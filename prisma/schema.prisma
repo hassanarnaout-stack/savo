@@ -1,0 +1,3576 @@
+// ============================================================================
+// SAVEO V2 — Marketplace Architecture
+// Saveo does not hold inventory. Every Product belongs to a verified
+// Supplier who stores and fulfills it; Saveo is the discovery + transaction
+// + trust layer, and takes a commission per sale.
+//
+// This is a clean rebuild (no legacy owned-inventory compatibility shims).
+// Categories remain fully data-driven — never hard-coded in app code.
+// Bilingual (EN/AR) fields live directly on the models that need them.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// AUTH (Auth.js v5 compatible models)
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  CUSTOMER
+  SUPPLIER
+  BRAND
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum Locale {
+  EN
+  AR
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String?
+  email           String    @unique
+  emailVerified   DateTime?
+  image           String?
+  passwordHash    String?
+  phone           String?
+  role            UserRole  @default(CUSTOMER)
+  preferredLocale Locale    @default(EN)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  accounts   Account[]
+  sessions   Session[]
+  addresses  Address[]
+  orders     Order[]
+  favorites  Favorite[]
+  cart       Cart?
+  reviews    Review[]
+  reviewVotes ReviewVote[]
+  reviewReplies ReviewReply[]
+  supplier   Supplier?
+  brandAccount BrandAccount?
+  membership Membership?
+  inventoryHistory InventoryHistory[]
+  mysteryBoxReveals MysteryBoxReveal[]
+  orderIssues OrderIssue[]
+  returnRequests ReturnRequest[]
+  wallet SaveoWallet?
+  points SaveoPoints?
+  productSubscriptions ProductSubscription[]
+  automationExecutions AutomationExecution[]
+  pushTokens PushToken[]
+  mobileRefreshTokens MobileRefreshToken[]
+  mobileCartSync MobileCartSync?
+  giftCardsPurchased GiftCard[]
+  assistantConversations AssistantConversation[]
+  messageThreads MessageThread[]
+  affiliateAccount AffiliateAccount?
+  sentMessages   Message[]
+  emailLogs EmailLog[]
+  feedback  Feedback[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  userId      String
+  label       String? // "Home", "Work"
+  fullName    String
+  phone       String
+  governorate String // Kuwait governorate (Al Asimah, Hawalli, ...)
+  area        String
+  block       String?
+  street      String?
+  building    String?
+  floor       String?
+  apartment   String?
+  avenue      String?
+  notes       String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@map("addresses")
+}
+
+// ---------------------------------------------------------------------------
+// SUPPLIERS — the marketplace's inventory owners. Every Product belongs to
+// exactly one Supplier who stores and fulfills it. Saveo takes
+// `commissionRate` % per sale, tracked via SupplierPayout.
+// ---------------------------------------------------------------------------
+
+// NOTE ON MERCHANT MIGRATION: an earlier revision of Saveo (v1, owned
+// inventory) had a `Merchant` model. It was fully removed during the v2
+// rebuild per an explicit reset request — there is no legacy Merchant table
+// in this schema and therefore nothing to migrate from. If a legacy
+// Merchant table is ever reintroduced (e.g. restoring an old backup), do
+// NOT delete it directly: add Supplier alongside it, run a data-migration
+// script to copy Merchant rows into Supplier, verify row counts match,
+// and only then drop Merchant in a follow-up schema change.
+
+enum SupplierStatus {
+  PENDING // applied, awaiting Saveo review
+  ACTIVE
+  SUSPENDED
+  REJECTED
+}
+
+enum SupplierVerificationStatus {
+  UNVERIFIED
+  PENDING // documents submitted, awaiting Saveo verification
+  VERIFIED // powers the "Verified Supplier" badge
+  REJECTED
+}
+
+model Supplier {
+  id                 String                      @id @default(cuid())
+  ownerUserId        String?                     @unique
+  companyName        String
+  companyNameAr      String?
+  slug               String                      @unique
+  logo               String?
+  description        String?                     @db.Text
+  descriptionAr      String?                     @db.Text
+  contactName        String?
+  phone              String
+  email              String
+  // Company profile (Phase 2 — completed in the step after initial registration)
+  address                     String?  @db.Text
+  commercialRegistrationNumber String?
+  taxNumber                   String?
+  website                     String?
+  termsAcceptedAt             DateTime? // timestamp the applicant accepted the Supplier Terms
+  commissionRate     Decimal                     @default(15) @db.Decimal(5, 2) // % Saveo keeps per sale
+  status             SupplierStatus              @default(PENDING) // account/operational status
+  verificationStatus SupplierVerificationStatus  @default(UNVERIFIED) // document/identity verification
+  notes              String?                     @db.Text
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+
+  owner         User?           @relation(fields: [ownerUserId], references: [id])
+  products      Product[]
+  supplierOrders SupplierOrder[]
+  transactions  SupplierTransaction[]
+  payouts       SupplierPayout[]
+  inventoryHistory InventoryHistory[]
+  goodsReceipts GoodsReceipt[]
+  productBatches ProductBatch[]
+  stockCounts   StockCount[]
+  purchaseOrders PurchaseOrder[]
+  visibilityBoost Int @default(0) // Phase 7.8 — real modifier applied in DiscoveryScoreEngine; earned/lost automatically by SupplierPerformanceService, never set directly by a supplier
+  performanceScore SupplierPerformanceScore?
+  onboardingChecklist SupplierOnboardingChecklist?
+  ledgerEntries SupplierLedgerEntry[]
+  wallet        SupplierWallet?
+
+  @@index([status])
+  @@index([verificationStatus])
+  @@map("suppliers")
+}
+
+// Running commission ledger — foundation for the "Commissions" tab of the
+// supplier dashboard, and for admin-side payout reporting.
+model SupplierPayout {
+  id              String    @id @default(cuid())
+  supplierId      String
+  periodStart     DateTime
+  periodEnd       DateTime
+  grossSales      Decimal   @db.Decimal(10, 3)
+  commission      Decimal   @db.Decimal(10, 3)
+  netPayout       Decimal   @db.Decimal(10, 3)
+  ordersCount     Int       @default(0) // how many SupplierOrders/transactions this settlement covers
+  referenceNumber String?   @unique // e.g. "PMT-284193" — set once a real payout run generates one
+  status          String    @default("PENDING") // PENDING | PAID
+  paidAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@map("supplier_payouts")
+}
+
+// ---------------------------------------------------------------------------
+// CATEGORIES — fully dynamic, self-referencing, bilingual.
+// ---------------------------------------------------------------------------
+
+model Category {
+  id            String   @id @default(cuid())
+  name          String
+  nameAr        String?
+  slug          String   @unique
+  description   String?
+  descriptionAr String?
+  icon          String? // icon name or emoji
+  imageUrl      String?
+  parentId      String?
+  isFeatured    Boolean  @default(false) // shown on homepage nav
+  displayType   String? // "grid" | "deals" | "mystery" | "rescue" — data-driven UI treatment
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
+  brandCampaigns BrandCampaign[]
+  adContents AdContent[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+// ---------------------------------------------------------------------------
+// PRODUCTS
+// ---------------------------------------------------------------------------
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  OUT_OF_STOCK
+  ARCHIVED
+}
+
+// Phase 5 — Product Quality Control. Deliberately separate from
+// ProductStatus above: `status` is the supplier's operational on/off
+// switch; `approvalStatus` is the admin's one-time quality gate before a
+// product is ever shown publicly. Defaults to APPROVED so every product
+// that already existed before this phase keeps working with zero
+// migration/backfill — only NEW supplier submissions are explicitly set
+// to PENDING_REVIEW at creation time (see supplier products API).
+enum ProductApprovalStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum ProductType {
+  STANDARD
+  DEAL // Saveo Deals — time-limited discount
+  MYSTERY_BOX
+  RESCUE // Saveo Rescue Deals — near-expiry, verified-safe, steep discount
+}
+
+enum StockManagedBy {
+  SUPPLIER
+  SAVEO
+}
+
+enum MysteryBoxTier {
+  BRONZE
+  SILVER
+  GOLD
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  nameAr        String?
+  slug          String   @unique
+  // Brand vs Supplier — deliberately different concepts. Supplier (below,
+  // via supplierId) is the fulfillment vendor and is intentionally never
+  // shown to customers (see the supplier storefront page's own product
+  // decision comment). brandName is the real manufacturer brand (Lindt,
+  // KitKat, Nespresso) and is meant to be customer-facing — Brand
+  // Districts are built on this field, not on supplier identity.
+  brandName     String?
+  description   String   @db.Text
+  descriptionAr String?  @db.Text
+  sku           String?  @unique
+  barcode       String?  @unique // EAN-13 / UPC-A / Code-128 / internal supplier code — see src/lib/barcode.ts for format validation. Nullable: existing products are unaffected. A unique index is created automatically by @unique; Postgres allows multiple NULLs under a unique constraint, so products without a barcode never collide with each other.
+  internalCode  String? // the supplier's own reference code for this product in their warehouse — distinct from `sku` (Saveo's catalog code) and `barcode` (retail scan code). Not unique — different suppliers may reuse the same internal numbering.
+  purchaseCost  Decimal? @db.Decimal(10, 3) // what the supplier paid to acquire this product — supplier-entered, used for real profit/margin calculation (see ProductAccountingService). Nullable: many products won't have this filled in yet.
+  vatRate       Decimal  @default(0) @db.Decimal(5, 2) // % — future-ready; Kuwait currently has no VAT on this category, defaults to 0
+
+  // --- Immersive Product Experience (Phase 5.6) ---
+  productStory      String?       @db.Text // supplier-submitted, requires admin approval — see experienceApproved
+  originStory       String?       @db.Text // "why we chose it", country of origin narrative — supplier-submitted
+  highlightFeatures Json? // array of { icon, label } feature highlights — supplier-submitted
+  discoveryScore    Int? // 0-100, computed by DiscoveryScoreEngine — see src/lib/services/discovery-score-engine.ts
+  experienceType    ExperienceType @default(STANDARD)
+  experienceApproved Boolean      @default(false) // supplier-submitted story/origin/features never go live to customers until an admin approves them (§11 requirement)
+
+  categoryId String
+  supplierId String // every product belongs to exactly one supplier
+
+  type           ProductType    @default(STANDARD)
+  status         ProductStatus  @default(ACTIVE)
+  stockManagedBy StockManagedBy @default(SUPPLIER)
+
+  // Pricing — original vs Saveo (member) price. Discount % is derived, never stored redundantly
+  // as a source of truth; it's computed in app layer from these two fields, but cached here
+  // for fast sorting/filtering.
+  originalPrice Decimal @db.Decimal(10, 3) // KWD supports 3 decimal places (fils)
+  saveoPrice    Decimal @db.Decimal(10, 3)
+  discountPct   Int     @default(0) // cached: round(((orig-saveo)/orig)*100)
+
+  stockQty      Int @default(0) // physical/current stock the supplier holds
+  reservedStock Int @default(0) // held for PENDING/ACCEPTED/PREPARING/SHIPPED supplier orders, not yet fulfilled or released
+  openingStock       Int? // snapshot of stockQty at the moment the product was first created — never changes afterward, used as the baseline for inventory reports
+  soldQuantity       Int @default(0) // real, delivered sales only — incremented at the same moment as completeReservedStock (ORDER_COMPLETED), never at reservation time
+  returnedQuantity   Int @default(0)
+  damagedQuantity    Int @default(0)
+  expiredQuantity    Int @default(0)
+  lowStockAlert Int @default(5)
+
+  // Deal / countdown support
+  dealStartsAt DateTime?
+  dealEndsAt   DateTime? // countdown timer target
+  expiryDate   DateTime? // product/food expiry — required transparency for RESCUE type
+
+  // Mystery box specific
+  mysteryBoxReveal   String?         @db.Text // e.g. "Contains 5-7 surprise snack items worth 12+ KWD"
+  mysteryBoxRevealAr String?         @db.Text
+  mysteryBoxValueMin Decimal?        @db.Decimal(10, 3)
+  mysteryBoxValueMax Decimal?        @db.Decimal(10, 3)
+  mysteryBoxTier     MysteryBoxTier? // BRONZE / SILVER / GOLD — only set when type = MYSTERY_BOX
+  // Hybrid reveal mechanic: mysteryBoxLockedCount random hidden items (from
+  // the LOCKED pool) plus mysteryBoxChooseCount items the customer picks
+  // themselves (from the CHOICE pool) at reveal time. Both default to the
+  // old fully-random behavior (chooseCount 0) so existing boxes with no
+  // CHOICE pool configured keep working exactly as before.
+  mysteryBoxLockedCount Int? @default(1)
+  mysteryBoxChooseCount Int? @default(0)
+
+  weightGrams   Int?
+  brand         String?
+  isFeatured    Boolean @default(false)
+  isMembersOnly Boolean @default(false) // Saveo Plus exclusive — hidden from non-members entirely (not just gated at checkout)
+  isSubscribable Boolean @default(false) // Admin-controlled — Subscribe & Save only shows on products the admin has explicitly opted in, never automatically (e.g. never stacks on top of a product that already has its own discount)
+  approvalStatus   ProductApprovalStatus @default(APPROVED) // see enum comment — defaults preserve existing products; new supplier submissions are set to PENDING_REVIEW explicitly
+  approvedAt       DateTime?
+  approvedByUserId String?
+  rejectionReason  String? @db.Text
+
+  viewCount  Int @default(0)
+  orderCount Int @default(0) // used for "best selling" + popularity-based recs
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category      Category        @relation(fields: [categoryId], references: [id])
+  supplier      Supplier        @relation(fields: [supplierId], references: [id])
+  dealOfTheHour DealOfTheHour[]
+
+  images     ProductImage[]
+  variants   ProductVariant[]
+  favorites  Favorite[]
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+  reviews    Review[]
+  attributes ProductAttribute[]
+
+  // Self-referential product relationships power cross-sell / upsell / FBT / related
+  relatedFrom ProductRelation[] @relation("RelationSource")
+  relatedTo   ProductRelation[] @relation("RelationTarget")
+  inventoryHistory InventoryHistory[]
+  mysteryBoxContents  MysteryBoxContent[]     @relation("MysteryBoxContents") // when this product IS a mystery box
+  possibleInBoxes     MysteryBoxContent[]     @relation("MysteryBoxPossibleProduct") // when this product CAN appear inside a mystery box
+  revealedInBoxes     MysteryBoxRevealItem[]  @relation("MysteryBoxRevealedProduct")
+  bundleItems         BundleItem[]
+  flashDeals          FlashDeal[]
+  auctions            Auction[]
+  brandCampaigns      BrandCampaign[]
+  media               ProductMedia[]
+  adContents          AdContent[]
+  generatedAds        GeneratedAd[]
+  sponsoredSlots      SponsoredSlot[]
+  sponsoredAsMysteryBox BrandSponsoredBox[] @relation("SponsoredMysteryBox")
+  competitorPrices      CompetitorPrice[]
+  locationStock         ProductLocationStock[]
+  stockTransfers        StockTransfer[]
+  purchaseOrderItems    PurchaseOrderItem[]
+  pickListItems         PickListItem[]
+  ingredients           ProductIngredient[]
+  nutritionFact         ProductNutritionFact?
+  badges                ProductBadge[]
+  storySteps            ProductStoryStep[]
+  flavorProfile         ProductFlavorProfile?
+  collectionEntries     CollectionProduct[]
+  goodsReceiptItems   GoodsReceiptItem[]
+  subscriptions       ProductSubscription[]
+  batches             ProductBatch[]
+  stockCounts         StockCount[]
+
+  @@index([categoryId])
+  @@index([brandName])
+  @@index([supplierId])
+  @@index([type, status])
+  @@index([dealEndsAt])
+  @@index([internalCode])
+  @@map("products")
+}
+
+// Flexible key/value attributes (e.g. "Weight: 250g", "Origin: Belgium")
+// so new product facets never require a schema migration.
+model ProductAttribute {
+  id        String @id @default(cuid())
+  productId String
+  key       String
+  keyAr     String?
+  value     String
+  valueAr   String?
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_attributes")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  url       String
+  altText   String?
+  sortOrder Int     @default(0)
+  isPrimary Boolean @default(false)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model ProductVariant {
+  id         String  @id @default(cuid())
+  productId  String
+  name       String // "500g", "Assorted"
+  nameAr     String?
+  priceDelta Decimal @default(0) @db.Decimal(10, 3)
+  stockQty   Int     @default(0)
+  sku        String?
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_variants")
+}
+
+// ---------------------------------------------------------------------------
+// INVENTORY HISTORY — every stock or reservation movement is logged here.
+// No code path may change Product.stockQty or Product.reservedStock
+// without writing one of these rows in the same transaction (enforced by
+// convention in src/lib/inventory.ts — all mutation goes through that
+// module rather than raw `prisma.product.update` calls).
+// ---------------------------------------------------------------------------
+
+enum InventoryActionType {
+  MANUAL_UPDATE // supplier directly edited the stock count (incl. initial stock on product creation)
+  RESTOCK // supplier explicitly added stock via the restock flow
+  ORDER_RESERVED // a customer order was placed — stock is held, not yet deducted
+  ORDER_RELEASED // a reservation was released without fulfillment (order/SupplierOrder cancelled)
+  ORDER_COMPLETED // a SupplierOrder was marked DELIVERED — stock is now actually deducted
+  RETURNED // a customer returned a delivered item — Phase 5.3 §4
+  DAMAGED // stock removed from sellable inventory due to damage — Phase 5.3 §4
+  EXPIRED // stock removed from sellable inventory due to expiry — Phase 5.3 §4
+}
+
+model InventoryHistory {
+  id         String              @id @default(cuid())
+  productId  String
+  supplierId String
+
+  // Semantics depend on actionType:
+  //   MANUAL_UPDATE / RESTOCK / ORDER_COMPLETED -> these track stockQty (current stock)
+  //   ORDER_RESERVED / ORDER_RELEASED           -> these track reservedStock
+  previousQuantity Int
+  newQuantity      Int
+  difference       Int // newQuantity - previousQuantity, snapshotted at write time
+
+  actionType InventoryActionType
+  userId     String? // who/what triggered it — nullable for system-driven events with no clear actor
+  note       String?
+
+  createdAt DateTime @default(now())
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+  user     User?    @relation(fields: [userId], references: [id])
+
+  @@index([productId, createdAt])
+  @@index([supplierId, createdAt])
+  @@map("inventory_history")
+}
+
+// ---------------------------------------------------------------------------
+// SALES OPTIMIZATION — cross-sell, upsell, frequently bought together,
+// related products, and cart-side "complete your deal". All curated
+// through this single relation table.
+// ---------------------------------------------------------------------------
+
+enum RelationType {
+  RELATED
+  CROSS_SELL // e.g. chocolate -> coffee capsules, nuts, juice, snacks
+  UPSELL
+  FREQUENTLY_BOUGHT_TOGETHER
+  COMPLETE_YOUR_DEAL
+}
+
+model ProductRelation {
+  id        String       @id @default(cuid())
+  sourceId  String
+  targetId  String
+  type      RelationType
+  sortOrder Int          @default(0)
+
+  source Product @relation("RelationSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  target Product @relation("RelationTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceId, targetId, type])
+  @@index([sourceId, type])
+  @@map("product_relations")
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  userId    String
+  rating    Int // 1-5, overall
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  // Phase 8.1 — Enterprise Reviews: genuinely new fields on the existing model, not a parallel one.
+  qualityRating      Int? // 1-5
+  packagingRating    Int? // 1-5
+  deliveryRating     Int? // 1-5
+  priceRating        Int? // 1-5
+  isVerifiedPurchase Boolean      @default(false) // snapshotted at creation from a real DELIVERED order — see ReviewService
+  status             ReviewStatus @default(PENDING)
+  moderationNote     String? // set by admin when rejecting/flagging
+  helpfulCount       Int          @default(0) // denormalized from ReviewVote for fast sorting — see ReviewService
+
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media   ReviewMedia[]
+  votes   ReviewVote[]
+  replies ReviewReply[]
+
+  @@index([productId])
+  @@index([productId, status])
+  @@map("reviews")
+}
+
+model ReviewMedia {
+  id       String  @id @default(cuid())
+  reviewId String
+  url      String
+  type     String // "IMAGE" | "VIDEO" — kept as a plain string rather than a new enum since it mirrors ProductMediaType's two relevant values
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@map("review_media")
+}
+
+model ReviewVote {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId]) // one helpful-vote per user per review
+  @@map("review_votes")
+}
+
+model ReviewReply {
+  id            String   @id @default(cuid())
+  reviewId      String
+  authorUserId  String
+  authorLabel   String // "Supplier" or "Saveo Team" — snapshotted at creation, not re-derived, so a role change later doesn't rewrite history
+  content       String   @db.Text
+  createdAt     DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@map("review_replies")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("favorites")
+}
+
+// ---------------------------------------------------------------------------
+// CART
+// ---------------------------------------------------------------------------
+
+model Cart {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  updatedAt DateTime @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int    @default(1)
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+// ---------------------------------------------------------------------------
+// ORDERS — Multi-vendor split architecture.
+//
+// A single customer Order can contain products from several suppliers.
+// Rather than tracking fulfillment on each OrderItem independently, the
+// Order is split into one SupplierOrder per vendor involved — each with
+// its own independent status (PENDING → ACCEPTED → PREPARING → SHIPPED →
+// DELIVERED, or CANCELLED). This mirrors how the supplier dashboard and
+// admin will actually operate: a supplier only ever sees and manages
+// their own SupplierOrder, never the parent Order or other suppliers'
+// portions of it.
+//
+//   Order #SVO-1001
+//     ├── SupplierOrder (Sultan Sweets Trading)   status: PREPARING
+//     │     ├── OrderItem (Ferrero Rocher x2)
+//     │     └── OrderItem (Lindt Dark 100g x1)
+//     └── SupplierOrder (Kuwait Pantry Supplies)   status: SHIPPED
+//           └── OrderItem (Rani Juice 6-pack x1)
+//
+// Order.status remains a simple customer-facing aggregate (derived/updated
+// from the state of its SupplierOrders); SupplierOrder.status is the real
+// operational status each supplier's dashboard reads and writes.
+// ---------------------------------------------------------------------------
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  KNET
+  CARD
+  COD
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+  FAILED
+}
+
+// Per-vendor sub-order status — this is the status a Supplier actually
+// manages from their dashboard.
+enum SupplierOrderStatus {
+  PENDING // just placed, supplier not yet acted
+  ACCEPTED // supplier confirmed they can fulfill
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED // supplier could not fulfill (e.g. out of stock) or customer cancelled
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  orderNumber String   @unique // human-friendly e.g. SVO-100234
+  userId      String
+  addressId   String?
+
+  status        OrderStatus   @default(PENDING) // customer-facing aggregate
+  paymentMethod PaymentMethod @default(KNET)
+  paymentStatus PaymentStatus @default(UNPAID)
+
+  subtotal      Decimal @db.Decimal(10, 3)
+  discountTotal Decimal @default(0) @db.Decimal(10, 3)
+  deliveryFee   Decimal @default(0) @db.Decimal(10, 3)
+  total         Decimal @db.Decimal(10, 3)
+
+  // Saveo Plus members get free delivery — snapshot whether this order benefited
+  isMembershipOrder Boolean @default(false)
+
+  promoCode String?
+  notes     String?
+
+  // Phase 8.2 — Gift System
+  isGift                Boolean   @default(false)
+  giftMessage           String?   @db.Text
+  giftWrapRequested     Boolean   @default(false)
+  giftWrapFee           Decimal   @default(0) @db.Decimal(10, 3)
+  scheduledDeliveryDate DateTime?
+  giftCardAmountApplied Decimal   @default(0) @db.Decimal(10, 3)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user           User                 @relation(fields: [userId], references: [id])
+  address        Address?             @relation(fields: [addressId], references: [id])
+  supplierOrders SupplierOrder[]
+  history        OrderStatusHistory[]
+  issues         OrderIssue[]
+  paymentTransactions PaymentTransaction[]
+  subscriptionOrders  SubscriptionOrder[]
+  returnRequests ReturnRequest[]
+  giftCardRedemptions GiftCardRedemption[]
+  affiliateReferral AffiliateReferral?
+
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
+}
+
+// One supplier's slice of a (possibly multi-vendor) Order. This is the
+// unit the Supplier Dashboard (Phase 3) operates on.
+model SupplierOrder {
+  id                  String              @id @default(cuid())
+  orderId             String
+  supplierId          String
+  supplierOrderNumber String?             @unique // distinct from the parent Order's orderNumber, e.g. "SO-482913". Nullable so this migration doesn't require resetting existing order data — every NEW order gets one.
+
+  status SupplierOrderStatus @default(PENDING)
+
+  subtotal       Decimal @db.Decimal(10, 3) // sum of this supplier's line items
+  commissionRate Decimal @db.Decimal(5, 2) // snapshot of supplier's rate at sale time
+  commissionAmount Decimal @db.Decimal(10, 3) // subtotal * commissionRate
+  supplierPayout Decimal @db.Decimal(10, 3) // subtotal - commissionAmount
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order    Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  supplier Supplier    @relation(fields: [supplierId], references: [id])
+  items    OrderItem[]
+  transactions SupplierTransaction[]
+  history  SupplierOrderStatusHistory[]
+  delivery Delivery?
+  pickList PickList?
+
+  @@unique([orderId, supplierId]) // one sub-order per supplier per order
+  @@index([supplierId, status])
+  @@map("supplier_orders")
+}
+
+model SupplierOrderStatusHistory {
+  id              String              @id @default(cuid())
+  supplierOrderId String
+  previousStatus  SupplierOrderStatus?
+  status          SupplierOrderStatus // the new status
+  changedBy       String? // userId of the actor (supplier's user, or admin)
+  note            String?
+  createdAt       DateTime            @default(now())
+
+  supplierOrder SupplierOrder @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+
+  @@map("supplier_order_status_history")
+}
+
+model OrderItem {
+  id              String @id @default(cuid())
+  supplierOrderId String
+  productId       String
+
+  productName   String // snapshot at purchase time
+  productImage  String?
+  unitPrice     Decimal @db.Decimal(10, 3) // saveoPrice at time of purchase
+  originalPrice Decimal @db.Decimal(10, 3)
+  quantity      Int
+  lineTotal     Decimal @db.Decimal(10, 3)
+
+  supplierOrder SupplierOrder @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id])
+  mysteryBoxReveal MysteryBoxReveal?
+
+  @@index([supplierOrderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// ---------------------------------------------------------------------------
+// MYSTERY BOX ARCHITECTURE (Phase 4.2)
+//
+// A mystery-box Product (type=MYSTERY_BOX) can optionally declare a set of
+// possible contents via MysteryBoxContent, each with a probability weight
+// (summing to ~100 across one box, enforced in app logic, not the DB).
+// If a box has no MysteryBoxContent rows configured yet, the reveal
+// experience gracefully falls back to showing the box's general
+// mysteryBoxReveal description text instead of specific items — so this
+// feature can be adopted incrementally per box, never blocking a purchase.
+// ---------------------------------------------------------------------------
+
+enum MysteryBoxPoolType {
+  LOCKED // mandatory, hidden until reveal, picked randomly by weighted probability
+  CHOICE // customer sees these and picks a set number themselves at reveal time
+}
+
+model MysteryBoxContent {
+  id                String             @id @default(cuid())
+  mysteryBoxId      String
+  possibleProductId String
+  probability       Decimal            @db.Decimal(5, 2) // e.g. 40.00 = 40% chance — only meaningful for LOCKED items
+  isSpecialItem     Boolean            @default(false) // marks rare/bonus items distinct from the regular pool
+  poolType          MysteryBoxPoolType @default(LOCKED)
+  createdAt         DateTime           @default(now())
+
+  mysteryBox      Product @relation("MysteryBoxContents", fields: [mysteryBoxId], references: [id], onDelete: Cascade)
+  possibleProduct Product @relation("MysteryBoxPossibleProduct", fields: [possibleProductId], references: [id])
+
+  @@unique([mysteryBoxId, possibleProductId])
+  @@index([mysteryBoxId])
+  @@map("mystery_box_contents")
+}
+
+// One reveal record per purchased mystery-box OrderItem. Contents are
+// deliberately NOT chosen at checkout time — `revealedAt` stays null and
+// `items` stays empty until the customer opens it on the reveal page,
+// which is what makes the unboxing moment real rather than pre-determined
+// and simply hidden.
+model MysteryBoxReveal {
+  id          String    @id @default(cuid())
+  orderItemId String    @unique
+  userId      String
+  revealedAt  DateTime?
+  // Customer's CHOICE-pool picks, submitted before the final reveal. Kept
+  // separate from `items` (the actual revealed contents) so the choose
+  // step and the final random-draw step are cleanly two different moments
+  // — this is what lets the reveal page show "pick 3 of these 5" as a real
+  // interactive step rather than a fake one.
+  chosenProductIds Json?
+  createdAt   DateTime  @default(now())
+
+  orderItem OrderItem              @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  user      User                   @relation(fields: [userId], references: [id])
+  items     MysteryBoxRevealItem[]
+
+  @@index([userId])
+  @@map("mystery_box_reveals")
+}
+
+model MysteryBoxRevealItem {
+  id        String @id @default(cuid())
+  revealId  String
+  productId String
+  quantity  Int    @default(1)
+
+  reveal  MysteryBoxReveal @relation(fields: [revealId], references: [id], onDelete: Cascade)
+  product Product          @relation("MysteryBoxRevealedProduct", fields: [productId], references: [id])
+
+  @@index([revealId])
+  @@map("mystery_box_reveal_items")
+}
+
+// ---------------------------------------------------------------------------
+// COMMISSION ENGINE — every SupplierOrder generates exactly one
+// SupplierTransaction recording the money split, independent of payout
+// batching (SupplierPayout groups many transactions into a periodic payout).
+// ---------------------------------------------------------------------------
+
+enum SupplierTransactionStatus {
+  PENDING // order placed, SupplierOrder not yet DELIVERED — counts toward GMV only, not realized revenue
+  COMPLETED // SupplierOrder DELIVERED — sale is realized, commission is owed but not yet paid out
+  SETTLED // included in a paid SupplierPayout
+  REVERSED // order cancelled before delivery (only possible while still PENDING)
+}
+
+model SupplierTransaction {
+  id              String                    @id @default(cuid())
+  supplierId      String
+  supplierOrderId String
+  saleAmount      Decimal                   @db.Decimal(10, 3) // gross line total(s) for this supplier order
+  commissionAmount Decimal                  @db.Decimal(10, 3) // Saveo's cut
+  supplierAmount  Decimal                   @db.Decimal(10, 3) // saleAmount - commissionAmount, owed to supplier
+  status          SupplierTransactionStatus @default(PENDING)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  supplier      Supplier      @relation(fields: [supplierId], references: [id])
+  supplierOrder SupplierOrder @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId, status])
+  @@map("supplier_transactions")
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  status    OrderStatus
+  note      String?
+  changedBy String? // admin user id
+  createdAt DateTime    @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_status_history")
+}
+
+// ---------------------------------------------------------------------------
+// PROMOTIONS
+// ---------------------------------------------------------------------------
+// BUNDLE OFFERS (Phase 4.3) — "Buy A + B, get a discount or a free item".
+// A Bundle groups 2+ BundleItems; each item is either REQUIRED (must be in
+// the cart for the bundle to apply) or the FREE_GIFT/reward line. Discount
+// can be a flat amount, a percentage, or "free" (100% off that one line).
+// ---------------------------------------------------------------------------
+
+enum BundleDiscountType {
+  PERCENTAGE // e.g. 15% off the bundle
+  FIXED_AMOUNT // e.g. 2.000 KD off
+  FREE_ITEM // one designated BundleItem (isRewardItem=true) becomes free
+}
+
+model Bundle {
+  id            String             @id @default(cuid())
+  name          String
+  nameAr        String?
+  description   String?            @db.Text
+  descriptionAr String?            @db.Text
+  discountType  BundleDiscountType
+  discountValue Decimal            @db.Decimal(10, 3) // % for PERCENTAGE, KD for FIXED_AMOUNT, ignored for FREE_ITEM
+  isActive      Boolean            @default(true)
+  startsAt      DateTime?
+  endsAt        DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  items BundleItem[]
+
+  @@index([isActive])
+  @@map("bundles")
+}
+
+model BundleItem {
+  id             String  @id @default(cuid())
+  bundleId       String
+  productId      String
+  isRewardItem   Boolean @default(false) // true = the discounted/free line (e.g. "Product C free")
+  requiredQuantity Int   @default(1)
+
+  bundle  Bundle  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([bundleId, productId])
+  @@index([bundleId])
+  @@index([productId])
+  @@map("bundle_items")
+}
+
+// ---------------------------------------------------------------------------
+// BETA MODE (Phase 5) — admin-toggleable, DB-backed (not an env var) so it
+// can be flipped without a redeploy. A single-row settings table.
+// ---------------------------------------------------------------------------
+
+model BetaSettings {
+  id         String    @id @default("singleton") // enforced single row by convention — see BetaService
+  enabled    Boolean   @default(false)
+  inviteOnly Boolean   @default(false)
+  startDate  DateTime?
+  endDate    DateTime?
+  updatedAt  DateTime  @updatedAt
+
+  @@map("beta_settings")
+}
+
+enum BetaInviteType {
+  CUSTOMER
+  SUPPLIER
+}
+
+enum BetaInviteStatus {
+  INVITED
+  REGISTERED
+}
+
+model BetaInvite {
+  id         String            @id @default(cuid())
+  email      String            @unique
+  type       BetaInviteType
+  status     BetaInviteStatus  @default(INVITED)
+  invitedAt  DateTime          @default(now())
+  registeredAt DateTime?
+  notes      String?
+
+  @@index([type, status])
+  @@map("beta_invites")
+}
+
+// ---------------------------------------------------------------------------
+// SUPPLIER ONBOARDING CHECKLIST (Phase 5)
+// ---------------------------------------------------------------------------
+
+enum OnboardingReviewStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model SupplierOnboardingChecklist {
+  id                     String                  @id @default(cuid())
+  supplierId             String                  @unique
+  companyInfoVerified    Boolean                 @default(false)
+  contactVerified        Boolean                 @default(false)
+  productQualityChecked  Boolean                 @default(false)
+  barcodeChecked         Boolean                 @default(false)
+  imagesChecked          Boolean                 @default(false)
+  pricingReviewed        Boolean                 @default(false)
+  commissionAgreed       Boolean                 @default(false)
+  status                 OnboardingReviewStatus  @default(PENDING_REVIEW)
+  reviewedByUserId       String?
+  reviewedAt             DateTime?
+  notes                  String?                 @db.Text
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@map("supplier_onboarding_checklists")
+}
+
+// ---------------------------------------------------------------------------
+// CUSTOMER SUPPORT — ORDER ISSUES (Phase 5)
+// ---------------------------------------------------------------------------
+
+enum OrderIssueStatus {
+  OPEN
+  PROCESSING
+  RESOLVED
+}
+
+model OrderIssue {
+  id          String            @id @default(cuid())
+  orderId     String
+  userId      String
+  subject     String
+  description String            @db.Text
+  status      OrderIssueStatus  @default(OPEN)
+  adminNotes  String?           @db.Text
+  createdAt   DateTime          @default(now())
+  resolvedAt  DateTime?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([orderId])
+  @@map("order_issues")
+}
+
+// ---------------------------------------------------------------------------
+// EMAIL SYSTEM (Phase 5.1) — every send attempt (success or failure) is
+// logged here regardless of which provider handled it, so delivery
+// problems are visible from the DB even before a real monitoring
+// dashboard exists.
+// ---------------------------------------------------------------------------
+
+enum EmailStatus {
+  SENT
+  FAILED
+  SKIPPED // provider not configured (no API key) — logged, not delivered
+}
+
+model EmailLog {
+  id            String      @id @default(cuid())
+  userId        String?
+  type          String // matches NotificationEventType / a dedicated email-only type, e.g. "WELCOME_EMAIL"
+  recipient     String
+  status        EmailStatus
+  sentAt        DateTime    @default(now())
+  errorMessage  String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@map("email_logs")
+}
+
+// ---------------------------------------------------------------------------
+// FEATURE FLAGS (Phase 5.2) — admin-toggleable, DB-backed. Seeded with the
+// flags this phase asks for; adding more later is just another row, no
+// schema change needed.
+// ---------------------------------------------------------------------------
+
+model FeatureFlag {
+  key       String   @id
+  name      String
+  enabled   Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+
+  @@map("feature_flags")
+}
+
+// ---------------------------------------------------------------------------
+// CUSTOMER FEEDBACK (Phase 5.3)
+// ---------------------------------------------------------------------------
+
+enum FeedbackCategory {
+  PRODUCT
+  DELIVERY
+  CHECKOUT
+  WEBSITE
+  OTHER
+}
+
+enum FeedbackStatus {
+  NEW
+  REVIEWED
+  ARCHIVED
+}
+
+model Feedback {
+  id        String           @id @default(cuid())
+  userId    String?
+  page      String // path the feedback was submitted from, e.g. "/en/checkout"
+  rating    Int // 1-5
+  category  FeedbackCategory
+  comment   String?          @db.Text
+  status    FeedbackStatus   @default(NEW)
+  createdAt DateTime         @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
+  @@map("feedback")
+}
+
+// ---------------------------------------------------------------------------
+// DELIVERY MANAGEMENT (Phase 5.4)
+//
+// `Delivery` links to SupplierOrder (not the parent Order) because that's
+// the actual fulfillment unit in Saveo's multi-vendor architecture — a
+// single customer Order can contain several SupplierOrders from
+// different vendors, each potentially handled by a different delivery
+// partner. This corresponds to the "orderId" concept from the spec.
+// ---------------------------------------------------------------------------
+
+enum DeliveryPartnerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model DeliveryPartner {
+  id        String                @id @default(cuid())
+  name      String
+  phone     String
+  status    DeliveryPartnerStatus @default(ACTIVE)
+  createdAt DateTime              @default(now())
+
+  deliveries Delivery[]
+  drivers    DeliveryDriver[]
+
+  @@map("delivery_partners")
+}
+
+enum DeliveryStatus {
+  READY_FOR_PICKUP
+  PICKED_UP
+  OUT_FOR_DELIVERY
+  DELIVERED
+}
+
+model Delivery {
+  id              String         @id @default(cuid())
+  supplierOrderId String         @unique
+  partnerId       String?
+  driverId        String? // Phase 6.4 — individual driver assignment, distinct from the company-level partnerId
+  estimatedDeliveryAt DateTime? // Phase 6.4 — delivery time window estimate
+  status          DeliveryStatus @default(READY_FOR_PICKUP)
+  assignedAt      DateTime?
+  pickedAt        DateTime?
+  deliveredAt     DateTime?
+  createdAt       DateTime       @default(now())
+
+  // Live Delivery Tracking (Phase 9.4) — genuinely new confirmation
+  // mechanism. deliveryOtp is generated when a driver is assigned and
+  // shown to the customer in-app; the driver (via the admin, since no
+  // driver login exists yet — see the ping endpoint's own note) enters
+  // it to confirm handoff. deliveryProofUrl follows the same URL-link
+  // convention used everywhere else in this codebase (no real file
+  // upload pipeline exists) rather than faking a photo upload.
+  deliveryOtp       String?
+  deliveryProofUrl  String?
+
+  supplierOrder SupplierOrder    @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  partner       DeliveryPartner? @relation(fields: [partnerId], references: [id])
+  driver        DeliveryDriver?  @relation(fields: [driverId], references: [id])
+
+  @@index([status])
+  @@index([partnerId])
+  @@index([driverId])
+  @@map("deliveries")
+}
+
+// ---------------------------------------------------------------------------
+// FINANCE CENTER (Phase 5.5)
+//
+// SupplierLedgerEntry is a general-ledger view — one row per financial
+// event (SALE, COMMISSION, REFUND, ADJUSTMENT, PAYOUT) — and deliberately
+// complements rather than replaces the existing `SupplierTransaction`
+// model (Phase 3.4's GMV vs Realized Sales engine, unchanged). SALE and
+// COMMISSION entries are auto-generated at the same moment a
+// SupplierTransaction becomes COMPLETED (order DELIVERED); REFUND and
+// ADJUSTMENT are admin-entered manually since no automated refund flow
+// exists yet (a known, documented gap — see PRODUCTION.md).
+//
+// Sign convention: `amount` is signed. SALE is positive (credit — money
+// owed to the supplier). COMMISSION, REFUND, and PAYOUT are negative
+// (debit — reduces what's owed). ADJUSTMENT can be either sign. A
+// supplier's Payable balance is simply the running sum of their entries.
+// ---------------------------------------------------------------------------
+
+enum LedgerEntryType {
+  SALE
+  COMMISSION
+  REFUND
+  ADJUSTMENT
+  PAYOUT
+}
+
+model SupplierLedgerEntry {
+  id              String          @id @default(cuid())
+  supplierId      String
+  type            LedgerEntryType
+  amount          Decimal         @db.Decimal(10, 3) // signed — see model doc comment
+  description     String
+  supplierOrderId String? // optional link back to the originating order, when applicable
+  createdByUserId String? // set for manually-entered REFUND/ADJUSTMENT/PAYOUT rows
+  createdAt       DateTime        @default(now())
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+  @@index([type])
+  @@map("supplier_ledger_entries")
+}
+
+enum ExpenseCategory {
+  MARKETING
+  OPERATIONS
+  SALARIES
+  TECHNOLOGY
+  LOGISTICS
+  OTHER
+}
+
+model Expense {
+  id        String          @id @default(cuid())
+  category  ExpenseCategory
+  amount    Decimal         @db.Decimal(10, 3)
+  date      DateTime
+  notes     String?         @db.Text
+  createdAt DateTime        @default(now())
+
+  @@index([category])
+  @@index([date])
+  @@map("expenses")
+}
+
+// ---------------------------------------------------------------------------
+// ADVANCED BETA ANALYTICS (Phase 5.6)
+//
+// A persisted event store — deliberately separate from the existing
+// lightweight console-log analytics (RecommendationAnalytics,
+// MysteryBoxAnalytics from earlier phases), which stay as-is. Those are
+// fire-and-forget signals with no dashboard behind them yet; this table
+// exists specifically to power the funnel/Top Products/retention
+// dashboard this phase asks for, so it needs real persistence.
+//
+// `sessionId` groups anonymous (pre-login) activity — a client-generated
+// id stored in localStorage, not tied to a user account. `userId` is
+// filled in whenever the event happens while signed in.
+// ---------------------------------------------------------------------------
+
+enum AnalyticsEventType {
+  PAGE_VIEW
+  PRODUCT_VIEW
+  ADD_TO_CART
+  CHECKOUT_START
+  ORDER_COMPLETE
+  MYSTERY_BOX_OPEN
+  MEMBERSHIP_PURCHASE
+  FEEDBACK_SENT
+}
+
+model AnalyticsEvent {
+  id        String             @id @default(cuid())
+  type      AnalyticsEventType
+  sessionId String
+  userId    String?
+  productId String?
+  metadata  Json?
+  createdAt DateTime           @default(now())
+
+  @@index([type, createdAt])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([productId])
+  @@map("analytics_events")
+}
+
+// ---------------------------------------------------------------------------
+// MARKETING CAMPAIGN MANAGER + GAMIFICATION ENGINE (Phase 5.2)
+//
+// One generic Campaign model for all 15 campaign types — adding a new
+// type later means adding an enum value + a handler in code, not a new
+// table. `config` (JSON) holds type-specific settings (reward pools,
+// probabilities, node maps, etc.) so each campaign type's shape doesn't
+// need its own columns.
+//
+// CampaignEvent doubles as both the analytics trail AND the source of
+// truth for "did this user already play today" / "what did they win" —
+// a REWARD_RECEIVED event's `metadata` IS the reward record. This
+// deliberately avoids a separate table per campaign type.
+// ---------------------------------------------------------------------------
+
+enum CampaignType {
+  TREASURE_CHEST
+  MYSTERY_SAFE
+  SURPRISE_ENVELOPE
+  PICK_THREE
+  DAILY_CRYSTAL
+  BALLOON_POP
+  MYSTERY_CARDS
+  LUCKY_PRODUCT
+  HIDDEN_CASHBACK
+  COMMUNITY_GOAL
+  MYSTERY_FRIDAY
+  SECRET_VIP_DEAL
+  COLLECT_UNLOCK
+  GOLDEN_TICKET
+  TREASURE_MAP
+  LIMITED_TIME_HUNT
+}
+
+enum CampaignStatus {
+  ACTIVE
+  INACTIVE
+  SCHEDULED
+  EXPIRED
+}
+
+model Campaign {
+  id        String         @id @default(cuid())
+  name      String
+  slug      String         @unique
+  type      CampaignType
+  status    CampaignStatus @default(INACTIVE)
+  priority  Int            @default(0) // higher = shown first when multiple are ACTIVE
+  startAt   DateTime?
+  endAt     DateTime?
+  config    Json // type-specific settings — reward pools, probabilities, node maps, etc.
+  // Real customer-facing copy — previously nonexistent, which is exactly why a
+  // customer shown a game had no way to understand what it is or how they
+  // benefit. Admin-entered per campaign (not hardcoded), shown on the game's
+  // entry point (e.g. the "/treasure" page) before the customer plays.
+  customerDescription   String? @db.Text
+  customerDescriptionAr String? @db.Text
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  events CampaignEvent[]
+
+  @@index([status])
+  @@index([type])
+  @@map("campaigns")
+}
+
+enum CampaignEventType {
+  VIEW
+  START
+  PLAY
+  REWARD_RECEIVED
+  SHARE
+  PURCHASE_AFTER_CAMPAIGN
+}
+
+model CampaignEvent {
+  id         String            @id @default(cuid())
+  userId     String
+  campaignId String
+  eventType  CampaignEventType
+  metadata   Json?
+  createdAt  DateTime          @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, eventType])
+  @@index([userId, campaignId])
+  @@index([createdAt])
+  @@map("campaign_events")
+}
+
+// ---------------------------------------------------------------------------
+// FLASH DEAL MANAGER (Phase 5.3 §5)
+// ---------------------------------------------------------------------------
+
+enum FlashDealStatus {
+  DRAFT
+  SCHEDULED
+  LIVE
+  PAUSED
+  COMPLETED
+}
+
+model FlashDeal {
+  id              String          @id @default(cuid())
+  productId       String
+  discountPercent Int
+  startAt         DateTime
+  endAt           DateTime
+  stockLimit      Int // how many units are allocated to this deal specifically
+  soldCount       Int             @default(0) // units sold under this deal — capped at stockLimit
+  status          FlashDealStatus @default(DRAFT)
+  viewCount       Int             @default(0)
+  buyerCount      Int             @default(0) // distinct customers who purchased under this deal
+  isActive        Boolean         @default(true) // legacy flag, kept for backward compatibility — `status` is now the source of truth (see FlashDealService)
+  createdAt       DateTime        @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([status, startAt, endAt])
+  @@index([productId])
+  @@map("flash_deals")
+}
+
+// ---------------------------------------------------------------------------
+// AUCTION FRAMEWORK (Phase 5.3 §6) — ready infrastructure, never live on
+// its own. `isEnabled` defaults false and is the ONLY switch that makes
+// an auction's bidding page reachable at all — see AuctionService.
+// ---------------------------------------------------------------------------
+
+enum AuctionStatus {
+  SCHEDULED
+  ACTIVE
+  ENDED
+}
+
+model Auction {
+  id             String        @id @default(cuid())
+  productId      String
+  startingPrice  Decimal       @db.Decimal(10, 3)
+  minIncrement   Decimal       @db.Decimal(10, 3)
+  startTime      DateTime
+  endTime        DateTime
+  status         AuctionStatus @default(SCHEDULED)
+  isEnabled      Boolean       @default(false) // admin-only activation switch — Phase 5.3 §6 requirement
+  winnerId       String?
+  winningBid     Decimal?      @db.Decimal(10, 3)
+  createdAt      DateTime      @default(now())
+
+  product Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  bids    AuctionBid[]
+
+  @@index([status, isEnabled])
+  @@index([productId])
+  @@map("auctions")
+}
+
+model AuctionBid {
+  id        String   @id @default(cuid())
+  auctionId String
+  userId    String
+  amount    Decimal  @db.Decimal(10, 3)
+  createdAt DateTime @default(now())
+
+  auction Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+
+  @@index([auctionId, amount])
+  @@map("auction_bids")
+}
+
+// ---------------------------------------------------------------------------
+// BRAND PARTNERSHIP PLATFORM (Phase 5.3 §10)
+// ---------------------------------------------------------------------------
+
+enum BrandCampaignType {
+  SPONSORED_PRODUCT
+  HOMEPAGE_BANNER
+  CATEGORY_HIGHLIGHT
+  SEARCH_BOOST
+}
+
+model BrandCampaign {
+  id            String            @id @default(cuid())
+  brandName     String
+  type          BrandCampaignType
+  productId     String? // for SPONSORED_PRODUCT / SEARCH_BOOST
+  categoryId    String? // for CATEGORY_HIGHLIGHT
+  bannerImageUrl String? // for HOMEPAGE_BANNER
+  bannerLinkUrl  String?
+  startDate     DateTime
+  endDate       DateTime
+  budget        Decimal           @db.Decimal(10, 3)
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+
+  product  Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  placements SponsoredPlacement[]
+
+  @@index([type, isActive, startDate, endDate])
+  @@map("brand_campaigns")
+}
+
+enum SponsoredEventType {
+  VIEW
+  CLICK
+  ADD_TO_CART
+  SALE
+}
+
+model SponsoredPlacement {
+  id              String             @id @default(cuid())
+  brandCampaignId String
+  eventType       SponsoredEventType
+  userId          String?
+  amount          Decimal?           @db.Decimal(10, 3) // sale amount, when eventType = SALE
+  createdAt       DateTime           @default(now())
+
+  brandCampaign BrandCampaign @relation(fields: [brandCampaignId], references: [id], onDelete: Cascade)
+
+  @@index([brandCampaignId, eventType])
+  @@map("sponsored_placements")
+}
+
+// ---------------------------------------------------------------------------
+// PREMIUM PRODUCT MEDIA (Phase 5.3 §11 + §12)
+//
+// Deliberately separate from the existing `ProductImage` model (kept
+// untouched — still what powers product cards, cart thumbnails, etc.
+// everywhere in the app). `ProductMedia` is the richer gallery system
+// specifically for the product detail page's premium experience: main
+// image, gallery images, lifestyle shots, video, and 360° image sets.
+// ---------------------------------------------------------------------------
+
+enum ExperienceType {
+  STANDARD
+  PREMIUM
+  LUXURY
+  MYSTERY
+  FLASH
+}
+
+enum ProductMediaType {
+  MAIN_IMAGE
+  GALLERY_IMAGE
+  LIFESTYLE_IMAGE
+  VIDEO
+  IMAGE_360
+  THREE_D_MODEL
+}
+
+model ProductMedia {
+  id        String           @id @default(cuid())
+  productId String
+  type      ProductMediaType
+  url       String
+  sortOrder Int              @default(0)
+  createdAt DateTime         @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, type])
+  @@map("product_media")
+}
+
+// ---------------------------------------------------------------------------
+// MARKETING CAMPAIGN STUDIO + AI AD BUILDER
+//
+// Named `MarketingCampaign`/`MarketingCampaignEvent` — deliberately NOT
+// `Campaign`/`CampaignEvent`, which already exist as the gamification
+// engine from Phase 5.2 (Treasure Chest, Mystery Safe, etc.). Those are
+// customer-facing reward mechanics; this is internal ad/marketing
+// tooling for the admin team. Different domain, different lifecycle,
+// kept fully separate to avoid conflating the two.
+// ---------------------------------------------------------------------------
+
+enum MarketingCampaignType {
+  PRODUCT
+  FLASH_DEAL
+  MYSTERY_BOX
+  SAVEO_PLUS
+  SUPPLIER
+  CATEGORY
+  SEASONAL
+}
+
+enum MarketingCampaignObjective {
+  SALES
+  TRAFFIC
+  CUSTOMERS
+  RETENTION
+  AWARENESS
+}
+
+enum MarketingCampaignStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+}
+
+model MarketingCampaign {
+  id            String                     @id @default(cuid())
+  name          String
+  type          MarketingCampaignType
+  status        MarketingCampaignStatus    @default(DRAFT)
+  objective     MarketingCampaignObjective
+  budget        Decimal                    @db.Decimal(10, 3)
+  startAt       DateTime
+  endAt         DateTime
+  createdByUserId String
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+
+  // A/B testing (§8) — variantB points back to variantA; a campaign with
+  // variantOfId set IS a "B" variant of the campaign it points to.
+  variantOfId   String?
+  variantOf     MarketingCampaign?  @relation("CampaignVariants", fields: [variantOfId], references: [id], onDelete: SetNull)
+  variants      MarketingCampaign[] @relation("CampaignVariants")
+
+  events     MarketingCampaignEvent[]
+  adContents AdContent[]
+  generatedAds GeneratedAd[]
+
+  @@index([status, type])
+  @@index([variantOfId])
+  @@map("marketing_campaigns")
+}
+
+enum MarketingEventType {
+  VIEW
+  CLICK
+  ADD_TO_CART
+  CHECKOUT
+  PURCHASE
+  SHARE
+}
+
+model MarketingCampaignEvent {
+  id         String             @id @default(cuid())
+  campaignId String
+  userId     String?
+  eventType  MarketingEventType
+  metadata   Json?
+  createdAt  DateTime           @default(now())
+
+  campaign MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, eventType])
+  @@index([userId])
+  @@map("marketing_campaign_events")
+}
+
+// --- Ad Content Generator (§3) — every generated copy is kept, never overwritten, so past versions stay usable. ---
+
+model AdContent {
+  id               String   @id @default(cuid())
+  campaignId       String?
+  productId        String?
+  categoryId       String?
+  targetAudience   String?
+  platform         String // e.g. Instagram, TikTok, Snapchat, Facebook
+  tone             String // e.g. playful, urgent, premium
+  goal             String
+  headline         String
+  shortDescription String   @db.Text
+  longDescription  String   @db.Text
+  cta              String
+  hashtags         String[] // Postgres text array
+  createdByUserId  String
+  createdAt        DateTime @default(now())
+
+  campaign MarketingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  product  Product?           @relation(fields: [productId], references: [id], onDelete: SetNull)
+  category Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId])
+  @@index([productId])
+  @@map("ad_contents")
+}
+
+// --- Ad Template Builder (§4) — real SVG-rendered ad images, not stubs. ---
+
+enum AdTemplateType {
+  PRODUCT_CARD
+  FLASH_DEAL
+  MYSTERY_BOX
+  NEW_ARRIVAL
+  DISCOUNT
+  SAVEO_PLUS
+}
+
+model GeneratedAd {
+  id         String         @id @default(cuid())
+  campaignId String?
+  productId  String?
+  templateType AdTemplateType
+  config     Json // background color/theme, price, discount, timer text, CTA text, etc.
+  svgContent String   @db.Text // the rendered ad, stored so it can be reopened/exported later without re-generating
+  createdByUserId String
+  createdAt  DateTime @default(now())
+
+  campaign MarketingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  product  Product?           @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId])
+  @@index([templateType])
+  @@map("generated_ads")
+}
+
+// ---------------------------------------------------------------------------
+// BRAND CENTER + SPONSORED ADVERTISING PLATFORM (Phase 5.4)
+//
+// A self-service system for real brand company accounts (with login),
+// distinct from the existing admin-only `BrandCampaign`/`SponsoredPlacement`
+// (Phase 5.3 §10), which remains untouched and fully functional. Every
+// model here is named to avoid any collision with that earlier, simpler
+// system — see the doc comments on each model.
+// ---------------------------------------------------------------------------
+
+enum BrandAccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+model BrandAccount {
+  id            String             @id @default(cuid())
+  ownerUserId   String             @unique
+  companyName   String
+  logo          String?
+  description   String?            @db.Text
+  hasPremiumPackage Boolean         @default(false) // Phase 5.6 §12 foundation — when true, this brand's sponsored products get Premium Product Display + Featured Story + Enhanced Card + Priority Placement. Not billed yet; ready to convert to a paid tier later.
+  contactName   String
+  email         String
+  phone         String
+  status        BrandAccountStatus @default(PENDING)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  owner User @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  sponsoredSlots      SponsoredSlot[]
+  campaigns           BrandMarketingCampaign[]
+  subscriptions       BrandSubscription[]
+  takeovers           BrandTakeover[]
+  sponsoredBoxes      BrandSponsoredBox[]
+  challenges          BrandChallenge[]
+  invoices            BrandInvoice[]
+  events              BrandEvent[]
+
+  @@index([status])
+  @@map("brand_accounts")
+}
+
+// --- Sponsored Products (§3) — NOT the same as the existing SponsoredPlacement (Phase 5.3 §10, event log for the old BrandCampaign). This is the actual placement/slot booking. ---
+
+enum SponsoredPlacementType {
+  HOMEPAGE_TOP
+  SEARCH_TOP
+  CATEGORY_TOP
+  TRENDING
+  RECOMMENDED
+  FLASH_SECTION
+  DEAL_BOOST
+}
+
+enum SponsoredSlotStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+model SponsoredSlot {
+  id            String                 @id @default(cuid())
+  brandId       String
+  productId     String
+  placementType SponsoredPlacementType
+  priority      Int                    @default(0) // higher = shown first among slots competing for the same placement
+  budget        Decimal                @db.Decimal(10, 3) // total lifetime budget for this slot
+  cpc           Decimal?               @db.Decimal(6, 4) // cost per click, in KD — Phase 7.7. Null = this slot only bills by CPM.
+  cpm           Decimal?               @db.Decimal(6, 4) // cost per 1000 impressions, in KD — Phase 7.7. Null = this slot only bills by CPC.
+  dailySpendLimit Decimal?             @db.Decimal(10, 3) // Phase 7.7 — optional daily cap, independent of the lifetime budget
+  spentTotal    Decimal                @default(0) @db.Decimal(10, 3) // Phase 7.7 — real cumulative spend, the ONLY place this is written (see SponsoredBillingService)
+  spentToday    Decimal                @default(0) @db.Decimal(10, 3) // Phase 7.7 — resets when spentTodayDate rolls to a new day
+  spentTodayDate DateTime?             // Phase 7.7 — the day spentToday is tracking; a new day triggers a reset before recording new spend
+  requiresApproval Boolean             @default(true) // Phase 7.7 — admin must approve before this slot can go ACTIVE
+  approvedByUserId String?
+  approvedAt    DateTime?
+  startAt       DateTime
+  endAt         DateTime
+  status        SponsoredSlotStatus    @default(DRAFT)
+  createdAt     DateTime               @default(now())
+
+  brand   BrandAccount @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([placementType, status, startAt, endAt])
+  @@index([brandId])
+  @@map("sponsored_slots")
+}
+
+// --- Brand Campaign Marketplace (§4) — NOT the same as the existing BrandCampaign (Phase 5.3 §10, admin-created only). This is brand-self-service. ---
+
+enum BrandMarketingCampaignType {
+  PRODUCT_BOOST
+  BRAND_TAKEOVER
+  MYSTERY_BOX_SPONSOR
+  CATEGORY_CAMPAIGN
+  CHALLENGE_CAMPAIGN
+  SEASONAL_CAMPAIGN
+}
+
+enum BrandMarketingCampaignStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+}
+
+model BrandMarketingCampaign {
+  id                String                       @id @default(cuid())
+  brandId           String
+  type              BrandMarketingCampaignType
+  objective         String
+  budget            Decimal                      @db.Decimal(10, 3)
+  startAt           DateTime
+  endAt             DateTime
+  audienceSegmentId String?
+  status            BrandMarketingCampaignStatus @default(DRAFT)
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
+
+  brand           BrandAccount     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  audienceSegment AudienceSegment? @relation(fields: [audienceSegmentId], references: [id], onDelete: SetNull)
+  variants        CampaignVariant[]
+  events          BrandEvent[]
+
+  @@index([brandId, status])
+  @@map("brand_marketing_campaigns")
+}
+
+// --- Targeted Audience Engine (§5) ---
+
+model AudienceSegment {
+  id             String   @id @default(cuid())
+  name           String
+  rules          Json // e.g. { purchasedCategoryId, isSaveoPlusMember, isNewCustomer, governorate, ... }
+  estimatedUsers Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  campaigns BrandMarketingCampaign[]
+
+  @@map("audience_segments")
+}
+
+// --- Brand Analytics Subscription (§6) ---
+
+enum BrandSubscriptionPlan {
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum BrandSubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum BrandPackageType {
+  STANDARD
+  PREMIUM
+  SPOTLIGHT
+  ENTERPRISE
+}
+
+// BrandPackage — Phase 5.7 §1/§5.
+//
+// The genuinely new piece in this phase: real, admin-editable package
+// tiers (name/price/features), replacing the hardcoded PLAN_PRICES
+// constant that BrandSubscription's `plan` enum relied on before.
+// `BrandSubscription.packageId` below links to this — the old `plan`
+// enum field stays untouched for backward compatibility with existing
+// subscriptions.
+model BrandPackage {
+  id           String           @id @default(cuid())
+  name         String
+  type         BrandPackageType
+  monthlyPrice Decimal          @db.Decimal(10, 3)
+  description  String?          @db.Text
+  features     Json // e.g. { productExperience: true, discoveryScoreBoost: 15, heroDisplay: false, maxSponsoredSlots: 5 }
+  active       Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+
+  subscriptions BrandSubscription[]
+
+  @@map("brand_packages")
+}
+
+// ---------------------------------------------------------------------------
+// PAYMENT GATEWAY & FINANCIAL CORE (Phase 6.1)
+// ---------------------------------------------------------------------------
+
+enum PaymentTransactionStatus {
+  PENDING
+  AUTHORIZED
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model PaymentTransaction {
+  id                String                   @id @default(cuid())
+  orderId           String
+  method            String // COD | KNET | CARD | VISA | MASTERCARD | APPLE_PAY
+  amount            Decimal                  @db.Decimal(10, 3)
+  status            PaymentTransactionStatus @default(PENDING)
+  gatewayReference  String? // opaque reference from the gateway, used to reconcile webhooks later
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status])
+  @@map("payment_transactions")
+}
+
+// ---------------------------------------------------------------------------
+// SUPPLIER PAYOUT SYSTEM (Phase 6.2)
+//
+// `balance` is a synced cache, not an independent source of truth — the
+// real ledger (SupplierLedgerEntry, Phase 5.5) already computes payable
+// correctly and is verified mathematically there. SupplierWalletService
+// keeps `balance` = ledger payable − pendingAmount, so a supplier always
+// sees a fast, consistent number without two systems ever disagreeing.
+// ---------------------------------------------------------------------------
+
+model SupplierWallet {
+  id            String   @id @default(cuid())
+  supplierId    String   @unique
+  balance       Decimal  @default(0) @db.Decimal(10, 3) // available to withdraw right now
+  pendingAmount Decimal  @default(0) @db.Decimal(10, 3) // requested but not yet admin-approved/paid
+  paidAmount    Decimal  @default(0) @db.Decimal(10, 3) // lifetime total actually paid out
+  updatedAt     DateTime @updatedAt
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@map("supplier_wallets")
+}
+
+// ---------------------------------------------------------------------------
+// REFUND & RETURN SYSTEM (Phase 6.3)
+//
+// Deliberately separate from the existing OrderIssue (a simpler general
+// complaint/support-ticket system, unchanged) — a ReturnRequest is
+// specifically a request to send an item back for a refund, and drives
+// real financial reversal (customer refund, commission reversal,
+// supplier balance update) once approved. See RefundEngine.
+// ---------------------------------------------------------------------------
+
+enum ReturnRequestStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+model ReturnRequest {
+  id         String              @id @default(cuid())
+  orderId    String
+  userId     String
+  reason     String              @db.Text
+  images     String[] // photo evidence URLs
+  status     ReturnRequestStatus @default(REQUESTED)
+  adminNotes String?             @db.Text
+  createdAt  DateTime            @default(now())
+  resolvedAt DateTime?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([status])
+  @@map("return_requests")
+}
+
+// ---------------------------------------------------------------------------
+// DELIVERY FLEET MANAGEMENT (Phase 6.4)
+//
+// DeliveryPartner (existing, Phase 5.4) stays as the company-level
+// record — untouched. DeliveryDriver is the genuinely new individual-
+// driver layer: a real person who can be assigned to a specific
+// Delivery, with a simple live-location ping (lat/lng) rather than full
+// turn-by-turn GPS routing, which is out of scope for this pass.
+// ---------------------------------------------------------------------------
+
+enum DriverStatus {
+  AVAILABLE
+  ON_DELIVERY
+  OFFLINE
+}
+
+model DeliveryDriver {
+  id          String       @id @default(cuid())
+  partnerId   String
+  name        String
+  phone       String
+  status      DriverStatus @default(OFFLINE)
+  currentLat  Float?
+  currentLng  Float?
+  lastPingAt  DateTime?
+  createdAt   DateTime     @default(now())
+
+  partner    DeliveryPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  deliveries Delivery[]
+
+  @@index([partnerId, status])
+  @@map("delivery_drivers")
+}
+
+// ---------------------------------------------------------------------------
+// SAVEO WALLET & LOYALTY POINTS (Phase 6.5)
+//
+// Two deliberately separate systems: SaveoWallet holds real store-credit
+// money (KD), SaveoPoints holds a loyalty score that's redeemable INTO
+// wallet credit but isn't money itself — keeping them apart avoids ever
+// conflating "you have points" with "you have spendable money".
+// ---------------------------------------------------------------------------
+
+model SaveoWallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Decimal  @default(0) @db.Decimal(10, 3)
+  updatedAt DateTime @updatedAt
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+
+  @@map("saveo_wallets")
+}
+
+enum WalletTransactionType {
+  CREDIT
+  DEBIT
+}
+
+model WalletTransaction {
+  id        String                 @id @default(cuid())
+  walletId  String
+  type      WalletTransactionType
+  amount    Decimal                @db.Decimal(10, 3) // always positive — `type` carries the direction
+  reason    String
+  createdAt DateTime               @default(now())
+
+  wallet SaveoWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@map("wallet_transactions")
+}
+
+model SaveoPoints {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  points        Int      @default(0) // current, spendable balance
+  lifetimePoints Int     @default(0) // never decreases — total ever earned, for tier/status calculations later
+  updatedAt     DateTime @updatedAt
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions PointsTransaction[]
+
+  @@map("saveo_points")
+}
+
+enum PointsTransactionType {
+  EARNED
+  REDEEMED
+}
+
+model PointsTransaction {
+  id        String                 @id @default(cuid())
+  pointsId  String
+  type      PointsTransactionType
+  points    Int // always positive — `type` carries the direction
+  reason    String
+  createdAt DateTime               @default(now())
+
+  pointsAccount SaveoPoints @relation(fields: [pointsId], references: [id], onDelete: Cascade)
+
+  @@index([pointsId])
+  @@map("points_transactions")
+}
+
+// ---------------------------------------------------------------------------
+// SUBSCRIBE & SAVE (Phase 6.6)
+//
+// Recurring product subscriptions with a discount. SubscriptionService's
+// processDueSubscriptions() is written to be called by a scheduled job
+// (cron) — this Next.js app has no built-in scheduler, so it's also
+// safely callable on-demand by an admin action for now. See the service
+// file for the honest scope note.
+// ---------------------------------------------------------------------------
+
+enum SubscriptionFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum ProductSubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+model ProductSubscription {
+  id              String                    @id @default(cuid())
+  userId          String
+  productId       String
+  quantity        Int                       @default(1)
+  frequency       SubscriptionFrequency
+  discountPercent Int                       @default(10) // Subscribe & Save discount
+  status          ProductSubscriptionStatus @default(ACTIVE)
+  nextDeliveryDate DateTime
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orders  SubscriptionOrder[]
+
+  @@index([userId])
+  @@index([status, nextDeliveryDate])
+  @@map("product_subscriptions")
+}
+
+// Links a real, already-existing Order to the subscription that generated it — the audit trail for "did this subscription actually deliver".
+model SubscriptionOrder {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  orderId        String
+  createdAt      DateTime @default(now())
+
+  subscription ProductSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  order        Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@map("subscription_orders")
+}
+
+// ---------------------------------------------------------------------------
+// MARKETING AUTOMATION ENGINE (Phase 6.7)
+//
+// Actions reuse existing machinery: EMAIL goes through the existing
+// NotificationService/EmailLog, DISCOUNT generates a real PromoCode
+// (already exists). PUSH is honestly deferred — no push token
+// infrastructure exists yet (that's Phase 6.12, Mobile App Prep).
+// ---------------------------------------------------------------------------
+
+enum AutomationTrigger {
+  CUSTOMER_INACTIVE
+  CART_ABANDONED
+  BIRTHDAY
+  AFTER_PURCHASE
+  PRODUCT_RESTOCK
+}
+
+enum AutomationAction {
+  EMAIL
+  PUSH
+  DISCOUNT
+}
+
+model MarketingAutomation {
+  id         String            @id @default(cuid())
+  name       String
+  trigger    AutomationTrigger
+  action     AutomationAction
+  conditions Json? // e.g. { inactiveDays: 30 } for CUSTOMER_INACTIVE, { abandonedHours: 4 } for CART_ABANDONED
+  active     Boolean           @default(true)
+  createdAt  DateTime          @default(now())
+
+  executions AutomationExecution[]
+
+  @@map("marketing_automations")
+}
+
+model AutomationExecution {
+  id            String   @id @default(cuid())
+  automationId  String
+  userId        String
+  actionTaken   String // what actually happened, e.g. "Email sent" or "10% promo code SAVE10-A1B2 issued"
+  triggeredAt   DateTime @default(now())
+
+  automation MarketingAutomation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([automationId])
+  @@index([userId])
+  @@map("automation_executions")
+}
+
+// ---------------------------------------------------------------------------
+// REGIONAL EXPANSION READY (Phase 6.11)
+//
+// Foundation only — no new country is activated. Kuwait is seeded as
+// the sole `isActive: true` row; everything else in the app (checkout,
+// pricing, delivery) still hardcodes KWD/Kuwait exactly as before. This
+// schema exists so a future phase can wire multi-country support in
+// without another migration, not because anything reads it yet.
+// ---------------------------------------------------------------------------
+
+model Country {
+  id            String   @id @default(cuid())
+  code          String   @unique // ISO 3166-1 alpha-2, e.g. "KW"
+  name          String
+  currencyCode  String // ISO 4217, e.g. "KWD"
+  currencySymbol String
+  taxRatePercent Decimal @default(0) @db.Decimal(5, 2)
+  isActive      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  shippingRules ShippingRule[]
+
+  @@map("countries")
+}
+
+model ShippingRule {
+  id                     String   @id @default(cuid())
+  countryId              String
+  zoneName               String // e.g. a Kuwait governorate, or a future country's region
+  baseFee                Decimal  @db.Decimal(10, 3)
+  freeShippingThreshold  Decimal? @db.Decimal(10, 3)
+  createdAt              DateTime @default(now())
+
+  country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@map("shipping_rules")
+}
+
+// ---------------------------------------------------------------------------
+// MOBILE APP PREPARATION (Phase 6.12)
+//
+// Backend readiness only — no app is built. Mobile Cart needs no
+// dedicated model: the cart is already a client-side concern (Zustand
+// store on web) and /api/checkout already accepts a plain items array
+// from any client, mobile included, with zero changes needed.
+// ---------------------------------------------------------------------------
+
+enum PushPlatform {
+  IOS
+  ANDROID
+}
+
+model PushToken {
+  id        String       @id @default(cuid())
+  userId    String
+  token     String       @unique
+  platform  PushPlatform
+  createdAt DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// BUSINESS INTELLIGENCE / DATA WAREHOUSE (Phase 7.1)
+//
+// Isolated from live transactional tables on purpose — a BI dashboard
+// query should never compete with checkout for database load. These
+// are materialized rollups, refreshed by BIAggregationService (written
+// for a scheduled job — same honest cron-pending pattern as
+// SubscriptionService/MarketingAutomationService in Phase 6, safely
+// triggerable on-demand in the meantime).
+// ---------------------------------------------------------------------------
+
+enum MetricGranularity {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model BusinessMetricSnapshot {
+  id              String            @id @default(cuid())
+  granularity     MetricGranularity
+  periodStart     DateTime // start of the day/week/month this row summarizes
+  gmv             Decimal           @db.Decimal(12, 3)
+  netRevenue      Decimal           @db.Decimal(12, 3) // Saveo's realized commission
+  grossProfit     Decimal           @db.Decimal(12, 3) // netRevenue minus tracked expenses for the period
+  orders          Int
+  customers       Int // distinct customers who ordered in this period
+  averageOrderValue Decimal         @db.Decimal(10, 3)
+  createdAt       DateTime          @default(now())
+
+  @@unique([granularity, periodStart])
+  @@index([granularity, periodStart])
+  @@map("business_metric_snapshots")
+}
+
+model BrandSubscription {
+  id        String                   @id @default(cuid())
+  brandId   String
+  plan      BrandSubscriptionPlan
+  packageId String? // new in Phase 5.7 — links to the real, admin-editable BrandPackage. Nullable: existing subscriptions created before this phase keep working off `plan` alone.
+  price     Decimal                  @db.Decimal(10, 3)
+  startAt   DateTime
+  endAt     DateTime
+  status    BrandSubscriptionStatus  @default(ACTIVE)
+  createdAt DateTime                 @default(now())
+
+  brand   BrandAccount  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  package BrandPackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+
+  @@index([brandId])
+  @@map("brand_subscriptions")
+}
+
+// --- Brand Takeover (§7) ---
+
+model BrandTakeover {
+  id        String   @id @default(cuid())
+  brandId   String
+  title     String
+  banner    String
+  startAt   DateTime
+  endAt     DateTime
+  status    String   @default("SCHEDULED") // SCHEDULED / LIVE / COMPLETED — lazily derived like elsewhere in this codebase
+  createdAt DateTime @default(now())
+
+  brand BrandAccount @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@index([status, startAt, endAt])
+  @@map("brand_takeovers")
+}
+
+// --- A/B Testing Engine (§8) ---
+
+model CampaignVariant {
+  id         String   @id @default(cuid())
+  campaignId String
+  name       String // "Variant A", "Variant B"
+  image      String?
+  copy       String?  @db.Text
+  discount   Int?
+  views      Int      @default(0)
+  clicks     Int      @default(0)
+  sales      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  campaign BrandMarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@map("campaign_variants")
+}
+
+// --- Sponsored Mystery Boxes (§9) ---
+
+model BrandSponsoredBox {
+  id               String   @id @default(cuid())
+  brandId          String
+  mysteryBoxId     String // references a Product with type MYSTERY_BOX
+  sponsorshipFee   Decimal  @db.Decimal(10, 3)
+  productsIncluded Json // array of product IDs the brand is featuring inside the box
+  opens            Int      @default(0)
+  views            Int      @default(0)
+  purchases        Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  brand      BrandAccount @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  mysteryBox Product      @relation("SponsoredMysteryBox", fields: [mysteryBoxId], references: [id], onDelete: Cascade)
+
+  @@index([brandId])
+  @@map("brand_sponsored_boxes")
+}
+
+// --- Brand Challenges (§10) ---
+
+model BrandChallenge {
+  id        String   @id @default(cuid())
+  brandId   String
+  title     String
+  rules     Json // e.g. { requiredProductCount: 3, categoryId, minSpend }
+  reward    String
+  startAt   DateTime
+  endAt     DateTime
+  createdAt DateTime @default(now())
+
+  brand    BrandAccount       @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  progress ChallengeProgress[]
+
+  @@index([brandId])
+  @@map("brand_challenges")
+}
+
+model ChallengeProgress {
+  id          String    @id @default(cuid())
+  challengeId String
+  userId      String
+  progress    Json // e.g. { productsPurchased: 2, spend: 12.500 }
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  challenge BrandChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+  @@map("challenge_progress")
+}
+
+// --- AI Brand Assistant (§11) — architecture only, no real AI API call.
+// getSuggestions() below returns rule-based placeholders describing what
+// a future AI integration would analyze and recommend; see the service
+// file for the exact scope boundary. No dedicated model needed yet. ---
+
+// --- Billing System (§12) ---
+
+enum BrandInvoiceType {
+  SPONSORED_PRODUCT
+  CAMPAIGN
+  SUBSCRIPTION
+  TAKEOVER
+  MYSTERY_BOX_SPONSOR
+}
+
+enum BrandInvoiceStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+model BrandInvoice {
+  id        String             @id @default(cuid())
+  brandId   String
+  type      BrandInvoiceType
+  amount    Decimal            @db.Decimal(10, 3)
+  status    BrandInvoiceStatus @default(PENDING)
+  createdAt DateTime           @default(now())
+
+  brand BrandAccount @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@index([brandId, status])
+  @@map("brand_invoices")
+}
+
+// --- Tracking System (§14) — NOT the same as MarketingCampaignEvent; scoped to BrandAccount/BrandMarketingCampaign. ---
+
+enum BrandEventType {
+  IMPRESSION
+  CLICK
+  PRODUCT_VIEW
+  ADD_TO_CART
+  PURCHASE
+}
+
+model BrandEvent {
+  id         String         @id @default(cuid())
+  brandId    String
+  campaignId String?
+  userId     String?
+  eventType  BrandEventType
+  metadata   Json?
+  billedAmount Decimal?     @default(0) @db.Decimal(6, 4) // Phase 7.7 — what this event actually cost the brand, 0 if unbilled/flagged
+  isFlaggedFraud Boolean    @default(false) // Phase 7.7 — set by SponsoredBillingService's fraud check; flagged events are recorded but never billed
+  createdAt  DateTime       @default(now())
+
+  brand    BrandAccount            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  campaign BrandMarketingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@index([brandId, eventType])
+  @@index([campaignId])
+  @@map("brand_events")
+}
+
+// ---------------------------------------------------------------------------
+// COMMERCE ERP — Goods Receiving, Batches, Stock Counting (Phase 5.5)
+//
+// Everything else requested in this phase already exists from earlier
+// work and is deliberately left untouched: cost/barcode as Product
+// fields (see purchaseCost/barcode/sku), SupplierLedgerEntry (the
+// general ledger), SupplierPayout (the period-based settlement model —
+// same shape as the "SupplierSettlement" requested here, just named
+// earlier), damaged/expired quantity tracking + recordDamage/recordExpiry
+// in inventory.ts, and /admin/finance. See the final delivery report for
+// the full audit.
+// ---------------------------------------------------------------------------
+
+enum GoodsReceiptStatus {
+  PENDING
+  RECEIVED
+  VERIFIED
+  CANCELLED
+}
+
+model GoodsReceipt {
+  id              String             @id @default(cuid())
+  supplierId      String
+  referenceNumber String             @unique
+  status          GoodsReceiptStatus @default(PENDING)
+  receivedByUserId String?
+  receivedAt      DateTime?
+  createdAt       DateTime           @default(now())
+
+  supplier Supplier           @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  items    GoodsReceiptItem[]
+
+  @@index([supplierId, status])
+  @@map("goods_receipts")
+}
+
+model GoodsReceiptItem {
+  id             String   @id @default(cuid())
+  goodsReceiptId String
+  productId      String
+  quantity       Int
+  costPrice      Decimal  @db.Decimal(10, 3)
+  batchNumber    String?
+  expiryDate     DateTime?
+
+  goodsReceipt GoodsReceipt @relation(fields: [goodsReceiptId], references: [id], onDelete: Cascade)
+  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([goodsReceiptId])
+  @@index([productId])
+  @@map("goods_receipt_items")
+}
+
+// --- Product Batch Management — tracks stock by batch, especially for food/expiry. ---
+
+model ProductBatch {
+  id                String    @id @default(cuid())
+  productId         String
+  supplierId        String
+  batchNumber       String
+  expiryDate        DateTime?
+  quantity          Int // originally received
+  remainingQuantity Int // decremented as this batch's stock sells/is lost — never goes below 0
+  createdAt         DateTime  @default(now())
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([expiryDate])
+  @@map("product_batches")
+}
+
+// --- Inventory Counting — physical count vs system count reconciliation. ---
+
+model StockCount {
+  id                String   @id @default(cuid())
+  productId         String
+  supplierId        String
+  systemQuantity    Int // what the system believed at count time
+  physicalQuantity  Int // what was actually counted
+  method            String   @default("MANUAL") // MANUAL | BARCODE
+  countedByUserId   String
+  createdAt         DateTime @default(now())
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([supplierId])
+  @@map("stock_counts")
+}
+
+// ---------------------------------------------------------------------------
+
+model PromoCode {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  description   String?
+  percentOff    Int?
+  amountOff     Decimal?  @db.Decimal(10, 3)
+  minOrderValue Decimal?  @db.Decimal(10, 3)
+  maxUses       Int?
+  usedCount     Int       @default(0)
+  startsAt      DateTime?
+  endsAt        DateTime?
+  isActive      Boolean   @default(true)
+
+  @@map("promo_codes")
+}
+
+// ---------------------------------------------------------------------------
+// SAVEO PLUS — monthly membership
+// ---------------------------------------------------------------------------
+
+enum MembershipStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+// Fixed, known set of benefit "kinds" the app can actually act on (checkout
+// discount, delivery waiver, badge, etc.) — NOT the plan catalog itself.
+// Which plans HAVE which benefits, and whether each is on/off, lives in
+// MembershipPlanBenefit below, fully admin-editable.
+enum MembershipBenefitKey {
+  EXTRA_DISCOUNT // extra % off every order, on top of normal Saveo pricing
+  EARLY_ACCESS // see new deals/mystery boxes before non-members
+  EXCLUSIVE_DEALS // can purchase Members Only products
+  FREE_DELIVERY // delivery fee waived regardless of order size
+  PLUS_BADGE // shows the membership badge across the site
+  MYSTERY_BOX_BONUS // bonus guaranteed-value uplift on mystery boxes
+  DOUBLE_REWARD_POINTS // Hook only — no reward-points system exists yet
+}
+
+// ---------------------------------------------------------------------------
+// MEMBERSHIP PLAN CATALOG (Phase 4.4)
+//
+// Ships with one plan (Saveo Plus) but the schema supports N plans
+// (Premium, Family, Business, ...) without redesign — just insert more
+// MembershipPlan rows. Nothing in the app hardcodes "Saveo Plus" as the
+// only plan; UserMembership always references a specific MembershipPlan.
+// ---------------------------------------------------------------------------
+
+model MembershipPlan {
+  id            String   @id @default(cuid())
+  name          String
+  nameAr        String?
+  slug          String   @unique
+  description   String?  @db.Text
+  descriptionAr String?  @db.Text
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pricingOptions MembershipPricingOption[]
+  benefits       MembershipPlanBenefit[]
+  memberships    Membership[]
+
+  @@map("membership_plans")
+}
+
+// Price + duration live here, not in code. A plan can offer both a
+// MONTHLY and a YEARLY option simultaneously; admin can edit price or
+// deactivate an option without touching the plan itself.
+model MembershipPricingOption {
+  id           String       @id @default(cuid())
+  planId       String
+  billingCycle BillingCycle
+  price        Decimal      @db.Decimal(10, 3)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+
+  plan        MembershipPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+
+  @@unique([planId, billingCycle])
+  @@map("membership_pricing_options")
+}
+
+// Which benefits a plan grants, and their tunable value (e.g. 5.00 for a
+// 5% EXTRA_DISCOUNT). Admin can flip `isEnabled` off without deleting the
+// row — BenefitEngine (src/lib/services/benefit-engine.ts) only honors
+// enabled rows.
+model MembershipPlanBenefit {
+  id        String               @id @default(cuid())
+  planId    String
+  key       MembershipBenefitKey
+  isEnabled Boolean              @default(true)
+  value     Decimal?             @db.Decimal(10, 3) // meaning depends on `key` (e.g. % for EXTRA_DISCOUNT)
+  label     String?
+  labelAr   String?
+
+  plan MembershipPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, key])
+  @@map("membership_plan_benefits")
+}
+
+model Membership {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  planId          String
+  pricingOptionId String
+  status          MembershipStatus @default(ACTIVE)
+  startsAt        DateTime         @default(now())
+  endsAt          DateTime // next billing / expiry date; renewed by a scheduled job
+  autoRenew       Boolean          @default(true)
+  cancelledAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan          MembershipPlan          @relation(fields: [planId], references: [id])
+  pricingOption MembershipPricingOption @relation(fields: [pricingOptionId], references: [id])
+
+  @@map("memberships")
+}
+
+// ---------------------------------------------------------------------------
+// DEAL OF THE HOUR — a single rotating spotlight slot with social proof
+// ---------------------------------------------------------------------------
+
+model DealOfTheHour {
+  id               String   @id @default(cuid())
+  productId        String
+  startTime        DateTime
+  endTime          DateTime
+  discountOverride Int? // optional % that overrides the product's normal discount for this slot
+  stockLimit       Int // e.g. "Only 8 left" — independent of the product's real stock
+  buyersCount      Int      @default(0) // increments on each purchase during the slot, for social proof
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([startTime, endTime])
+  @@map("deal_of_the_hour")
+}
+
+// ---------------------------------------------------------------------------
+// COMPETITOR PRICING (Phase 7.3 follow-up)
+//
+// Manually entered by an admin — no automated scraping/API integration
+// (deliberately: scraping is legally risky per-site, and no reliable
+// Kuwait/GCC price-comparison API exists). When a real, recent
+// CompetitorPrice exists for a product, PricingEngineService uses it
+// INSTEAD OF the category-average proxy — a genuine upgrade in accuracy
+// whenever real data has been entered.
+// ---------------------------------------------------------------------------
+
+model CompetitorPrice {
+  id              String   @id @default(cuid())
+  productId       String
+  competitorName  String
+  price           Decimal  @db.Decimal(10, 3)
+  updatedByUserId String
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, competitorName])
+  @@index([productId])
+  @@map("competitor_prices")
+}
+
+// ---------------------------------------------------------------------------
+// WAREHOUSE ERP (Phase 7.4)
+//
+// CRITICAL INVARIANT — "no duplicated stock logic": Product.stockQty
+// (set by the existing setStockQuantity/reserveStock/recordDamage in
+// src/lib/inventory.ts) remains the ONE source of truth for how much
+// stock exists. ProductLocationStock never independently tracks a
+// competing quantity — it's a DECOMPOSITION of that same number across
+// physical locations. The invariant Σ(ProductLocationStock.quantity for
+// a product) ≤ Product.stockQty is enforced by WarehouseService; the
+// difference is "received but not yet put away" stock. Transfers move
+// quantity between locations with zero net change to Product.stockQty.
+// Picking calls the EXISTING releaseReservedStock/setStockQuantity
+// functions to actually reduce stock — never a parallel decrement.
+// ---------------------------------------------------------------------------
+
+model WarehouseLocation {
+  id        String   @id @default(cuid())
+  code      String   @unique // e.g. "A-01-03" (zone-aisle-shelf)
+  zone      String
+  aisle     String?
+  shelf     String?
+  bin       String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  stock          ProductLocationStock[]
+  transfersFrom  StockTransfer[]        @relation("TransferFrom")
+  transfersTo    StockTransfer[]        @relation("TransferTo")
+  pickListItems  PickListItem[]
+
+  @@map("warehouse_locations")
+}
+
+// Decomposition of Product.stockQty across physical locations — see the invariant note above. Never an independent quantity source.
+model ProductLocationStock {
+  id         String   @id @default(cuid())
+  productId  String
+  locationId String
+  quantity   Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  product  Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  location WarehouseLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, locationId])
+  @@index([productId])
+  @@index([locationId])
+  @@map("product_location_stock")
+}
+
+model StockTransfer {
+  id             String   @id @default(cuid())
+  productId      String
+  fromLocationId String
+  toLocationId   String
+  quantity       Int
+  note           String?
+  createdByUserId String
+  createdAt      DateTime @default(now())
+
+  product      Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  fromLocation WarehouseLocation @relation("TransferFrom", fields: [fromLocationId], references: [id])
+  toLocation   WarehouseLocation @relation("TransferTo", fields: [toLocationId], references: [id])
+
+  @@index([productId])
+  @@map("stock_transfers")
+}
+
+// --- Purchase Orders — the REQUEST to a supplier, genuinely distinct from GoodsReceipt (Phase 5.5), which records what actually arrived. A PurchaseOrder can be linked to the GoodsReceipt that fulfills it, reusing that existing receiving flow rather than duplicating it. ---
+
+enum PurchaseOrderStatus {
+  DRAFT
+  SENT
+  CONFIRMED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id              String              @id @default(cuid())
+  supplierId      String
+  referenceNumber String              @unique
+  status          PurchaseOrderStatus @default(DRAFT)
+  expectedDate    DateTime?
+  createdByUserId String
+  createdAt       DateTime            @default(now())
+
+  supplier Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  items    PurchaseOrderItem[]
+
+  @@index([supplierId, status])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String @id @default(cuid())
+  purchaseOrderId String
+  productId       String
+  quantityOrdered Int
+  unitCost        Decimal @db.Decimal(10, 3)
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseOrderId])
+  @@map("purchase_order_items")
+}
+
+// --- Picking & Packing — fulfillment workflow for an existing SupplierOrder. Picking a quantity here calls the existing stock-reduction functions; this model never tracks stock quantity itself, only fulfillment progress. ---
+
+enum PickListStatus {
+  PENDING
+  PICKING
+  PICKED
+  PACKED
+}
+
+model PickList {
+  id              String         @id @default(cuid())
+  supplierOrderId String         @unique
+  status          PickListStatus @default(PENDING)
+  createdAt       DateTime       @default(now())
+  packedAt        DateTime?
+
+  supplierOrder SupplierOrder    @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  items         PickListItem[]
+
+  @@map("pick_lists")
+}
+
+model PickListItem {
+  id         String   @id @default(cuid())
+  pickListId String
+  productId  String
+  locationId String? // suggested pick location, if the product has been put away somewhere
+  quantity   Int
+  isPicked   Boolean  @default(false)
+
+  pickList PickList           @relation(fields: [pickListId], references: [id], onDelete: Cascade)
+  product  Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  location WarehouseLocation? @relation(fields: [locationId], references: [id])
+
+  @@index([pickListId])
+  @@map("pick_list_items")
+}
+
+// ---------------------------------------------------------------------------
+// MOBILE REFRESH TOKENS (Phase 7.6)
+//
+// The Phase 6.12 mobile access token was a single 30-day HMAC token
+// with no way to revoke it early (logout, lost device, compromised
+// token). This splits that into a SHORT-lived access token (see
+// MobileAuthService) plus a server-stored refresh token that can
+// actually be revoked. Only the SHA-256 hash of the refresh token is
+// stored — never the plaintext — so a database leak alone can't be
+// used to impersonate a user.
+// ---------------------------------------------------------------------------
+
+model MobileRefreshToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  deviceInfo String?
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("mobile_refresh_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// MOBILE CART SYNC (Phase 7.6)
+//
+// The web cart is intentionally client-side-only (Zustand) — Phase
+// 6.12 correctly noted no mobile cart API was needed since checkout
+// already accepts a plain items array from any client. "Cart Sync"
+// here is a genuinely different, real need: letting a customer's cart
+// follow them across their own devices (start on phone, finish on
+// tablet). One row per user; last-write-wins, which is the right
+// tradeoff for a personal cart, not a source-of-truth inventory system.
+// ---------------------------------------------------------------------------
+
+model MobileCartSync {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  itemsJson Json // [{ productId, quantity }] — the mobile client's own shape, opaque to the server
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mobile_cart_sync")
+}
+
+// ---------------------------------------------------------------------------
+// SUPPLIER PERFORMANCE CENTER (Phase 7.8)
+//
+// Every KPI is computed from data that already exists elsewhere in
+// this schema — SupplierOrderStatusHistory (acceptance/cancellation),
+// Delivery (SLA), Review (rating), OrderIssue/ReturnRequest
+// (complaints/returns — order-level, not per-supplier-item, so a
+// multi-supplier order counts against every supplier with items in
+// it; documented honestly as an approximation), StockCount
+// (inventory accuracy). "Bonus visibility" hooks into the REAL
+// existing DiscoveryScoreEngine (Phase 5.6) via Supplier.visibilityBoost
+// rather than a second, parallel ranking system.
+// ---------------------------------------------------------------------------
+
+enum SupplierBadge {
+  NONE
+  RISING
+  TRUSTED
+  TOP_RATED
+  ELITE
+}
+
+model SupplierPerformanceScore {
+  id                  String        @id @default(cuid())
+  supplierId          String        @unique
+  acceptanceRate      Float // %
+  cancellationRate    Float // %
+  lateShipmentRate    Float // %
+  avgRating           Float // 0-5
+  returnRate          Float // %
+  complaintRate       Float // %
+  inventoryAccuracy   Float // %
+  compositeScore      Float // 0-100
+  badge               SupplierBadge @default(NONE)
+  lastPenaltyReason   String?
+  lastRewardReason    String?
+  calculatedAt        DateTime      @default(now())
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@map("supplier_performance_scores")
+}
+
+// ---------------------------------------------------------------------------
+// PRODUCT EXPERIENCE STUDIO (Phase 8.0 — signature feature, batch 1)
+//
+// Deliberately does NOT touch ProductMedia/ProductMediaType (already
+// supports IMAGE_360, VIDEO, THREE_D_MODEL since Phase 5.3) or
+// productStory/originStory/highlightFeatures (Phase 5.6) — those are
+// reused as-is by the 360° Viewer and Video Commerce experiences,
+// which were missing a DISPLAY component, not data. Only genuinely
+// new structures are added here: Ingredient Explorer, Nutrition
+// Experience, and a real multi-badge system (experienceType was a
+// single classification, not a set of earned/assigned badges).
+// ---------------------------------------------------------------------------
+
+model ProductIngredient {
+  id           String  @id @default(cuid())
+  productId    String
+  name         String
+  nameAr       String?
+  origin       String?
+  benefit      String? @db.Text
+  isAllergen   Boolean @default(false)
+  certificateUrl String?
+  sortOrder    Int     @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_ingredients")
+}
+
+model ProductNutritionFact {
+  id              String  @id @default(cuid())
+  productId       String  @unique
+  servingSize     String? // e.g. "30g"
+  calories        Float?
+  proteinG        Float?
+  carbsG          Float?
+  sugarG          Float?
+  fatG            Float?
+  saturatedFatG   Float?
+  fiberG          Float?
+  sodiumMg        Float?
+  dietTags        String[] // e.g. ["VEGAN", "KETO_FRIENDLY", "GLUTEN_FREE"] — admin/supplier-entered, not auto-inferred
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_nutrition_facts")
+}
+
+enum ProductBadgeType {
+  TRENDING
+  LIMITED
+  EXCLUSIVE
+  SAVEO_PLUS
+  AWARD_WINNER
+  CHEF_CHOICE
+  HEALTHY_CHOICE
+  KIDS_FAVORITE
+  PREMIUM
+  NEW_ARRIVAL
+  BEST_SELLER
+  EDITORS_PICK
+}
+
+model ProductBadge {
+  id         String           @id @default(cuid())
+  productId  String
+  type       ProductBadgeType
+  isAutomatic Boolean         @default(false) // true = assigned by BadgeEngine from real signals; false = manually set by admin
+  assignedAt DateTime         @default(now())
+  expiresAt  DateTime? // e.g. NEW_ARRIVAL naturally expires after 30 days
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, type])
+  @@index([productId])
+  @@map("product_badges")
+}
+
+// ---------------------------------------------------------------------------
+// STORY MODE TIMELINE (Phase 8.0 batch 2)
+//
+// productStory/originStory/highlightFeatures (Phase 5.6) remain as the
+// short intro text shown at the top of ProductStorySection — untouched,
+// not duplicated. This adds the genuinely missing piece: an ORDERED
+// SEQUENCE of steps (origin -> manufacturing -> quality -> certificates
+// -> awards) for real scrollable storytelling, which a single text
+// field can't represent.
+// ---------------------------------------------------------------------------
+
+enum StoryStepType {
+  ORIGIN
+  MANUFACTURING
+  INGREDIENTS
+  QUALITY
+  CERTIFICATE
+  AWARD
+  CUSTOM
+}
+
+model ProductStoryStep {
+  id        String        @id @default(cuid())
+  productId String
+  stepType  StoryStepType
+  title     String
+  titleAr   String?
+  content   String        @db.Text
+  contentAr String?       @db.Text
+  imageUrl  String?
+  sortOrder Int           @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_story_steps")
+}
+
+// ---------------------------------------------------------------------------
+// GIFT SYSTEM (Phase 8.2)
+//
+// Order gets real gift fields (message, wrap, scheduled delivery) —
+// genuinely new, nothing to reuse. GiftCard is a real prepaid balance
+// instrument, redeemable at checkout via the existing PromoCode-style
+// discount mechanism is NOT reused (a gift card is a balance, not a
+// percentage/amount-off rule) — it gets its own real redemption flow
+// that reduces Order.total directly, tracked so partial use across
+// multiple orders is possible.
+// ---------------------------------------------------------------------------
+
+enum GiftCardStatus {
+  ACTIVE
+  REDEEMED
+  EXPIRED
+  CANCELLED
+}
+
+model GiftCard {
+  id                String         @id @default(cuid())
+  code              String         @unique
+  initialValue      Decimal        @db.Decimal(10, 3)
+  remainingBalance  Decimal        @db.Decimal(10, 3)
+  purchasedByUserId String
+  recipientEmail    String?
+  recipientName     String?
+  personalMessage   String?        @db.Text
+  status            GiftCardStatus @default(ACTIVE)
+  expiresAt         DateTime
+  createdAt         DateTime       @default(now())
+
+  purchasedBy  User                 @relation(fields: [purchasedByUserId], references: [id], onDelete: Cascade)
+  redemptions  GiftCardRedemption[]
+
+  @@index([purchasedByUserId])
+  @@map("gift_cards")
+}
+
+model GiftCardRedemption {
+  id           String   @id @default(cuid())
+  giftCardId   String
+  orderId      String
+  amountUsed   Decimal  @db.Decimal(10, 3)
+  createdAt    DateTime @default(now())
+
+  giftCard GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([giftCardId])
+  @@index([orderId])
+  @@map("gift_card_redemptions")
+}
+
+// ---------------------------------------------------------------------------
+// FLAVOR JOURNEY (Phase 8.0 batch 3)
+//
+// A structured taste profile — genuinely new, no counterpart in the
+// existing schema. Intensity scores (0-5) are admin/supplier-entered
+// real sensory data, not inferred or randomized. "Journey" notes
+// (first taste / mid / finish) are optional short text, the same
+// convention used in professional tasting notes.
+// ---------------------------------------------------------------------------
+
+model ProductFlavorProfile {
+  id             String  @id @default(cuid())
+  productId      String  @unique
+  sweetness      Int?    // 0-5
+  sourness       Int?    // 0-5
+  bitterness     Int?    // 0-5
+  saltiness      Int?    // 0-5
+  spiciness      Int?    // 0-5
+  richness       Int?    // 0-5 (creaminess/fattiness)
+  firstTasteNote String? // e.g. "Bright citrus opens the palate"
+  midTasteNote   String?
+  finishNote     String?
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_flavor_profiles")
+}
+
+// ---------------------------------------------------------------------------
+// AI SHOPPING ASSISTANT (Phase 9.0)
+//
+// No LLM is connected here (same honest architecture as the admin
+// assistant — AICommerceAssistantService) — this is real pattern-based
+// intent extraction (price constraints, dietary/category keywords,
+// bilingual) over real product/category/nutrition data already in
+// this schema. Conversation history is real (persisted), not a
+// client-only illusion.
+// ---------------------------------------------------------------------------
+
+model AssistantConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AssistantMessage[]
+
+  @@index([userId])
+  @@map("assistant_conversations")
+}
+
+enum AssistantMessageRole {
+  USER
+  ASSISTANT
+}
+
+model AssistantMessage {
+  id                String                @id @default(cuid())
+  conversationId    String
+  role              AssistantMessageRole
+  content           String                @db.Text
+  matchedProductIds Json? // string[] snapshot of product ids shown for this message, for analytics + "add all to cart"
+  createdAt         DateTime              @default(now())
+
+  conversation AssistantConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("assistant_messages")
+}
+
+// ---------------------------------------------------------------------------
+// INTERNAL MESSAGING (Phase 9.1)
+//
+// Real threads between a Customer or Supplier and Saveo (an admin who
+// picks up the thread) — genuinely new, no existing model covers
+// free-form two-way conversation (OrderIssue is order-scoped,
+// Feedback is one-way). "Real-time" here is honest near-real-time via
+// client polling, not a WebSocket/Pusher connection — no such
+// infrastructure exists in this project, and pretending otherwise
+// would be dishonest. Attachments follow the same URL-link convention
+// already used everywhere else in this codebase (no real file-upload
+// pipeline exists — see MediaManager) rather than faking one.
+//
+// KNOWN GAP: Driver <-> Saveo messaging is NOT included. DeliveryDriver
+// has no linked User account in this schema (drivers aren't Saveo
+// platform users, confirmed by the existing driver-ping endpoint's own
+// comment) — real driver messaging would require building driver
+// authentication first, which is out of scope here and not faked.
+// ---------------------------------------------------------------------------
+
+enum MessageThreadParticipantType {
+  CUSTOMER
+  SUPPLIER
+}
+
+enum MessageThreadStatus {
+  OPEN
+  CLOSED
+}
+
+model MessageThread {
+  id                String                       @id @default(cuid())
+  participantUserId String
+  participantType    MessageThreadParticipantType
+  subject           String
+  status            MessageThreadStatus          @default(OPEN)
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
+
+  participant User      @relation(fields: [participantUserId], references: [id], onDelete: Cascade)
+  messages    Message[]
+
+  @@index([participantUserId])
+  @@index([status])
+  @@map("message_threads")
+}
+
+model Message {
+  id             String    @id @default(cuid())
+  threadId       String
+  senderUserId   String
+  content        String    @db.Text
+  attachmentUrl  String?
+  attachmentType String? // "IMAGE" | "DOCUMENT" — mirrors the convention used by ReviewMedia/ProductMedia
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender User          @relation(fields: [senderUserId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@map("messages")
+}
+
+// ---------------------------------------------------------------------------
+// AFFILIATE SYSTEM (Phase 9.2)
+//
+// Order.promoCode already existed in the schema but had zero real
+// logic behind it — this is the first real use of that field, as the
+// referral code entered at checkout. Cookie attribution uses a real
+// signed cookie set on ?ref=CODE visits (30-day window, standard
+// affiliate cookie convention). Commission confirms only when the
+// referred order is actually DELIVERED (not at placement — a
+// cancelled/returned order earns nothing). Withdrawals reuse the
+// exact SupplierPayout pattern (PENDING -> PAID, admin-run).
+//
+// MULTI-LEVEL READY, NOT ACTIVE: AffiliateAccount.referredByAffiliateId
+// lets one affiliate be recruited by another — the relation exists so
+// a future phase can add a second-tier commission split, but no
+// second-tier commission is calculated today. Honestly incomplete,
+// not faked.
+// ---------------------------------------------------------------------------
+
+enum AffiliateStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum AffiliateReferralStatus {
+  PENDING // order placed, not yet delivered — commission not confirmed
+  CONFIRMED // order delivered — commission is real and withdrawable
+  CANCELLED // order cancelled/returned — commission voided
+}
+
+enum AffiliateWithdrawalStatus {
+  PENDING
+  PAID
+  REJECTED
+}
+
+model AffiliateAccount {
+  id                    String          @id @default(cuid())
+  userId                String          @unique
+  referralCode          String          @unique
+  commissionRate        Float           @default(2) // percent of order subtotal — admin-adjustable per affiliate
+  status                AffiliateStatus @default(ACTIVE)
+  totalEarned           Decimal         @default(0) @db.Decimal(10, 3) // sum of CONFIRMED referrals, ever
+  totalWithdrawn        Decimal         @default(0) @db.Decimal(10, 3)
+  referredByAffiliateId String? // multi-level-ready, see note above — not used for commission math yet
+  createdAt             DateTime        @default(now())
+
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referredByAffiliate AffiliateAccount?   @relation("AffiliateRecruits", fields: [referredByAffiliateId], references: [id])
+  recruits          AffiliateAccount[]    @relation("AffiliateRecruits")
+  clicks            AffiliateClick[]
+  referrals         AffiliateReferral[]
+  withdrawals       AffiliateWithdrawal[]
+  milestones        AffiliateMilestone[]
+
+  @@map("affiliate_accounts")
+}
+
+model AffiliateClick {
+  id           String   @id @default(cuid())
+  affiliateId  String
+  referrerUrl  String?
+  landingPath  String
+  createdAt    DateTime @default(now())
+
+  affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId])
+  @@map("affiliate_clicks")
+}
+
+model AffiliateReferral {
+  id                String                   @id @default(cuid())
+  affiliateId       String
+  orderId           String                   @unique // one order attributed to exactly one affiliate
+  orderSubtotal     Decimal                  @db.Decimal(10, 3) // snapshotted at confirmation time
+  commissionAmount  Decimal                  @db.Decimal(10, 3) // snapshotted using the rate at confirmation time
+  status            AffiliateReferralStatus  @default(PENDING)
+  confirmedAt       DateTime?
+  createdAt         DateTime                 @default(now())
+
+  affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  order     Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId, status])
+  @@map("affiliate_referrals")
+}
+
+model AffiliateWithdrawal {
+  id              String                     @id @default(cuid())
+  affiliateId     String
+  amount          Decimal                    @db.Decimal(10, 3)
+  status          AffiliateWithdrawalStatus  @default(PENDING)
+  referenceNumber String?                    @unique
+  rejectionReason String?
+  paidAt          DateTime?
+  createdAt       DateTime                   @default(now())
+
+  affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@map("affiliate_withdrawals")
+}
+
+// ---------------------------------------------------------------------------
+// AFFILIATE MILESTONES (Phase 9.3)
+//
+// Real, automatic tiered rewards — checked after every confirmed
+// referral. Each milestone type can only be awarded once per
+// affiliate (enforced by the unique constraint below), so a retry or
+// re-check never double-issues a reward. Gift cards issued here reuse
+// the real GiftCard model (Phase 8.2) — not a separate fake currency.
+// ---------------------------------------------------------------------------
+
+enum AffiliateMilestoneMetric {
+  REFERRAL_COUNT // confirmed referral count
+  REVENUE // confirmed referred revenue, KD
+}
+
+// Admin-editable milestone definitions — replaces the old fixed
+// 3-tier enum. Admins can add, edit, or deactivate any milestone
+// freely from /admin/affiliates. isActive (not deletion) is used to
+// retire a rule, so historical AffiliateMilestone awards under it
+// stay intact and explainable.
+model AffiliateMilestoneRule {
+  id                String                   @id @default(cuid())
+  name              String // e.g. "15 Referrals" — admin-entered, shown to affiliates
+  metric            AffiliateMilestoneMetric
+  threshold         Float // referral count, or KD revenue, depending on metric
+  giftCardAmount    Decimal                  @default(0) @db.Decimal(10, 3)
+  newCommissionRate Float? // optional — null means this rule never touches the rate
+  isActive          Boolean                  @default(true)
+  sortOrder         Int                      @default(0)
+  createdAt         DateTime                 @default(now())
+
+  awards AffiliateMilestone[]
+
+  @@map("affiliate_milestone_rules")
+}
+
+model AffiliateMilestone {
+  id          String   @id @default(cuid())
+  affiliateId String
+  ruleId      String
+  giftCardId  String? // the real GiftCard issued as the reward, if any
+  awardedAt   DateTime @default(now())
+
+  affiliate AffiliateAccount       @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  rule      AffiliateMilestoneRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@unique([affiliateId, ruleId])
+  @@map("affiliate_milestones")
+}
+
+// ---------------------------------------------------------------------------
+// COLLECTIONS (Discovery Methods, batch 1)
+//
+// Real admin-curated groupings of products — genuinely new, no
+// existing model covers "hand-picked selection with explicit order"
+// (Category is structural/taxonomic, Bundle is a priced package deal
+// with its own checkout logic). CollectionProduct is an explicit join
+// table (not an implicit many-to-many) specifically so sortOrder is
+// real and admin-controlled — the curation itself is the point.
+// ---------------------------------------------------------------------------
+
+model Collection {
+  id             String   @id @default(cuid())
+  name           String
+  nameAr         String?
+  slug           String   @unique
+  description    String?  @db.Text
+  descriptionAr  String?  @db.Text
+  coverImageUrl  String?
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  products CollectionProduct[]
+
+  @@map("collections")
+}
+
+model CollectionProduct {
+  id           String   @id @default(cuid())
+  collectionId String
+  productId    String
+  sortOrder    Int      @default(0)
+  addedAt      DateTime @default(now())
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, productId])
+  @@index([collectionId])
+  @@map("collection_products")
+}

@@ -1,0 +1,233 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-arabic: "IBM Plex Sans Arabic", system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-white text-saveo-emerald-700 antialiased;
+  }
+  ::selection {
+    @apply bg-saveo-gold-200 text-saveo-emerald-700;
+  }
+}
+
+/*
+  RTL CONVENTION — read before adding new components.
+  This app renders under both dir="ltr" (English) and dir="rtl" (Arabic) at
+  the <html> level (see src/app/[locale]/layout.tsx). Tailwind's spacing/
+  position utilities must therefore use LOGICAL properties, not physical
+  left/right ones, so they auto-flip with no extra rtl: variant needed:
+
+    ml-4  / mr-4   →  ms-4  / me-4     (margin-inline-start / -end)
+    pl-4  / pr-4   →  ps-4  / pe-4     (padding-inline-start / -end)
+    left-0/ right-0→  start-0/ end-0
+    text-left/right→  text-start/text-end
+    rounded-l-lg   →  rounded-s-lg
+
+  Only reach for the rtl:/ltr: variant for things that are NOT spacing —
+  e.g. mirroring a directional icon: className="rtl:-scale-x-100"
+*/
+
+@layer components {
+  /* Signature element: the "savings tag" — a torn-ticket price badge used
+     across product cards, PDP, and cart. Gold-on-navy, direction-agnostic
+     (uses logical inset-inline so the notches sit correctly in RTL too). */
+  .savings-tag {
+    position: relative;
+    @apply inline-flex items-center gap-1 bg-saveo-emerald-700 text-saveo-gold-400 text-xs font-bold px-2.5 py-1 rounded-sm;
+  }
+  .savings-tag::before,
+  .savings-tag::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    background: white;
+    border-radius: 999px;
+    transform: translateY(-50%);
+  }
+  .savings-tag::before {
+    inset-inline-start: -3px;
+  }
+  .savings-tag::after {
+    inset-inline-end: -3px;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-saveo-gold-400 px-5 py-3 text-sm font-semibold text-saveo-emerald-700 transition-colors hover:bg-saveo-gold-500 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-dark {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-saveo-emerald-700 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-saveo-emerald-600;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-saveo-emerald-700/15 px-5 py-3 text-sm font-semibold text-saveo-emerald-700 transition-colors hover:border-saveo-emerald-700/40;
+  }
+  .card {
+    @apply rounded-xl2 bg-white shadow-card transition-shadow hover:shadow-card-hover;
+  }
+
+  /* Accessibility (Phase 4.5): Tailwind's Preflight reset removes the
+     browser's default focus outline on all interactive elements. This is
+     the single, centralized fix — every button/link/input in the app
+     gets a visible focus ring when navigated to via keyboard, without
+     needing per-component changes. `:focus-visible` (not `:focus`) means
+     mouse clicks don't show the ring, only keyboard/assistive-tech focus. */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid #d4af37;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* ---------------------------------------------------------------------
+     SAVEO AURA™ + LUXURY PRODUCT CARD SYSTEM (Design Language v1, batch 1)
+     Real CSS depth/floating system — soft multi-layer shadow (not a flat
+     box-shadow), a subtle light-sweep "aura" reserved for premium/hero
+     surfaces, and calm spring-based motion (no bounce/overshoot). Built
+     from the existing Emerald/Gold palette only — no new colors.
+     --------------------------------------------------------------------- */
+
+  /* Multi-layer "luxury shadow" — a soft, deep, warm-toned shadow stack
+     rather than a single flat box-shadow. Emerald-tinted, not pure black,
+     so it reads as premium rather than generic. */
+  .shadow-luxury {
+    box-shadow:
+      0 1px 2px rgba(11, 61, 46, 0.04),
+      0 4px 8px rgba(11, 61, 46, 0.05),
+      0 16px 32px -8px rgba(11, 61, 46, 0.12),
+      0 32px 64px -16px rgba(11, 61, 46, 0.10);
+  }
+  .shadow-luxury-hover {
+    box-shadow:
+      0 2px 4px rgba(11, 61, 46, 0.05),
+      0 8px 16px rgba(11, 61, 46, 0.07),
+      0 24px 48px -8px rgba(11, 61, 46, 0.18),
+      0 48px 80px -16px rgba(11, 61, 46, 0.14);
+  }
+
+  /* Saveo Aura™ — a slow, soft diagonal light sweep. Reserved for
+     premium surfaces (hero, featured cards, Plus/exclusive content) per
+     the brand brief — not applied everywhere, so it stays a signature,
+     not wallpaper. */
+  .saveo-aura {
+    position: relative;
+    overflow: hidden;
+  }
+  .saveo-aura::before {
+    content: "";
+    position: absolute;
+    inset: -50%;
+    background: linear-gradient(
+      115deg,
+      transparent 30%,
+      rgba(212, 175, 55, 0.12) 45%,
+      rgba(255, 255, 255, 0.18) 50%,
+      rgba(212, 175, 55, 0.12) 55%,
+      transparent 70%
+    );
+    animation: saveo-aura-sweep 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .saveo-aura::before {
+      animation: none;
+    }
+  }
+
+  /* Floating product card — real depth on hover: a calm lift (translateY),
+     not a scale-pop, plus the shadow deepening to sell the elevation. */
+  .card-float {
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .card-float:hover {
+    transform: translateY(-6px);
+  }
+
+  /* Thin, soft-lit edge — used sparingly on premium cards for a glass-adjacent
+     highlight without full glassmorphism blur. */
+  .edge-glow {
+    box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.25);
+  }
+
+  /* ---------------------------------------------------------------------
+     SAVEO AURA™ batch 2 — Glass system + cursor-tracking dynamic light.
+     A real multi-layer glass (not flat glassmorphism): a blurred backdrop
+     layer, a faint top-edge highlight simulating light catching glass,
+     and a luminous border — reserved for premium surfaces per the brief
+     (used sparingly, not applied everywhere).
+     --------------------------------------------------------------------- */
+  .aura-glass {
+    position: relative;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(212, 175, 55, 0.18);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      inset 0 0 24px rgba(255, 255, 255, 0.03),
+      0 8px 32px rgba(11, 61, 46, 0.15);
+  }
+
+  /* Cursor-tracking dynamic light — the glow position follows real mouse
+     coordinates via --aura-x/--aura-y custom properties, set by
+     AuraGlowCard's real mousemove handler (src/components/ui/aura-glow-card.tsx),
+     not a fixed decorative gradient. Falls back to a static center glow
+     if JS hasn't set the properties yet (e.g. first paint). */
+  .aura-glow-surface {
+    position: relative;
+    overflow: hidden;
+  }
+  .aura-glow-surface::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      280px circle at var(--aura-x, 50%) var(--aura-y, 50%),
+      rgba(255, 255, 255, 0.55),
+      transparent 65%
+    );
+    opacity: 0.35;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    animation: aura-idle-pulse 2.5s ease-in-out infinite;
+  }
+  .aura-glow-surface:hover::after {
+    opacity: 0.9;
+    animation: none;
+  }
+  @keyframes aura-idle-pulse {
+    0%, 100% {
+      opacity: 0.25;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .aura-glow-surface::after {
+      display: none;
+    }
+  }
+}
+
+@keyframes saveo-aura-sweep {
+  0%, 100% {
+    transform: translateX(-15%) translateY(-15%);
+  }
+  50% {
+    transform: translateX(15%) translateY(15%);
+  }
+}
