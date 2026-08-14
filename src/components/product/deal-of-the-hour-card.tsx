@@ -28,7 +28,7 @@ interface DealOfHourData {
 export function DealOfTheHourCard({ deal }: { deal: DealOfHourData }) {
   const t = useTranslations("home");
   const p = useTranslations("product");
-  const image = deal.product.images[0]?.url ?? "/placeholder-product.png";
+  const image = deal.product.images[0]?.url ?? "/placeholder-product.svg";
   const discount =
     deal.discountOverride ??
     Math.round(

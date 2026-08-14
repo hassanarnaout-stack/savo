@@ -96,8 +96,7 @@ function isPrismaDecimal(value: unknown): value is { toNumber: () => number } {
     typeof value === "object" &&
     value !== null &&
     typeof (value as any).toNumber === "function" &&
-    typeof (value as any).toFixed === "function" &&
-    (value as any).constructor?.name === "Decimal"
+    typeof (value as any).toFixed === "function"
   );
 }
 
@@ -111,11 +110,17 @@ function isPrismaDecimal(value: unknown): value is { toNumber: () => number } {
  * no field-name list to maintain, safe against future schema changes.
  */
 export function serializeProduct<T extends Record<string, any>>(product: T): T {
-  const clone: Record<string, any> = { ...product };
-  for (const key of Object.keys(clone)) {
-    if (isPrismaDecimal(clone[key])) clone[key] = clone[key].toNumber();
+  function serializeValue(value: any): any {
+    if (isPrismaDecimal(value)) return value.toNumber();
+    if (value instanceof Date) return value;
+    if (Array.isArray(value)) return value.map(serializeValue);
+    if (value && typeof value === "object") {
+      return Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, serializeValue(nested)]));
+    }
+    return value;
   }
-  return clone as T;
+
+  return serializeValue(product) as T;
 }
 
 export function serializeProducts<T extends Record<string, any>>(products: T[]): T[] {

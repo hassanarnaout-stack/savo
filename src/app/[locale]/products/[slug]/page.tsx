@@ -45,6 +45,9 @@ import { RecommendationAnalytics } from "@/lib/recommendation-analytics";
 import { serializeProducts } from "@/lib/utils";
 import { getLaunchFlags } from "@/lib/launch-flags";
 import { getTranslations, getLocale } from "next-intl/server";
+import { Link } from "@/i18n/routing";
+import { OperationalProductInfoTabs } from "@/components/product/operational-product-info-tabs";
+import { calcDiscountPct, formatKWD } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -192,31 +195,39 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="pdp-page">
       <ViewTracker productId={product.id} />
-      <div className="grid gap-10 lg:grid-cols-2">
+      <div className="pdp-breadcrumb-strip">
+        <nav className="pdp-breadcrumb v21-shell" aria-label="Breadcrumb">
+          <Link href="/">{locale === "ar" ? "الرئيسية" : "Home"}</Link><span>/</span>
+          <Link href={`/category/${product.category.slug}`}>{categoryName}</Link><span>/</span>
+          <span>{displayName}</span>
+        </nav>
+      </div>
+      <div className="pdp-main v21-shell">
         {/* Gallery */}
-        <div>
+        <div className="pdp-gallery-column">
           {product.media.length > 0 ? (
             <ProductRevealWrapper experienceType={product.experienceType}>
               <PremiumProductGallery media={product.media} fallbackImage={product.images[0]?.url ?? null} productName={displayName} />
             </ProductRevealWrapper>
           ) : (
             <>
-              <div className="relative aspect-square overflow-hidden rounded-xl2 bg-saveo-emerald-700/[0.03]">
+              <div className="pdp-gallery-frame">
                 <Image
-                  src={product.images[0]?.url ?? "/placeholder-product.png"}
+                  src={product.images[0]?.url ?? "/placeholder-product.svg"}
                   alt={displayName}
                   fill
+                  sizes="(max-width: 900px) 100vw, 616px"
                   className="object-cover"
                   priority
                 />
               </div>
               {product.images.length > 1 && (
-                <div className="mt-3 grid grid-cols-5 gap-2">
+                <div className="pdp-gallery-thumbs">
                   {product.images.map((img) => (
-                    <div key={img.id} className="relative aspect-square overflow-hidden rounded-lg bg-saveo-emerald-700/[0.03]">
-                      <Image src={img.url} alt={img.altText ?? displayName} fill className="object-cover" />
+                    <div key={img.id}>
+                      <Image src={img.url} alt={img.altText ?? displayName} fill sizes="64px" className="object-cover" />
                     </div>
                   ))}
                 </div>
@@ -226,9 +237,10 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
         </div>
 
         {/* Info */}
-        <div>
-          <p className="text-sm font-medium text-saveo-emerald-600">{categoryName}</p>
-          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{displayName}</h1>
+        <div className="pdp-purchase-panel">
+          <div className="pdp-meta-chips"><Link href={`/category/${product.category.slug}`}>{categoryName}</Link>{product.type !== "STANDARD" && <span>{product.type.replaceAll("_", " ")}</span>}</div>
+          <h1>{displayName}</h1>
+          {product.nameAr && <p className="pdp-name-ar" dir="rtl" lang="ar">{product.nameAr}</p>}
 
           {product.dealEndsAt && (
             <div className="mt-3">
@@ -236,13 +248,16 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
             </div>
           )}
 
-          <div className="mt-4">
+          <div className="pdp-price-panel">
             <PriceTag
               originalPrice={Number(product.originalPrice)}
               saveoPrice={Number(product.saveoPrice)}
               size="lg"
             />
+            {Number(product.originalPrice) > Number(product.saveoPrice) && <p>You save {formatKWD(Number(product.originalPrice) - Number(product.saveoPrice))} · {calcDiscountPct(Number(product.originalPrice), Number(product.saveoPrice))}% off</p>}
           </div>
+
+          {product.type === "RESCUE" && product.expiryDate && <aside className="pdp-rescue-panel"><strong>RESCUE DEAL</strong><div><b>Exceptional value, responsibly discovered.</b><p>{p("bestBefore", { date: new Date(product.expiryDate).toLocaleDateString(locale === "ar" ? "ar-KW" : "en-GB") })}</p></div></aside>}
 
           {product.type === "MYSTERY_BOX" && mysteryReveal && (
             <div className="mt-4 rounded-xl2 bg-saveo-emerald-50 p-4 text-sm">
@@ -274,7 +289,7 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
             </div>
           )}
 
-          <p className="mt-5 text-sm leading-relaxed text-saveo-emerald-700/70">{displayDescription}</p>
+          <p className="pdp-description-copy">{displayDescription}</p>
 
           <div className="mt-5 flex flex-wrap gap-4 text-xs text-saveo-emerald-700/50">
             {product.expiryDate && (
@@ -291,6 +306,11 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
               <ShieldCheck className="h-4 w-4" />
               {p("verifiedSupplier")}
             </span>
+          </div>
+
+          <div className={`pdp-stock ${product.stockQty <= product.lowStockAlert ? "is-low" : ""}`}>
+            <div><strong>{product.stockQty <= product.lowStockAlert ? (locale === "ar" ? `متبقي ${product.stockQty} فقط` : `Only ${product.stockQty} left`) : p("inStock", { count: product.stockQty })}</strong><span>{product.stockQty} available</span></div>
+            <div><i style={{ width: `${Math.max(0, Math.min(100, Math.round((product.stockQty / Math.max(product.openingStock || product.stockQty, 1)) * 100)))}%` }} /></div>
           </div>
 
           {product.attributes.length > 0 && (
@@ -332,13 +352,13 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
             </div>
           )}
 
-          <div className="mt-6">
+          <div className="pdp-operational-purchase">
             <AddToCartPanel
               product={{
                 id: product.id,
                 name: product.name,
                 slug: product.slug,
-                image: product.images[0]?.url ?? "/placeholder-product.png",
+                image: product.images[0]?.url ?? "/placeholder-product.svg",
                 originalPrice: Number(product.originalPrice),
                 saveoPrice: Number(product.saveoPrice),
                 stockQty: product.stockQty,
@@ -347,6 +367,8 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
               userId={session?.user?.id ?? null}
             />
           </div>
+
+          <section className="pdp-supplier"><ShieldCheck className="h-6 w-6" /><div><p><strong>{p("verifiedSupplier")}</strong><span>Verified by SAVO</span></p><small>Supplier approval and product ownership remain controlled by the operational SAVO platform.</small></div></section>
 
           {bundles.length > 0 && (
             <div className="mt-6 space-y-4">
@@ -377,13 +399,19 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
         </div>
       </div>
 
+      <OperationalProductInfoTabs
+        description={product.description}
+        descriptionAr={product.descriptionAr}
+        facts={product.attributes.map((attr) => ({ label: locale === "ar" && attr.keyAr ? attr.keyAr : attr.key, value: locale === "ar" && attr.valueAr ? attr.valueAr : attr.value }))}
+      />
+
       {(() => {
         const lifestyleImage = product.media.find((m) => m.type === "LIFESTYLE_IMAGE");
         return lifestyleImage ? (
           <div className="mt-6">
             <ProductScene
               backgroundImage={lifestyleImage.url}
-              productImage={product.images[0]?.url ?? "/placeholder-product.png"}
+              productImage={product.images[0]?.url ?? "/placeholder-product.svg"}
               overlayText={product.experienceApproved && product.originStory ? product.originStory : displayName}
             />
           </div>

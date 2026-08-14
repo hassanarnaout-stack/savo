@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { useLocale, useTranslations } from "next-intl";
@@ -16,6 +16,45 @@ export function CartDrawer() {
   const [suggestions, setSuggestions] = useState<ProductCardData[]>([]);
   const locale = useLocale();
   const t = useTranslations("cart");
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const closeForMenu = () => closeCart();
+    window.addEventListener("savo:mobile-nav-open", closeForMenu);
+    return () => window.removeEventListener("savo:mobile-nav-open", closeForMenu);
+  }, [closeCart]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    window.dispatchEvent(new Event("savo:cart-open"));
+    const scrollRegion = document.querySelector<HTMLElement>(".store-scroll");
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRegionOverflow = scrollRegion?.style.overflow;
+    const previousScrollTop = scrollRegion?.scrollTop ?? 0;
+    document.body.style.overflow = "hidden";
+    if (scrollRegion) scrollRegion.style.overflow = "hidden";
+
+    const focusable = drawerRef.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+    focusable?.[0]?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { closeCart(); return; }
+      if (event.key !== "Tab" || !focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
+      if (scrollRegion) {
+        scrollRegion.style.overflow = previousRegionOverflow ?? "";
+        scrollRegion.scrollTop = previousScrollTop;
+      }
+      document.querySelector<HTMLElement>("[data-cart-trigger]")?.focus();
+    };
+  }, [isOpen, closeCart]);
 
   useEffect(() => {
     if (!isOpen || items.length === 0) return;
@@ -35,7 +74,7 @@ export function CartDrawer() {
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/40" onClick={closeCart} />
-      <div className="relative flex h-full w-full max-w-md flex-col bg-white shadow-xl animate-fade-up">
+      <div ref={drawerRef} role="dialog" aria-modal="true" aria-label={t("title")} className="relative flex h-full w-full max-w-md flex-col bg-white shadow-xl animate-fade-up">
         <div className="flex items-center justify-between border-b border-black/5 px-5 py-4">
           <h2 className="text-lg font-bold">{t("title")} ({items.length})</h2>
           <button onClick={closeCart} aria-label="Close cart">
@@ -53,7 +92,7 @@ export function CartDrawer() {
                   <li key={item.productId} className="flex gap-3">
                     <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-saveo-emerald-700/5">
                       {item.image && (
-                        <Image src={item.image} alt={item.name} fill className="object-cover" />
+                        <Image src={item.image} alt={item.name} fill sizes="64px" className="object-cover" />
                       )}
                     </div>
                     <div className="flex-1">
@@ -131,13 +170,13 @@ export function CartDrawer() {
 
 function MiniAddCard({ product, locale }: { product: ProductCardData; locale: string }) {
   const addItem = useCartStore((s) => s.addItem);
-  const image = product.images[0]?.url ?? "/placeholder-product.png";
+  const image = product.images[0]?.url ?? "/placeholder-product.svg";
   const displayName = locale === "ar" && product.nameAr ? product.nameAr : product.name;
 
   return (
     <div className="w-28 shrink-0 rounded-lg bg-white p-2 shadow-sm">
       <div className="relative h-16 w-full overflow-hidden rounded bg-saveo-emerald-700/5">
-        <Image src={image} alt={displayName} fill className="object-cover" />
+        <Image src={image} alt={displayName} fill sizes="112px" className="object-cover" />
       </div>
       <p className="mt-1 line-clamp-1 text-[11px] font-medium">{displayName}</p>
       <p className="text-[11px] font-bold text-saveo-emerald-600">{formatKWD(Number(product.saveoPrice))}</p>

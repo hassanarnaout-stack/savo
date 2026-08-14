@@ -14,6 +14,7 @@ export interface ProductCardData {
   id: string;
   name: string;
   nameAr?: string | null;
+  brandName?: string | null;
   slug: string;
   originalPrice: number | string;
   saveoPrice: number | string;
@@ -38,12 +39,12 @@ export interface ProductCardData {
  * layer, and inventing them would mean fake data — flagged in the PHASE 1
  * report as a known, deliberate gap rather than a silent omission.
  */
-export function ProductCard({ product }: { product: ProductCardData }) {
+export function ProductCard({ product, priority = false }: { product: ProductCardData; priority?: boolean }) {
   const addItem = useCartStore((s) => s.addItem);
   const locale = useLocale();
   const p = useTranslations("product");
   const common = useTranslations("common");
-  const image = product.images[0]?.url ?? "/placeholder-product.png";
+  const image = product.images[0]?.url ?? "/placeholder-product.svg";
   const outOfStock = product.stockQty <= 0;
   const displayName = locale === "ar" && product.nameAr ? product.nameAr : product.name;
 
@@ -103,17 +104,11 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   }
 
   return (
-    <Link
-      href={`/products/${product.slug}`}
-      className="group flex flex-col overflow-hidden rounded-card bg-saveo-card font-manrope shadow-card transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-figma-card"
-    >
-      <div className="relative aspect-square overflow-hidden bg-saveo-surface">
-        <Image
-          src={image}
-          alt={displayName}
-          fill
-          className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-        />
+    <article className="product-card group flex flex-col">
+      <div className="product-media">
+        <Link href={`/products/${product.slug}`} aria-label={displayName} className="product-image-link">
+          <Image src={image} alt={displayName} fill sizes="(max-width: 640px) 50vw, 25vw" priority={priority} className="object-cover" />
+        </Link>
 
         {product.type === "MYSTERY_BOX" ? (
           <span className="absolute start-2.5 top-2.5 flex items-center gap-1 rounded-lg bg-saveo-ink px-2 py-1 text-[10px] font-bold text-white">
@@ -121,7 +116,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           </span>
         ) : (
           discountPct > 0 && (
-            <span className="figma-badge-discount absolute start-2.5 top-2.5">
+            <span className="discount-badge">
               <span className="figma-badge-dash">-</span>
               {discountPct}%
             </span>
@@ -131,12 +126,10 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         <button
           onClick={handleToggleFavorite}
           disabled={favoriteBusy}
-          className={`absolute end-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-200 ${
-            favorited ? "bg-saveo-accent" : "bg-white/[0.92]"
-          }`}
+          className={`heart-button ${favorited ? "liked" : ""}`}
           aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
         >
-          <Heart className={`h-[13px] w-[13px] ${favorited ? "fill-white text-white" : "fill-transparent text-saveo-muted"}`} strokeWidth={1.8} />
+          <Heart strokeWidth={1.8} />
         </button>
 
         {/* Bottom-left status badges — real signals only (typeof-checked,
@@ -156,16 +149,19 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-1 p-3.5">
-        <div className="flex items-center justify-between">
+      <div className="product-body flex flex-1 flex-col">
+        <div className="product-meta">
+          <span>{product.brandName ?? "SAVO"}</span>
           {product.dealEndsAt ? (
             <CountdownTimer dealEndsAt={product.dealEndsAt} compact />
+          ) : typeof product.avgRating === "number" && product.avgRating > 0 ? (
+            <span><Star fill="currentColor" /> {product.avgRating.toFixed(1)}</span>
           ) : (
             <span />
           )}
         </div>
 
-        <h3 className="line-clamp-2 text-[13px] font-semibold leading-[1.4] text-saveo-ink">{displayName}</h3>
+        <Link href={`/products/${product.slug}`} className="product-title">{displayName}</Link>
 
         {(typeof product.avgRating === "number" && product.avgRating > 0) ||
         (typeof product.orderCount === "number" && product.orderCount > 0) ? (
@@ -184,34 +180,29 @@ export function ProductCard({ product }: { product: ProductCardData }) {
               </div>
             )}
             {typeof product.orderCount === "number" && product.orderCount > 0 && (
-              <span className="text-[10px] text-saveo-muted">({product.orderCount.toLocaleString()})</span>
+              <span className="text-[10px] text-saveo-muted">({String(product.orderCount)})</span>
             )}
           </div>
         ) : null}
 
-        <div className="mt-1 flex items-baseline gap-2">
-          <span className="text-[17px] font-extrabold text-saveo-primary">{formatKWD(saveoPrice)}</span>
+        <div className="price-row mt-1 flex items-baseline gap-2">
+          <strong>{formatKWD(saveoPrice)}</strong>
           {discountPct > 0 && <span className="text-xs text-saveo-muted line-through">{formatKWD(originalPrice)}</span>}
         </div>
-        {discountPct > 0 && (
-          <div className="text-[10px] font-semibold text-saveo-primary">
-            {p("youSave")} {formatKWD(originalPrice - saveoPrice)}
-          </div>
-        )}
-
         <div className="mt-0.5">
-          <div className={`text-[10px] font-semibold ${lowStock ? "text-saveo-accent" : "text-saveo-muted"}`}>
-            {lowStock ? `Only ${product.stockQty} left!` : `${product.stockQty} in stock`}
+          <div className={`stock-copy ${lowStock ? "is-low" : ""}`}>
+            <span>{lowStock ? `Only ${product.stockQty} left!` : `${product.stockQty} in stock`}</span>
+            {typeof product.orderCount === "number" && product.orderCount > 0 && <span>{String(product.orderCount)} orders</span>}
           </div>
-          <div className="figma-stockbar-track">
-            <div className={`figma-stockbar-fill ${lowStock ? "is-low" : ""}`} style={{ width: `${stockPct}%` }} />
+          <div className="stock-bar">
+            <i className={lowStock ? "is-low" : ""} style={{ width: `${stockPct}%` }} />
           </div>
         </div>
 
         <button
           onClick={handleAddToCart}
           disabled={outOfStock}
-          className={`figma-btn-cta mt-2.5 w-full disabled:cursor-not-allowed disabled:bg-saveo-border disabled:text-saveo-muted ${added ? "is-added" : ""}`}
+          className={`add-button disabled:cursor-not-allowed disabled:bg-saveo-border disabled:text-saveo-muted ${added ? "added" : ""}`}
         >
           {added ? (
             <>
@@ -225,6 +216,6 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           )}
         </button>
       </div>
-    </Link>
+    </article>
   );
 }

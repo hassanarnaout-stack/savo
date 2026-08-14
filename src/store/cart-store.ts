@@ -73,6 +73,12 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "saveo-cart",
+      partialize: (state) => ({ items: state.items }) as CartState,
+      merge: (persisted, current) => ({
+        ...current,
+        items: (persisted as Partial<CartState>)?.items ?? [],
+        isOpen: false,
+      }),
       // The persisted cart lives in localStorage, which doesn't exist during
       // server rendering. Auto-hydrating on the client would make the first
       // client render diverge from the server-rendered HTML (a React

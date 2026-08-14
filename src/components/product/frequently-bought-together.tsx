@@ -32,7 +32,7 @@ export function FrequentlyBoughtTogether({ items }: { items: ProductCardData[] }
     items
       .filter((i) => selected.has(i.id))
       .forEach((i) => {
-        const image = i.images[0]?.url ?? "/placeholder-product.png";
+        const image = i.images[0]?.url ?? "/placeholder-product.svg";
         addItem(
           {
             productId: i.id,
@@ -50,38 +50,27 @@ export function FrequentlyBoughtTogether({ items }: { items: ProductCardData[] }
   }
 
   return (
-    <section className="border-t border-black/5 py-8">
-      <h2 className="mb-4 text-lg font-bold">{p("fbtTitle")}</h2>
-      <div className="flex flex-wrap items-center gap-3">
-        {items.map((item, idx) => {
-          const displayName = locale === "ar" && item.nameAr ? item.nameAr : item.name;
-          return (
-            <div key={item.id} className="flex items-center gap-3">
-              <label className="flex w-32 cursor-pointer flex-col items-center gap-2 rounded-xl2 border border-black/10 p-3 text-center">
-                <input
-                  type="checkbox"
-                  checked={selected.has(item.id)}
-                  onChange={() => toggle(item.id)}
-                  className="self-start accent-saveo-emerald-700"
-                />
-                <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-saveo-emerald-700/5">
-                  <Image src={item.images[0]?.url ?? "/placeholder-product.png"} alt={displayName} fill className="object-cover" />
+    <section className="pdp-fbt-section">
+      <div className="v21-shell">
+        <header><p>BETTER TOGETHER</p><h2>{p("fbtTitle")}</h2></header>
+        <div className="pdp-fbt-panel">
+          <div className="pdp-fbt-products">
+            {items.map((item, idx) => {
+              const displayName = locale === "ar" && item.nameAr ? item.nameAr : item.name;
+              return (
+                <div key={item.id} className="pdp-fbt-item">
+                  <label>
+                    <input type="checkbox" checked={selected.has(item.id)} onChange={() => toggle(item.id)} />
+                    <div className="pdp-fbt-image"><Image src={item.images[0]?.url ?? "/placeholder-product.svg"} alt={displayName} fill sizes="(max-width: 560px) 145px, 92px" /></div>
+                    <span><strong>{displayName}</strong><b>{formatKWD(Number(item.saveoPrice))}</b></span>
+                  </label>
+                  {idx < items.length - 1 && <Plus className="pdp-fbt-plus" />}
                 </div>
-                <p className="line-clamp-2 text-[11px] font-medium">{displayName}</p>
-                <p className="text-xs font-bold text-saveo-emerald-600">{formatKWD(Number(item.saveoPrice))}</p>
-              </label>
-              {idx < items.length - 1 && <Plus className="h-4 w-4 rtl:-scale-x-100 text-saveo-emerald-700/30" />}
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-4 flex items-center gap-4">
-        <p className="text-sm">
-          {selected.size} × {formatKWD(total)}
-        </p>
-        <button onClick={addBundle} className="btn-dark">
-          {p("addBundle")}
-        </button>
+              );
+            })}
+          </div>
+          <div className="pdp-fbt-summary"><small>{selected.size} selected</small><strong>{formatKWD(total)}</strong><button onClick={addBundle}>{p("addBundle")}</button></div>
+        </div>
       </div>
     </section>
   );

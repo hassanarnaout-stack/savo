@@ -4,6 +4,7 @@ import { Clock, Compass, Flame, Gift, Heart, Menu, Package, Search, Tag, User, X
 import { useEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/routing";
 import { SavoLogo } from "@/components/layout/savo-logo";
+import { useCartStore } from "@/store/cart-store";
 
 interface Category {
   id: string;
@@ -19,6 +20,13 @@ export function MobileNav({ categories, locale }: { categories: Category[]; loca
   const triggerRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLElement>(null);
   const isArabic = locale === "ar";
+  const closeCart = useCartStore((state) => state.closeCart);
+
+  useEffect(() => {
+    const closeForCart = () => setOpen(false);
+    window.addEventListener("savo:cart-open", closeForCart);
+    return () => window.removeEventListener("savo:cart-open", closeForCart);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -61,6 +69,11 @@ export function MobileNav({ categories, locale }: { categories: Category[]; loca
   }, [open]);
 
   const close = () => setOpen(false);
+  const openMenu = () => {
+    closeCart();
+    window.dispatchEvent(new Event("savo:mobile-nav-open"));
+    setOpen(true);
+  };
   const primaryLinks = [
     { label: isArabic ? "اكتشف" : "Discover", href: "/discover" as const, Icon: Compass },
     { label: isArabic ? "عروض فلاش" : "Flash Deals", href: "/products?type=DEAL" as const, Icon: Zap },
@@ -74,7 +87,7 @@ export function MobileNav({ categories, locale }: { categories: Category[]; loca
 
   return (
     <>
-      <button ref={triggerRef} onClick={() => setOpen(true)} className="savo-menu-button" aria-label={isArabic ? "فتح القائمة" : "Open menu"} aria-expanded={open}>
+      <button ref={triggerRef} onClick={openMenu} className="savo-menu-button" aria-label={isArabic ? "فتح القائمة" : "Open menu"} aria-expanded={open}>
         <Menu />
       </button>
       {open && (

@@ -19,7 +19,7 @@ export function PremiumProductGallery({ media, fallbackImage, productName }: { m
   const containerRef = useRef<HTMLDivElement>(null);
 
   if (items.length === 0) {
-    return <div className="aspect-square rounded-xl2 bg-black/5" />;
+    return <div className="pdp-gallery-sticky"><div className="pdp-gallery-frame" /></div>;
   }
 
   const active = items[activeIndex];
@@ -33,11 +33,11 @@ export function PremiumProductGallery({ media, fallbackImage, productName }: { m
   }
 
   return (
-    <div>
+    <div className="pdp-gallery-sticky">
       {/* Main viewer — Smart Zoom on hover for images, native player for video */}
       <div
         ref={containerRef}
-        className="relative aspect-square overflow-hidden rounded-xl2 bg-black/5"
+        className="pdp-gallery-frame"
         onMouseEnter={() => active.type !== "VIDEO" && setZooming(true)}
         onMouseLeave={() => setZooming(false)}
         onMouseMove={handleMouseMove}
@@ -70,19 +70,19 @@ export function PremiumProductGallery({ media, fallbackImage, productName }: { m
 
       {/* Thumbnail strip */}
       {items.length > 1 && (
-        <div className="mt-3 flex gap-2 overflow-x-auto">
+        <div className="pdp-gallery-thumbs">
           {items.map((item, i) => (
             <button
               key={item.id}
               onClick={() => setActiveIndex(i)}
-              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 ${i === activeIndex ? "border-saveo-emerald-700" : "border-transparent"}`}
+              className={i === activeIndex ? "is-active" : ""}
             >
               {item.type === "VIDEO" ? (
                 <div className="flex h-full w-full items-center justify-center bg-black/80">
                   <Play className="h-5 w-5 text-white" />
                 </div>
               ) : (
-                <Image src={item.url} alt="" fill className="object-cover" />
+                <Image src={item.url} alt="" fill sizes="64px" className="object-cover" />
               )}
             </button>
           ))}

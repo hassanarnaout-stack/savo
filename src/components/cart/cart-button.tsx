@@ -16,9 +16,13 @@ export function CartButton() {
 
   return (
     <button
-      onClick={openCart}
+      onClick={() => {
+        window.dispatchEvent(new Event("savo:cart-open"));
+        openCart();
+      }}
       className="savo-cart-button"
       aria-label="Open cart"
+      data-cart-trigger
     >
       <ShoppingCart aria-hidden="true" />
       {mounted && count > 0 && (

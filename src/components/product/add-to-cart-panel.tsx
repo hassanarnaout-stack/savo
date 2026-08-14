@@ -34,19 +34,19 @@ export function AddToCartPanel({
   const outOfStock = product.stockQty <= 0;
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex items-center rounded-full border border-black/10">
+    <div className="pdp-buy-row">
+      <div className="pdp-quantity">
         <button
           onClick={() => setQty((q) => Math.max(1, q - 1))}
-          className="flex h-11 w-11 items-center justify-center"
+          className=""
           aria-label="Decrease quantity"
         >
           <Minus className="h-4 w-4" />
         </button>
-        <span className="w-8 text-center text-sm font-semibold">{qty}</span>
+        <output aria-live="polite">{qty}</output>
         <button
           onClick={() => setQty((q) => Math.min(product.stockQty, q + 1))}
-          className="flex h-11 w-11 items-center justify-center"
+          className=""
           aria-label="Increase quantity"
         >
           <Plus className="h-4 w-4" />
@@ -69,14 +69,14 @@ export function AddToCartPanel({
           toast.success(`${product.name} added to cart`);
         }}
         disabled={outOfStock}
-        className="btn-primary flex-1 disabled:bg-saveo-emerald-700/20"
+        className="pdp-add-button disabled:opacity-50"
       >
         <ShoppingCart className="h-4 w-4" />
         {outOfStock ? common("outOfStock") : p("addToCart")}
       </button>
 
       <button
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-black/10 hover:border-red-300 hover:text-red-500"
+        className="pdp-wishlist pdp-wishlist-icon"
         aria-label="Add to favorites"
       >
         <Heart className="h-4 w-4" />
