@@ -25,7 +25,7 @@ export function LocaleSwitcher({ currentLocale }: { currentLocale: string }) {
     <button
       onClick={handleSwitch}
       disabled={isPending}
-      className="flex h-10 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-saveo-emerald-700 hover:bg-saveo-emerald-700/5 disabled:opacity-50"
+      className="savo-locale-switcher"
       aria-label="Switch language"
     >
       <Languages className="h-4 w-4" />

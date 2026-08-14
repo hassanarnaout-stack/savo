@@ -17,6 +17,7 @@ import { AIConciergeLauncher } from "@/components/ai-assistant/ai-concierge-laun
 import { AffiliateTracker } from "@/components/affiliate/affiliate-tracker";
 import { BrowserExtensionErrorGuard } from "@/components/layout/browser-extension-error-guard";
 import { getLaunchFlags } from "@/lib/launch-flags";
+import { MobileBottomNavigation } from "@/components/layout/storefront-navigation";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -79,14 +80,17 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} dir={dir}>
-      <body
-        className={`flex min-h-screen flex-col ${dir === "rtl" ? "font-arabic" : "font-sans"}`}
-      >
+      <body className={dir === "rtl" ? "font-arabic" : "font-sans"}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <CartHydration />
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <div className="store-shell">
+            <Header />
+            <div className="store-scroll">
+              <main>{children}</main>
+              <Footer />
+            </div>
+            <MobileBottomNavigation locale={locale} />
+          </div>
           <CartDrawer />
           <FeedbackWidget />
           {FEATURE_FLAGS.SAVE_AI_ENABLED && <AIConciergeLauncher locale={locale} />}

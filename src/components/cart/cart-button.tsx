@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 
 export function CartButton() {
@@ -17,12 +17,12 @@ export function CartButton() {
   return (
     <button
       onClick={openCart}
-      className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-saveo-emerald-700/5"
+      className="savo-cart-button"
       aria-label="Open cart"
     >
-      <ShoppingBag className="h-5 w-5" />
+      <ShoppingCart aria-hidden="true" />
       {mounted && count > 0 && (
-        <span className="absolute -end-0.5 -top-0.5 flex h-4.5 min-w-[18px] items-center justify-center rounded-full bg-saveo-emerald-700 px-1 text-[10px] font-bold text-white">
+        <span>
           {count}
         </span>
       )}

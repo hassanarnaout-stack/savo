@@ -1,15 +1,20 @@
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/routing";
-import Image from "next/image";
-import { getTranslations, getLocale } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { FeatureFlagService } from "@/lib/services/feature-flag-service";
+import { SavoLogo } from "@/components/layout/savo-logo";
 
 async function getFeaturedCategories() {
-  return prisma.category.findMany({
-    where: { isActive: true, isFeatured: true, parentId: null },
-    orderBy: { sortOrder: "asc" },
-    select: { id: true, name: true, nameAr: true, slug: true },
-  });
+  try {
+    return await prisma.category.findMany({
+      where: { isActive: true, isFeatured: true, parentId: null },
+      orderBy: { sortOrder: "asc" },
+      take: 4,
+      select: { id: true, name: true, nameAr: true, slug: true },
+    });
+  } catch {
+    return [];
+  }
 }
 
 export async function Footer() {
@@ -19,57 +24,53 @@ export async function Footer() {
     getTranslations("account"),
     getFeaturedCategories(),
     getLocale(),
-    FeatureFlagService.isEnabled("affiliate_program"),
+    FeatureFlagService.isEnabled("affiliate_program").catch(() => false),
   ]);
+  const isArabic = locale === "ar";
 
   return (
-    <footer className="mt-20 border-t border-white/[0.08] bg-saveo-ink-mid font-manrope text-white">
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-          <div className="col-span-2 md:col-span-1">
-            <Image src="/brand/savo-logo-light.png" alt="Savo" width={104} height={36} className="h-8 w-auto" />
-            <p className="mt-4 max-w-[280px] text-sm leading-relaxed text-saveo-muted">{brand("tagline")}</p>
-            <p className="mt-2 text-xs text-saveo-subtle">
-              {locale === "ar" ? "منصة الكويت الذكية للتوفير." : "Kuwait's smart savings marketplace."}
-            </p>
+    <footer className="savo-site-footer">
+      <div className="savo-footer-inner">
+        <div className="savo-footer-grid">
+          <div className="savo-footer-brand">
+            <div className="savo-footer-logo-stage"><SavoLogo height={36} tagline /></div>
+            <p>{brand("tagline")}</p>
+            <p lang="ar" dir="rtl">سافو — عالمك للاكتشاف في الكويت</p>
           </div>
-          <div>
-            <h4 className="mb-4 text-[13px] font-bold text-white">{t("shop")}</h4>
-            <ul className="space-y-[11px] text-[13px] text-saveo-muted">
-              <li><Link href="/discover" className="transition-colors hover:text-saveo-primary">🔍 Discover</Link></li>
-              <li><Link href="/brands" className="transition-colors hover:text-saveo-primary">🏷️ Brands</Link></li>
-              {categories.map((cat) => (
-                <li key={cat.id}>
-                  <Link href={`/category/${cat.slug}`} className="transition-colors hover:text-saveo-primary">
-                    {locale === "ar" && cat.nameAr ? cat.nameAr : cat.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+
+          <div className="savo-footer-column">
+            <h3>{t("shop")}</h3>
+            <Link href="/discover">{isArabic ? "اكتشف" : "Discover"}</Link>
+            <Link href="/products?type=DEAL">{isArabic ? "العروض" : "Special Deals"}</Link>
+            <Link href="/brands">{isArabic ? "العلامات" : "Brands"}</Link>
+            <Link href="/mystery-boxes">{isArabic ? "صناديق المفاجآت" : "Mystery Boxes"}</Link>
+            <Link href="/products">{isArabic ? "كل المنتجات" : "All Products"}</Link>
           </div>
-          <div>
-            <h4 className="mb-4 text-[13px] font-bold text-white">{t("account")}</h4>
-            <ul className="space-y-[11px] text-[13px] text-saveo-muted">
-              <li><Link href="/account" className="transition-colors hover:text-saveo-primary">{account("title")}</Link></li>
-              <li><Link href="/account/orders" className="transition-colors hover:text-saveo-primary">{account("orderHistory")}</Link></li>
-              <li><Link href="/favorites" className="transition-colors hover:text-saveo-primary">{account("favorites")}</Link></li>
-              <li><Link href="/gift-cards" className="transition-colors hover:text-saveo-primary">Gift Cards</Link></li>
-              <li><Link href="/account/messages" className="transition-colors hover:text-saveo-primary">Messages</Link></li>
-              {affiliateProgramEnabled && (
-                <li><Link href="/affiliate" className="transition-colors hover:text-saveo-primary">Become an Affiliate</Link></li>
-              )}
-            </ul>
+
+          <div className="savo-footer-column">
+            <h3>{t("account")}</h3>
+            <Link href="/account">{account("title")}</Link>
+            <Link href="/account/orders">{account("orderHistory")}</Link>
+            <Link href="/favorites">{account("favorites")}</Link>
+            <Link href="/gift-cards">{isArabic ? "بطاقات الهدايا" : "Gift Cards"}</Link>
+            <Link href="/account/messages">{isArabic ? "الرسائل" : "Messages"}</Link>
+            {affiliateProgramEnabled && <Link href="/affiliate">{isArabic ? "برنامج الشركاء" : "Affiliate Program"}</Link>}
           </div>
-          <div>
-            <h4 className="mb-4 text-[13px] font-bold text-white">{t("support")}</h4>
-            <ul className="space-y-[11px] text-[13px] text-saveo-muted">
-              <li>help@saveo.com.kw</li>
-              <li>{locale === "ar" ? "مدينة الكويت، الكويت" : "Kuwait City, Kuwait"}</li>
-            </ul>
+
+          <div className="savo-footer-column">
+            <h3>{t("support")}</h3>
+            {categories.map((category) => (
+              <Link key={category.id} href={`/category/${category.slug}`}>
+                {isArabic && category.nameAr ? category.nameAr : category.name}
+              </Link>
+            ))}
+            <span>help@saveo.com.kw</span>
+            <span>{isArabic ? "مدينة الكويت، الكويت" : "Kuwait City, Kuwait"}</span>
           </div>
         </div>
-        <div className="mt-10 border-t border-white/[0.08] pt-6 text-xs text-saveo-subtle">
-          © {new Date().getFullYear()} Savo. {t("rights")}
+
+        <div className="savo-footer-bottom">
+          <span>© {new Date().getFullYear()} SAVO Kuwait. {t("rights")}</span>
         </div>
       </div>
     </footer>
