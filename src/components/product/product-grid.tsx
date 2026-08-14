@@ -37,11 +37,11 @@ export function ProductRail({
 
   return (
     <section className="py-6">
-      <div className="mb-4">
-        <h2 className="text-lg font-bold text-saveo-emerald-700">{title}</h2>
-        {subtitle && <p className="text-sm text-saveo-emerald-700/50">{subtitle}</p>}
+      <div className="mb-5">
+        <h2 className="font-display text-xl font-extrabold tracking-tight text-saveo-ink">{title}</h2>
+        {subtitle && <p className="mt-1 text-sm text-saveo-muted">{subtitle}</p>}
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-2">
+      <div className="flex gap-3.5 overflow-x-auto pb-2">
         {products.map((p) => (
           <div
             key={p.id}

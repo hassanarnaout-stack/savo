@@ -41,72 +41,80 @@ export async function Header() {
   const isPlusMember = session?.user?.id ? await MembershipService.isActiveMember(session.user.id) : false;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-saveo-emerald-700/10 bg-white/95 backdrop-blur">
-      {/* Top strip */}
-      <div className="bg-saveo-emerald-700 text-center text-xs font-medium text-saveo-gold-400 py-1.5 px-4">
+    // Figma Make's SavoHeader is built on the `ink` surface (not a light
+    // header), with `inkMid` for the search field and the nav strip below it.
+    <header className="sticky top-0 z-40 bg-saveo-ink font-manrope">
+      {/* Top strip — kept, restyled onto ink */}
+      <div className="bg-saveo-ink-low py-1.5 text-center text-[11px] font-bold uppercase tracking-[0.12em] text-saveo-primary">
         {nav("freeDeliveryBanner")}
       </div>
 
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
+      {/* Row 1: Logo + Search + Icons — ported 1:1 from Figma's row-1 layout */}
+      <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-3.5 sm:px-6 lg:px-8">
         <MobileNav categories={categories} locale={locale} />
 
-        <Link href="/" className="flex items-center gap-1.5 shrink-0">
-          <Image src="/brand/savo-logo-dark.png" alt="Savo" width={104} height={36} className="h-8 w-auto" priority />
+        <Link href="/" className="flex shrink-0 items-center gap-1.5">
+          <Image src="/brand/savo-logo-light.png" alt="Savo" width={104} height={36} className="h-8 w-auto" priority />
         </Link>
 
-        <form action={`/${locale}/products`} className="hidden flex-1 max-w-xl md:flex">
+        <form action={`/${locale}/products`} className="hidden max-w-xl flex-1 md:flex">
           <div className="relative w-full">
-            <Search className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-saveo-emerald-700/40" />
+            <Search className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-saveo-muted" />
             <input
               name="q"
               placeholder={nav("search")}
-              className="w-full rounded-full border border-saveo-emerald-700/10 bg-saveo-emerald-700/[0.03] py-2.5 ps-10 pe-4 text-sm outline-none focus:border-saveo-gold-400 focus:bg-white"
+              className="w-full rounded-[10px] border border-white/[0.08] bg-saveo-ink-mid py-2.5 ps-10 pe-4 text-sm text-white placeholder:text-saveo-muted outline-none transition-shadow focus:border-saveo-primary focus:shadow-[0_0_0_3px_rgba(0,201,167,0.18)]"
             />
           </div>
         </form>
 
-        <div className="ms-auto flex items-center gap-1">
+        <div className="ms-auto flex items-center gap-1 text-white">
           <LocaleSwitcher currentLocale={locale} />
           <Link
             href="/favorites"
-            className="hidden sm:flex h-10 w-10 items-center justify-center rounded-full hover:bg-saveo-emerald-700/5"
+            className="hidden h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-white/5 sm:flex"
             aria-label={nav("favorites")}
           >
-            <Heart className="h-5 w-5" />
+            <Heart className="h-5 w-5 text-saveo-muted transition-colors hover:text-saveo-accent" />
           </Link>
           <Link
             href="/account"
-            className="relative hidden sm:flex h-10 w-10 items-center justify-center rounded-full hover:bg-saveo-emerald-700/5"
+            className="relative hidden h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-white/5 sm:flex"
             aria-label={nav("account")}
           >
-            <User className="h-5 w-5" />
+            <User className="h-5 w-5 text-saveo-muted" />
             {isPlusMember && (
               <span className="absolute -top-1 -end-1">
                 <PlusBadge size="xs" />
               </span>
             )}
           </Link>
-          <CartButton />
+          <div className="rounded-full transition-colors hover:bg-white/5">
+            <CartButton />
+          </div>
         </div>
       </div>
 
-      {/* Category nav — 100% data-driven, no hard-coded categories */}
-      <nav className="hidden md:block border-t border-saveo-emerald-700/5">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5 sm:px-6 lg:px-8">
+      {/* Row 2: category nav (desktop) — same ink-mid strip Figma uses for its
+          primary nav row, with the same muted → white hover treatment and a
+          teal bottom border on hover instead of Figma's "active" state (this
+          bar is 100% Prisma-driven categories, not a fixed page menu). */}
+      <nav className="hidden border-t border-white/[0.08] bg-saveo-ink-mid md:block">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-1 px-4 sm:px-6 lg:px-8">
           {categories.map((cat) => (
             <Link
               key={cat.id}
               href={`/category/${cat.slug}`}
-              className="flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-saveo-emerald-700/70 hover:text-saveo-gold-500"
+              className="flex items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent px-4 py-3.5 text-[13px] font-semibold text-saveo-muted transition-colors hover:border-saveo-primary hover:text-white"
             >
               {cat.icon && <span>{cat.icon}</span>}
               {locale === "ar" && cat.nameAr ? cat.nameAr : cat.name}
-              <span className="text-saveo-emerald-700/40">({cat._count.products})</span>
+              <span className="text-saveo-subtle">({cat._count.products})</span>
             </Link>
           ))}
           <Link
             href="/products"
-            className="whitespace-nowrap text-sm font-semibold text-saveo-gold-500"
+            className="ms-auto whitespace-nowrap px-4 py-3.5 text-[13px] font-bold text-saveo-primary"
           >
             {nav("shopAll")} {locale === "ar" ? "←" : "→"}
           </Link>

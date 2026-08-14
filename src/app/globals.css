@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Lexend+Exa:wght@700;800&family=Manrope:wght@400;500;600;700;800&family=Cairo:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,6 +7,11 @@
 :root {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-arabic: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  /* New — Figma Make's typographic system (display/body/arabic). Additive:
+     pages not yet migrated keep using --font-sans/--font-arabic above. */
+  --font-display: "Lexend Exa", system-ui, sans-serif;
+  --font-manrope: "Manrope", system-ui, sans-serif;
+  --font-cairo: "Cairo", system-ui, sans-serif;
 }
 
 @layer base {
@@ -229,5 +234,89 @@
   }
   50% {
     transform: translateX(15%) translateY(15%);
+  }
+}
+
+/* ===========================================================================
+   FIGMA MAKE COMPONENT LAYER — ported directly from the source file's
+   DealCard / StockBar / SavoHeader / MysteryBoxHomeSection (see the
+   PHASE 1 report for the exact line references). These are the visual
+   building blocks the rebuilt Homepage components consume. Scoped/additive:
+   existing .savings-tag / .btn-* / .card / .shadow-luxury system above is
+   untouched and keeps serving every page not yet in this migration.
+   =========================================================================== */
+@layer components {
+  /* DealCard discount badge — ink bg, teal "-" prefix, white bold %. */
+  .figma-badge-discount {
+    @apply inline-flex items-center rounded-lg bg-saveo-ink px-[9px] py-1 font-manrope text-xs font-extrabold text-white;
+  }
+  .figma-badge-discount .figma-badge-dash {
+    @apply text-saveo-primary;
+  }
+  /* BEST SELLER — warn/amber bg. */
+  .figma-badge-bestseller {
+    @apply rounded-[5px] bg-saveo-warn px-[7px] py-0.5 font-manrope text-[9px] font-bold text-white;
+  }
+  /* NEW / EXTRA SAVINGS — teal bg, ink text. */
+  .figma-badge-new {
+    @apply rounded-[5px] bg-saveo-primary px-[7px] py-0.5 font-manrope text-[9px] font-bold text-saveo-ink;
+  }
+  /* Primary CTA button — fire bg (urgency/action), success green when confirmed. */
+  .figma-btn-cta {
+    @apply flex items-center justify-center gap-1.5 rounded-[10px] bg-saveo-accent px-[10px] py-[10px] font-manrope text-[13px] font-bold text-white transition-colors hover:bg-saveo-accent-soft;
+  }
+  .figma-btn-cta.is-added {
+    @apply bg-saveo-success hover:bg-saveo-success;
+  }
+  /* Stock progress bar — teal normally, fire when low (<20%). */
+  .figma-stockbar-track {
+    @apply mt-1 h-1 overflow-hidden rounded-full bg-saveo-border;
+  }
+  .figma-stockbar-fill {
+    @apply h-full rounded-full bg-saveo-primary transition-[width];
+  }
+  .figma-stockbar-fill.is-low {
+    @apply bg-saveo-accent;
+  }
+  /* Dark "dramatic moment" panel — Mystery Box home section. Near-black ink
+     with soft radial glows in the brand accent colors. */
+  .figma-ink-panel {
+    position: relative;
+    background: #0d0e12;
+    overflow: hidden;
+  }
+  .figma-ink-panel::before {
+    content: "";
+    position: absolute;
+    top: 15%;
+    inset-inline-start: 8%;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(0, 201, 167, 0.16) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .figma-ink-panel::after {
+    content: "";
+    position: absolute;
+    bottom: 10%;
+    inset-inline-end: 6%;
+    width: 340px;
+    height: 340px;
+    background: radial-gradient(circle, rgba(255, 77, 46, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  /* Marquee ticker belt — ported from Figma's `savoTicker` keyframe. Content
+     is duplicated once in the markup; this animates it -50% for a seamless loop. */
+  .figma-ticker-track {
+    @apply flex w-max items-center gap-10 whitespace-nowrap;
+    animation: figma-ticker 24s linear infinite;
+  }
+  .figma-ticker-track:hover {
+    animation-play-state: paused;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .figma-ticker-track {
+      animation: none;
+    }
   }
 }

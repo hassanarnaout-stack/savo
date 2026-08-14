@@ -56,7 +56,10 @@
     "joinNow": "Join Now",
     "reviewsTitle": "What Our Shoppers Say",
     "reviewsSubtitle": "Real reviews from real discoveries",
-    "noReviewsYet": "Reviews are just getting started — be the first to share yours after your next order."
+    "noReviewsYet": "Reviews are just getting started — be the first to share yours after your next order.",
+    "categoriesEyebrow": "Shop by Category",
+    "categoriesTitle": "Everything you need",
+    "allCategories": "All categories"
   },
   "product": {
     "original": "Original",

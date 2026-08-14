@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Heart, ShoppingCart, Gift } from "lucide-react";
+import { Heart, ShoppingCart, Gift, Star, CheckCircle2 } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { useLocale, useTranslations } from "next-intl";
-import { PriceTag } from "@/components/product/price-tag";
 import { CountdownTimer } from "@/components/product/countdown-timer";
 import { useCartStore } from "@/store/cart-store";
+import { formatKWD, calcDiscountPct } from "@/lib/utils";
 import { toast } from "sonner";
 
 export interface ProductCardData {
@@ -28,13 +28,15 @@ export interface ProductCardData {
 }
 
 /**
- * Design Language v1, batch 1 — Luxury Product Card.
- * Real depth (multi-layer shadow + calm float-on-hover, no scale-pop),
- * quick-action wishlist wired to the real /api/favorites endpoint
- * (previously a dead button — preventDefault() with no request behind
- * it), and a subtle reflection sweep on the image only, not the whole
- * card, so it reads as a product photograph catching light rather than
- * a gimmick.
+ * Design Language v2 — Figma Make visual parity (PHASE 1).
+ * Structural port of Figma Make's `DealCard` (see src/app/App.tsx:225 in the
+ * Figma source): ink discount badge, fire wishlist-liked state, teal price +
+ * "Save X" line, stock bar, fire CTA. Cart/favorites logic below is
+ * byte-for-byte identical to the previous version — only the JSX/classes
+ * changed. Figma's `brand` and `categoryEn` row was intentionally NOT
+ * reproduced: SAVO's ProductCardData contract has no such fields at this
+ * layer, and inventing them would mean fake data — flagged in the PHASE 1
+ * report as a known, deliberate gap rather than a silent omission.
  */
 export function ProductCard({ product }: { product: ProductCardData }) {
   const addItem = useCartStore((s) => s.addItem);
@@ -47,6 +49,15 @@ export function ProductCard({ product }: { product: ProductCardData }) {
 
   const [favorited, setFavorited] = useState(!!product.isFavorited);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  // Presentational-only derived values (no new state beyond the existing
+  // component-local pattern, no data contract change).
+  const originalPrice = Number(product.originalPrice);
+  const saveoPrice = Number(product.saveoPrice);
+  const discountPct = calcDiscountPct(originalPrice, saveoPrice);
+  const lowStock = !outOfStock && product.stockQty > 0 && product.stockQty <= 5;
+  const stockPct = Math.max(0, Math.min(100, Math.round((product.stockQty / 20) * 100))); // 20 units ≈ "full" bar, matches Figma's maxStock-relative bar without needing a maxStock field SAVO doesn't have
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
@@ -57,12 +68,14 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         name: product.name,
         slug: product.slug,
         image,
-        originalPrice: Number(product.originalPrice),
-        saveoPrice: Number(product.saveoPrice),
+        originalPrice,
+        saveoPrice,
         stockQty: product.stockQty,
       },
       1
     );
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1800); // mirrors Figma's DealCard added-state timing
     toast.success(`${displayName} added to cart`);
   }
 
@@ -92,82 +105,124 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="card-float shadow-luxury hover:shadow-luxury-hover group flex flex-col overflow-hidden rounded-xl2 bg-white"
+      className="group flex flex-col overflow-hidden rounded-card bg-saveo-card font-manrope shadow-card transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-figma-card"
     >
-      <div className="relative aspect-square overflow-hidden bg-saveo-emerald-700/[0.03]">
+      <div className="relative aspect-square overflow-hidden bg-saveo-surface">
         <Image
           src={image}
           alt={displayName}
           fill
           className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
         />
-        {/* Soft reflection sweep on the image itself, not the whole card — reads as light catching a photograph. */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-          style={{
-            background: "linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.25) 50%, transparent 60%)",
-          }}
-        />
 
-        {product.type === "MYSTERY_BOX" && (
-          <span className="absolute start-2 top-2 flex items-center gap-1 rounded-full bg-saveo-emerald-700/90 px-2 py-1 text-[10px] font-bold text-white">
-            <Gift className="h-3 w-3" /> MYSTERY
+        {product.type === "MYSTERY_BOX" ? (
+          <span className="absolute start-2.5 top-2.5 flex items-center gap-1 rounded-lg bg-saveo-ink px-2 py-1 text-[10px] font-bold text-white">
+            <Gift className="h-3 w-3 text-saveo-primary" /> MYSTERY
           </span>
-        )}
-        {typeof product.discoveryScore === "number" && product.discoveryScore >= 70 && (
-          <span className="absolute start-2 bottom-2 flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-[10px] font-bold text-white">
-            💎 {product.discoveryScore}
-          </span>
+        ) : (
+          discountPct > 0 && (
+            <span className="figma-badge-discount absolute start-2.5 top-2.5">
+              <span className="figma-badge-dash">-</span>
+              {discountPct}%
+            </span>
+          )
         )}
 
         <button
           onClick={handleToggleFavorite}
           disabled={favoriteBusy}
-          className="shadow-luxury absolute end-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 transition-transform duration-300 hover:scale-110"
+          className={`absolute end-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-200 ${
+            favorited ? "bg-saveo-accent" : "bg-white/[0.92]"
+          }`}
           aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
         >
-          <Heart className={`h-4 w-4 transition-colors ${favorited ? "fill-saveo-gold-400 text-saveo-gold-400" : "text-saveo-emerald-700"}`} />
+          <Heart className={`h-[13px] w-[13px] ${favorited ? "fill-white text-white" : "fill-transparent text-saveo-muted"}`} strokeWidth={1.8} />
         </button>
+
+        {/* Bottom-left status badges — real signals only (typeof-checked,
+            no invented "isNew"/"isBestSeller" flags that don't exist on
+            ProductCardData). discoveryScore doubles as the "featured" signal
+            already used by the previous card version. */}
+        {typeof product.discoveryScore === "number" && product.discoveryScore >= 70 && (
+          <div className="absolute bottom-2.5 start-2.5 flex gap-1">
+            <span className="figma-badge-new">💎 {product.discoveryScore}</span>
+          </div>
+        )}
 
         {outOfStock && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/70">
-            <span className="rounded-full bg-saveo-emerald-700 px-3 py-1 text-xs font-bold text-white">
-              {common("outOfStock")}
-            </span>
-          </div>
-        )}
-        {!outOfStock && Number(product.originalPrice) > Number(product.saveoPrice) && (
-          <div className="absolute inset-x-0 bottom-0 translate-y-full bg-black/75 p-2.5 text-white opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100">
-            <p className="text-xs">
-              <span className="line-through opacity-60">{Number(product.originalPrice).toFixed(3)} KD</span>{" "}
-              <span className="font-bold text-saveo-gold-400">
-                Save {Math.round((1 - Number(product.saveoPrice) / Number(product.originalPrice)) * 100)}%
-              </span>
-            </p>
-            {(typeof product.avgRating === "number" || typeof product.orderCount === "number") && (
-              <p className="mt-0.5 flex items-center gap-2 text-[11px] opacity-80">
-                {typeof product.avgRating === "number" && product.avgRating > 0 && <span>⭐ {product.avgRating.toFixed(1)}</span>}
-                {typeof product.orderCount === "number" && product.orderCount > 0 && <span>{product.orderCount} bought</span>}
-              </p>
-            )}
+            <span className="rounded-full bg-saveo-ink px-3 py-1 text-xs font-bold text-white">{common("outOfStock")}</span>
           </div>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-3.5">
-        {product.dealEndsAt && <CountdownTimer dealEndsAt={product.dealEndsAt} compact />}
-        <h3 className="line-clamp-2 text-sm font-semibold text-saveo-emerald-700">{displayName}</h3>
-        <PriceTag
-          originalPrice={Number(product.originalPrice)}
-          saveoPrice={Number(product.saveoPrice)}
-        />
+      <div className="flex flex-1 flex-col gap-1 p-3.5">
+        <div className="flex items-center justify-between">
+          {product.dealEndsAt ? (
+            <CountdownTimer dealEndsAt={product.dealEndsAt} compact />
+          ) : (
+            <span />
+          )}
+        </div>
+
+        <h3 className="line-clamp-2 text-[13px] font-semibold leading-[1.4] text-saveo-ink">{displayName}</h3>
+
+        {(typeof product.avgRating === "number" && product.avgRating > 0) ||
+        (typeof product.orderCount === "number" && product.orderCount > 0) ? (
+          <div className="mt-0.5 flex items-center gap-1.5">
+            {typeof product.avgRating === "number" && product.avgRating > 0 && (
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star
+                    key={i}
+                    className="h-2.5 w-2.5"
+                    fill={i <= Math.floor(product.avgRating!) ? "#F59E0B" : "transparent"}
+                    color={i <= Math.floor(product.avgRating!) ? "#F59E0B" : "#E8E8EA"}
+                    strokeWidth={1.5}
+                  />
+                ))}
+              </div>
+            )}
+            {typeof product.orderCount === "number" && product.orderCount > 0 && (
+              <span className="text-[10px] text-saveo-muted">({product.orderCount.toLocaleString()})</span>
+            )}
+          </div>
+        ) : null}
+
+        <div className="mt-1 flex items-baseline gap-2">
+          <span className="text-[17px] font-extrabold text-saveo-primary">{formatKWD(saveoPrice)}</span>
+          {discountPct > 0 && <span className="text-xs text-saveo-muted line-through">{formatKWD(originalPrice)}</span>}
+        </div>
+        {discountPct > 0 && (
+          <div className="text-[10px] font-semibold text-saveo-primary">
+            {p("youSave")} {formatKWD(originalPrice - saveoPrice)}
+          </div>
+        )}
+
+        <div className="mt-0.5">
+          <div className={`text-[10px] font-semibold ${lowStock ? "text-saveo-accent" : "text-saveo-muted"}`}>
+            {lowStock ? `Only ${product.stockQty} left!` : `${product.stockQty} in stock`}
+          </div>
+          <div className="figma-stockbar-track">
+            <div className={`figma-stockbar-fill ${lowStock ? "is-low" : ""}`} style={{ width: `${stockPct}%` }} />
+          </div>
+        </div>
+
         <button
           onClick={handleAddToCart}
           disabled={outOfStock}
-          className="btn-primary mt-auto w-full !py-2.5 text-sm transition-transform duration-200 active:scale-[0.98] disabled:bg-saveo-emerald-700/20"
+          className={`figma-btn-cta mt-2.5 w-full disabled:cursor-not-allowed disabled:bg-saveo-border disabled:text-saveo-muted ${added ? "is-added" : ""}`}
         >
-          <ShoppingCart className="h-4 w-4" />
-          {outOfStock ? common("outOfStock") : p("addToCart")}
+          {added ? (
+            <>
+              <CheckCircle2 className="h-3.5 w-3.5" /> Added!
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="h-3.5 w-3.5" />
+              {outOfStock ? common("outOfStock") : p("addToCart")}
+            </>
+          )}
         </button>
       </div>
     </Link>

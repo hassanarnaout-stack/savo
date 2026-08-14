@@ -23,37 +23,35 @@ export function FeaturedSuppliers({
   productsLabel: (count: number) => string;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3.5 font-manrope sm:grid-cols-3 lg:grid-cols-6">
       {suppliers.map((s) => {
         const name = locale === "ar" && s.companyNameAr ? s.companyNameAr : s.companyName;
         return (
           <Link
             key={s.id}
             href={`/suppliers/${s.slug}`}
-            className="card-float shadow-luxury hover:shadow-luxury-hover relative flex flex-col items-center gap-2 rounded-xl2 bg-white p-5 text-center"
+            className="relative flex flex-col items-center gap-2 rounded-2xl border border-saveo-border bg-saveo-card p-5 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-figma-card"
           >
             <div
-              className={`relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-saveo-emerald-50 ${
-                s.isVerified ? "ring-2 ring-saveo-gold-400 ring-offset-2" : ""
+              className={`relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-saveo-primary-pale ${
+                s.isVerified ? "ring-2 ring-saveo-primary ring-offset-2" : ""
               }`}
             >
               {s.logo ? (
                 <Image src={s.logo} alt={name} fill className="object-cover" />
               ) : (
-                <Building2 className="h-6 w-6 text-saveo-emerald-700/40" />
+                <Building2 className="h-6 w-6 text-saveo-muted" />
               )}
             </div>
-            {s.isVerified && (
-              <BadgeCheck className="absolute end-3 top-3 h-4 w-4 fill-saveo-gold-400 text-white" />
-            )}
-            <p className="line-clamp-1 text-sm font-bold text-saveo-emerald-800">{name}</p>
-            <p className="text-xs text-saveo-emerald-700/50">{productsLabel(s.productCount)}</p>
+            {s.isVerified && <BadgeCheck className="absolute end-3 top-3 h-4 w-4 fill-saveo-primary text-white" />}
+            <p className="line-clamp-1 text-[13px] font-bold text-saveo-ink">{name}</p>
+            <p className="text-[11px] text-saveo-muted">{productsLabel(s.productCount)}</p>
             {s.rating !== null ? (
-              <span className="flex items-center gap-0.5 text-xs font-semibold text-saveo-gold-600">
+              <span className="flex items-center gap-0.5 text-[11px] font-semibold text-saveo-warn">
                 <Star className="h-3 w-3 fill-current" /> {s.rating.toFixed(1)}
               </span>
             ) : (
-              <span className="text-[10px] text-saveo-emerald-700/30">—</span>
+              <span className="text-[10px] text-saveo-subtle">—</span>
             )}
           </Link>
         );
