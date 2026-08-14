@@ -57,6 +57,7 @@ const config: Config = {
           // so any page not yet migrated (cart/checkout/PDP/admin/...)
           // keeps working exactly as before.
           // ---------------------------------------------------------------
+          darkNavy: "#1A1C24", // approved logo enclosure / dark identity surface
           ink: {
             DEFAULT: "#0D0E12", // primary dark surface (header, footer, hero, dramatic panels)
             mid: "#1A1C24",     // fields/inputs on ink (search bar, mid-tone cards)
@@ -74,6 +75,7 @@ const config: Config = {
             pale: "#FFF1EE",
           },
           surface: "#F5F5F2",
+          white: "#FFFFFF",
           card: "#FFFFFF",
           muted: "#8A8FA0",
           subtle: "#B5BAC8",

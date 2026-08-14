@@ -12,6 +12,16 @@
   --font-display: "Lexend Exa", system-ui, sans-serif;
   --font-manrope: "Manrope", system-ui, sans-serif;
   --font-cairo: "Cairo", system-ui, sans-serif;
+
+  /* SAVO Version 21 brand primitives. These are additive aliases for
+     presentation migration; legacy operational tokens remain untouched. */
+  --savo-dark-navy: #1A1C24;
+  --savo-ink: #0D0E12;
+  --savo-teal: #00C9A7;
+  --savo-fire: #FF4D2E;
+  --savo-surface: #F5F5F2;
+  --savo-white: #FFFFFF;
+  --savo-muted: #8A8FA0;
 }
 
 @layer base {
