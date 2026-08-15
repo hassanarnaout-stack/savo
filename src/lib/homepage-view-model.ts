@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { MembershipService } from "@/lib/services/membership-service";
+import { getDealOfTheHour } from "@/lib/discovery-engine";
+import { isLaunchFeatureEnabled } from "@/lib/launch-flags";
 
 export type HomeProduct = {
   id: string; slug: string; name: string; nameAr: string | null; brand: string | null;
@@ -17,6 +19,24 @@ export type HomeDeal = HomeProduct & {
   stockLimit: number; soldCount: number; endsAt: string;
 };
 
+/**
+ * SAVO Hour (Phase 3 — V22 Homepage Migration). Backed by the real
+ * DealOfTheHour model — this used to be displayed on an earlier
+ * Homepage iteration (see discovery-engine.ts) but was dropped during
+ * the V21 migration and never reconnected. `buyersCount` is a real
+ * incrementing counter (not fabricated social proof) — see the
+ * DealOfTheHour schema comment. Gated by ADVANCED_DEAL_OF_HOUR_ENABLED;
+ * null means either the flag is off or no slot is currently active.
+ */
+export type HomeDealOfHour = {
+  id: string; productId: string; slug: string; name: string; nameAr: string | null;
+  image: string | null; supplierName: string | null; supplierNameAr: string | null;
+  price: number; originalPrice: number; discountPercent: number;
+  stockLimit: number; buyersCount: number; endsAt: string;
+  /** Real per-session state — same Favorite table product-card.tsx reads, so the "Save for later" heart starts in the correct state instead of always defaulting to unfavorited. */
+  isFavorited: boolean;
+};
+
 export type HomepageViewModel = {
   heroProducts: HomeProduct[]; flashDeals: HomeDeal[]; trending: HomeProduct[];
   editorsPicks: HomeProduct[];
@@ -24,6 +44,9 @@ export type HomepageViewModel = {
   brands: { slug: string; name: string; count: number }[];
   mysteryBoxes: HomeProduct[]; justLanded: HomeProduct[]; bestValue: HomeProduct[];
   endingSoon: HomeDeal[]; verifiedSupplierCount: number;
+  dealOfTheHour: HomeDealOfHour | null;
+  /** Real live product count — used for Hero stats instead of hard-coded marketing numbers. */
+  totalProductCount: number;
 };
 
 const productInclude = {
@@ -53,7 +76,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
   const visibility = await MembershipService.getVisibilityFilter(session?.user?.id);
   const now = new Date();
   const publicWhere = { status: "ACTIVE" as const, approvalStatus: "APPROVED" as const, ...visibility };
-  const [products, flashRows, editorRows, categories, verifiedSupplierCount] = await Promise.all([
+  const [products, flashRows, editorRows, categories, verifiedSupplierCount, dealOfHourEnabled] = await Promise.all([
     prisma.product.findMany({ where: publicWhere, include: productInclude }),
     prisma.flashDeal.findMany({
       where: { status: "LIVE", isActive: true, startAt: { lte: now }, endAt: { gt: now }, product: publicWhere },
@@ -71,7 +94,34 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
       },
     }),
     prisma.supplier.count({ where: { status: "ACTIVE", verificationStatus: "VERIFIED" } }),
+    isLaunchFeatureEnabled("ADVANCED_DEAL_OF_HOUR_ENABLED"),
   ]);
+  // SAVO Hour — only queried when the launch flag is on; getDealOfTheHour()
+  // already filters to the single active, non-expired slot.
+  const dealOfHourRow = dealOfHourEnabled ? await getDealOfTheHour() : null;
+  const dealOfHourFavorited = dealOfHourRow && session?.user?.id
+    ? await prisma.favorite.findUnique({ where: { userId_productId: { userId: session.user.id, productId: dealOfHourRow.productId } } })
+    : null;
+  const dealOfTheHour: HomeDealOfHour | null = (() => {
+    if (!dealOfHourRow) return null;
+    const p = dealOfHourRow.product;
+    if (Math.max(0, p.stockQty - p.reservedStock) < 1) return null; // sold out slot, don't advertise it
+    const originalPrice = Number(p.originalPrice);
+    const basePrice = Number(p.saveoPrice);
+    const discountPercent = dealOfHourRow.discountOverride ?? Math.max(0, Math.round((1 - basePrice / originalPrice) * 100));
+    const price = dealOfHourRow.discountOverride != null
+      ? Math.max(0, originalPrice * (1 - dealOfHourRow.discountOverride / 100))
+      : basePrice;
+    return {
+      id: dealOfHourRow.id, productId: p.id, slug: p.slug, name: p.name, nameAr: p.nameAr,
+      image: p.images[0]?.url ?? null,
+      supplierName: p.supplier?.companyName ?? null, supplierNameAr: p.supplier?.companyNameAr ?? null,
+      price, originalPrice, discountPercent,
+      stockLimit: dealOfHourRow.stockLimit, buyersCount: dealOfHourRow.buyersCount,
+      endsAt: dealOfHourRow.endTime.toISOString(),
+      isFavorited: !!dealOfHourFavorited,
+    };
+  })();
   const all = products.map(toProduct).filter((product) => product.stock > 0 && product.image);
   const byId = new Map(all.map((product) => [product.id, product]));
   const deals = flashRows.filter((row) => row.soldCount < row.stockLimit).map((row) => {
@@ -102,5 +152,6 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
     })),
     brands: [...brandMap.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
     mysteryBoxes, justLanded, bestValue, endingSoon, verifiedSupplierCount,
+    dealOfTheHour, totalProductCount: all.length,
   };
 }
