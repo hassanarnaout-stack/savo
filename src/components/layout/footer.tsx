@@ -2,7 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { prisma } from "@/lib/prisma";
 import { FeatureFlagService } from "@/lib/services/feature-flag-service";
-import { SavoLogo } from "@/components/layout/savo-logo";
+import { SAVOLogo } from "@/components/brand/savo-master-logo";
 
 async function getFeaturedCategories() {
   try {
@@ -33,7 +33,7 @@ export async function Footer() {
       <div className="savo-footer-inner">
         <div className="savo-footer-grid">
           <div className="savo-footer-brand">
-            <div className="savo-footer-logo-stage"><SavoLogo height={36} tagline /></div>
+            <Link href="/" className="savo-footer-logo-stage" aria-label="SAVO home"><SAVOLogo variant="primary-light" style={{ height: 32, width: "auto" }} /></Link>
             <p>{brand("tagline")}</p>
             <p lang="ar" dir="rtl">سافو — عالمك للاكتشاف في الكويت</p>
           </div>

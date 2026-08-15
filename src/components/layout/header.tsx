@@ -8,8 +8,15 @@ import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 import { PlusBadge } from "@/components/membership/plus-badge";
 import { auth } from "@/lib/auth";
 import { MembershipService } from "@/lib/services/membership-service";
-import { SavoLogo } from "@/components/layout/savo-logo";
+import { SAVOLogo } from "@/components/brand/savo-master-logo";
 import { DesktopNavigation } from "@/components/layout/storefront-navigation";
+import { AnnouncementTicker } from "@/components/layout/announcement-ticker";
+
+const SHELL_ANNOUNCEMENTS = [
+  "🚚 Free delivery on SAVO Plus orders",
+  "🎁 New Mystery Boxes every week",
+  "🇰🇼 Shop in English or Arabic",
+];
 
 async function getFeaturedCategories() {
   try {
@@ -46,9 +53,10 @@ export async function Header() {
 
   return (
     <header className="savo-site-header">
+      <AnnouncementTicker items={SHELL_ANNOUNCEMENTS} />
       <div className="savo-header-primary">
         <Link href="/" className="savo-header-logo" aria-label="SAVO home">
-          <SavoLogo height={36} priority tagline />
+          <SAVOLogo variant="primary-light" style={{ height: 32, width: "auto" }} />
         </Link>
 
         <form action={`/${locale}/products`} className="savo-header-search">

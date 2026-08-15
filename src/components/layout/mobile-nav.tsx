@@ -3,7 +3,7 @@
 import { Clock, Compass, Flame, Gift, Heart, Menu, Package, Search, Tag, User, X, Zap } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/routing";
-import { SavoLogo } from "@/components/layout/savo-logo";
+import { SAVOLogo } from "@/components/brand/savo-master-logo";
 import { useCartStore } from "@/store/cart-store";
 
 interface Category {
@@ -94,7 +94,7 @@ export function MobileNav({ categories, locale }: { categories: Category[]; loca
         <div className="savo-mobile-drawer-scrim" onMouseDown={(event) => event.target === event.currentTarget && close()}>
           <aside ref={drawerRef} className="savo-mobile-drawer" aria-label={isArabic ? "التنقل المحمول" : "Mobile navigation"}>
             <div className="savo-mobile-drawer-head">
-              <Link href="/" onClick={close} aria-label="SAVO home"><SavoLogo height={28} tagline /></Link>
+              <Link href="/" onClick={close} aria-label="SAVO home"><SAVOLogo variant="primary-light" style={{ height: 28, width: "auto" }} /></Link>
               <button onClick={close} aria-label={isArabic ? "إغلاق القائمة" : "Close menu"}><X /></button>
             </div>
             <nav>

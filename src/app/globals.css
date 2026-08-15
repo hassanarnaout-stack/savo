@@ -41,6 +41,20 @@
   --savo-surface: #F5F5F2;
   --savo-white: #FFFFFF;
   --savo-muted: #8A8FA0;
+
+  /* Phase 2 — Global Shell Migration. FINAL LOCKED brand values (Phase 1
+     Brand Foundation), scoped to the reusable shell (header/nav/footer/
+     mobile) only. Deliberately separate variable names from --savo-ink/
+     --savo-teal/--savo-fire above, which the out-of-scope .v21-home
+     Homepage rule still depends on — this keeps that rule's rendering
+     byte-for-byte unchanged while the shell adopts the new identity. */
+  --savo-shell-ink: #0C0F16; /* SAVO Ink (final) */
+  --savo-shell-discovery: #00D4A1; /* SAVO Discovery (final) */
+  --savo-shell-fire: #FF4D0F; /* SAVO Fire (final) */
+  --savo-shell-gold: #E8A020; /* SAVO Gold (final) */
+  --savo-shell-surface: #141820; /* SAVO Surface (final) */
+  --savo-shell-text: #EEF2FF; /* SAVO Text (final) */
+  --savo-shell-muted: #7A8499; /* SAVO Muted (final) */
 }
 
 /* Official outlined SAVO lockup. The SVG remains immutable; only a separate
@@ -107,6 +121,17 @@
   }
 }
 
+/* Phase 2 — Global Shell Migration: AnnouncementTicker (savo-shell-*
+   tokens). Separate from .v21-ticker (Homepage, out of scope, stays
+   on the old teal value untouched). */
+.savo-shell-ticker { overflow: hidden; padding: 8px 0; color: var(--savo-shell-ink); background: var(--savo-shell-discovery); font-size: 11px; font-weight: 800; white-space: nowrap; }
+.savo-shell-ticker > div { width: max-content; display: flex; animation: savo-shell-ticker-scroll 26s linear infinite; }
+.savo-shell-ticker span { padding-inline: 28px; }
+@keyframes savo-shell-ticker-scroll { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .savo-shell-ticker > div { animation: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .savo-official-logo__fire-dot {
     animation: none;
@@ -118,7 +143,7 @@
    remain owned by the existing application components. */
 .store-shell { min-height: 100vh; }
 .store-scroll > main { min-height: 1px; }
-.savo-site-header { position: sticky; z-index: 200; top: 0; color: white; background: var(--savo-ink); font-family: var(--font-manrope), sans-serif; }
+.savo-site-header { position: sticky; z-index: 200; top: 0; color: white; background: var(--savo-shell-ink); font-family: var(--font-manrope), sans-serif; }
 .savo-header-primary { min-height: 64px; padding: 14px 40px; display: flex; align-items: center; gap: 20px; }
 .savo-header-logo { flex: none; }
 .savo-header-search { width: 100%; max-width: 500px; flex: 1; }
@@ -126,7 +151,7 @@
 .savo-header-search svg { width: 15px; height: 15px; position: absolute; z-index: 1; inset-inline-start: 14px; top: 50%; color: var(--savo-muted); transform: translateY(-50%); pointer-events: none; }
 .savo-header-search input { width: 100%; padding: 10px 16px; padding-inline-start: 42px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; outline: none; color: white; background: var(--savo-dark-navy); font-size: 13px; transition: border-color .15s ease, box-shadow .15s ease; }
 .savo-header-search input::placeholder { color: var(--savo-muted); opacity: 1; }
-.savo-header-search input:focus { border-color: var(--savo-teal); box-shadow: 0 0 0 3px rgba(0,201,167,.18); }
+.savo-header-search input:focus { border-color: var(--savo-shell-discovery); box-shadow: 0 0 0 3px rgba(0,201,167,.18); }
 .savo-header-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 14px; }
 .savo-header-action, .savo-mobile-search, .savo-menu-button, .savo-cart-button, .savo-locale-switcher { position: relative; border: 0; background: none; color: var(--savo-muted); display: inline-grid; place-items: center; cursor: pointer; transition: color .15s ease; }
 .savo-header-action, .savo-mobile-search, .savo-menu-button, .savo-cart-button { width: 24px; height: 32px; padding: 0; }
@@ -134,7 +159,7 @@
 .savo-header-action > svg, .savo-mobile-search > svg, .savo-menu-button > svg, .savo-cart-button > svg { width: 19px; height: 19px; }
 .savo-cart-button { color: white; }
 .savo-cart-button > svg { width: 20px; height: 20px; }
-.savo-cart-button > span { min-width: 16px; height: 16px; padding-inline: 3px; position: absolute; top: -1px; inset-inline-end: -5px; border-radius: 999px; color: white; background: var(--savo-fire); display: grid; place-items: center; font-size: 9px; font-weight: 700; }
+.savo-cart-button > span { min-width: 16px; height: 16px; padding-inline: 3px; position: absolute; top: -1px; inset-inline-end: -5px; border-radius: 999px; color: white; background: var(--savo-shell-fire); display: grid; place-items: center; font-size: 9px; font-weight: 700; }
 .savo-plus-indicator { position: absolute; top: -6px; inset-inline-end: -8px; }
 .savo-locale-switcher { min-height: 32px; padding: 0 4px; grid-auto-flow: column; gap: 5px; font-size: 12px; font-weight: 600; }
 .savo-locale-switcher svg { width: 16px; height: 16px; }
@@ -143,31 +168,31 @@
 .savo-desktop-nav > div { max-width: 1280px; margin-inline: auto; display: flex; }
 .savo-desktop-nav > div > a, .savo-deals-nav > a { padding: 14px 16px; border-bottom: 2px solid transparent; color: var(--savo-muted); display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: color .15s ease, border-color .15s ease; }
 .savo-desktop-nav > div > a:hover, .savo-deals-nav > a:hover { color: white; }
-.savo-desktop-nav > div > a.active, .savo-deals-nav > a.active { border-bottom-color: var(--savo-teal); color: white; }
+.savo-desktop-nav > div > a.active, .savo-deals-nav > a.active { border-bottom-color: var(--savo-shell-discovery); color: white; }
 .savo-deals-nav { position: relative; }
 .savo-deals-nav > a svg { width: 13px; height: 13px; }
-.savo-deals-menu { min-width: 230px; padding: 8px 0; position: absolute; z-index: 500; top: 100%; inset-inline-start: 0; visibility: hidden; opacity: 0; border: 1px solid #e8e8ea; border-top: 0; border-radius: 0 0 12px 12px; color: var(--savo-ink); background: white; box-shadow: 0 12px 40px rgba(0,0,0,.18); transition: opacity .15s ease, visibility .15s ease; }
+.savo-deals-menu { min-width: 230px; padding: 8px 0; position: absolute; z-index: 500; top: 100%; inset-inline-start: 0; visibility: hidden; opacity: 0; border: 1px solid #e8e8ea; border-top: 0; border-radius: 0 0 12px 12px; color: var(--savo-shell-ink); background: white; box-shadow: 0 12px 40px rgba(0,0,0,.18); transition: opacity .15s ease, visibility .15s ease; }
 .savo-deals-nav:hover .savo-deals-menu, .savo-deals-nav:focus-within .savo-deals-menu { visibility: visible; opacity: 1; }
-.savo-deals-menu > a { padding: 10px 18px; color: var(--savo-ink); display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.savo-deals-menu > a { padding: 10px 18px; color: var(--savo-shell-ink); display: flex; align-items: center; gap: 10px; font-size: 13px; }
 .savo-deals-menu > a:hover { background: var(--savo-surface); }
 .savo-deals-menu strong { display: block; font-weight: 600; }
 .savo-deals-menu small { color: var(--savo-muted); display: block; font: 400 11px var(--font-cairo), sans-serif; }
 .savo-deals-menu hr { margin: 8px 0; border: 0; border-top: 1px solid #e8e8ea; }
-.savo-deals-menu .savo-all-deals { color: var(--savo-teal); font-size: 12px; font-weight: 700; }
+.savo-deals-menu .savo-all-deals { color: var(--savo-shell-discovery); font-size: 12px; font-weight: 700; }
 .savo-mobile-drawer-scrim { display: none; }
 .savo-mobile-bottom-nav { display: none; }
 
 .savo-site-footer { margin-top: 5rem; padding: 56px 60px; border-top: 1px solid rgba(255,255,255,.08); color: white; background: var(--savo-dark-navy); font-family: var(--font-manrope), sans-serif; }
 .savo-footer-inner { max-width: 1280px; margin-inline: auto; }
 .savo-footer-grid { margin-bottom: 40px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
-.savo-footer-logo-stage { width: fit-content; padding: 8px; margin: -8px; border-radius: 14px; background: var(--savo-ink); }
+.savo-footer-logo-stage { width: fit-content; padding: 8px; margin: -8px; border-radius: 14px; background: var(--savo-shell-ink); }
 .savo-footer-logo-stage .savo-logo-lockup > small { color: rgba(255,255,255,.58); }
 .savo-footer-brand > p { max-width: 280px; margin: 16px 0 0; color: var(--savo-muted); font-size: 13px; line-height: 1.75; }
 .savo-footer-brand > p[dir="rtl"] { max-width: none; margin-top: 10px; font-family: var(--font-cairo), sans-serif; text-align: start; }
 .savo-footer-column h3 { margin: 0 0 18px; color: white; font-size: 13px; font-weight: 700; }
 .savo-footer-column a, .savo-footer-column span { margin-bottom: 11px; color: var(--savo-muted); display: block; font-size: 13px; text-align: start; }
 .savo-footer-column a { transition: color .15s ease; }
-.savo-footer-column a:hover { color: var(--savo-teal); }
+.savo-footer-column a:hover { color: var(--savo-shell-discovery); }
 .savo-footer-bottom { padding-top: 24px; border-top: 1px solid rgba(255,255,255,.08); color: var(--savo-muted); display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; }
 
 @keyframes savo-drawer-enter {
@@ -197,7 +222,7 @@
   .savo-mobile-drawer-head button svg { width: 22px; height: 22px; }
   .savo-mobile-drawer nav a { min-height: 44px; padding: 12px 20px; color: var(--savo-muted); display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; transition: color .15s ease, background .15s ease; }
   .savo-mobile-drawer nav a:hover { color: white; background: rgba(255,255,255,.03); }
-  .savo-mobile-drawer nav a.active { color: var(--savo-teal); }
+  .savo-mobile-drawer nav a.active { color: var(--savo-shell-discovery); }
   .savo-mobile-drawer nav a > svg { width: 16px; height: 16px; flex: none; }
   .savo-mobile-drawer nav a > span { min-width: 16px; text-align: center; }
   .savo-mobile-drawer-divider { margin: 12px 0; border-top: 1px solid rgba(255,255,255,.08); }
@@ -207,10 +232,10 @@
   .savo-footer-bottom { align-items: flex-start; flex-direction: column; gap: 12px; }
   .savo-mobile-bottom-nav { padding: 10px 0 max(8px, env(safe-area-inset-bottom)); position: relative; z-index: 100; flex: none; border-top: 1px solid rgba(255,255,255,.08); background: var(--savo-dark-navy); display: flex; font-family: var(--font-manrope), sans-serif; }
   .savo-mobile-bottom-nav > a { min-width: 0; padding: 0 4px; color: var(--savo-muted); display: flex; flex: 1; flex-direction: column; align-items: center; gap: 3px; font-size: 9px; font-weight: 600; }
-  .savo-mobile-bottom-nav > a.active { color: var(--savo-teal); }
+  .savo-mobile-bottom-nav > a.active { color: var(--savo-shell-discovery); }
   .savo-bottom-nav-icon { position: relative; display: grid; place-items: center; }
   .savo-bottom-nav-icon > svg { width: 20px; height: 20px; }
-  .savo-bottom-nav-icon > b { min-width: 15px; height: 15px; padding-inline: 2px; position: absolute; top: -5px; inset-inline-end: -10px; border-radius: 999px; color: white; background: var(--savo-fire); display: grid; place-items: center; font-size: 9px; font-weight: 700; }
+  .savo-bottom-nav-icon > b { min-width: 15px; height: 15px; padding-inline: 2px; position: absolute; top: -5px; inset-inline-end: -10px; border-radius: 999px; color: white; background: var(--savo-shell-fire); display: grid; place-items: center; font-size: 9px; font-weight: 700; }
 }
 
 @media (prefers-reduced-motion: reduce) {
