@@ -55,6 +55,7 @@
   --savo-shell-text: #EEF2FF; /* SAVO Text (final) */
   --savo-shell-muted: #7A8499; /* SAVO Muted (final) */
   --savo-shell-border: rgba(255, 255, 255, 0.07); /* SAVO Border (final) — from V22 BORDER token */
+  --savo-shell-card: #181E2C; /* SAVO Card (final) — from V22 CARD token, elevated surface above --savo-shell-surface */
 }
 
 /* Official outlined SAVO lockup. The SVG remains immutable; only a separate
@@ -713,4 +714,36 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .savo-logo-point { animation: none; }
+}
+
+/* Phase 3 — QuickDiscovery. Ported from savo-new/src/App.tsx
+   QuickDiscovery(). Horizontal-scroll strip; each card's badge is
+   V22's exact Chip() treatment (translucent tone tint, 8%/16% alpha)
+   ported to color-mix against the locked Phase 1 tokens. */
+.v21-home .savo-quick{padding:40px 0;background:var(--savo-shell-ink);border-bottom:1px solid var(--savo-shell-border)}
+.v21-home .savo-quick-head .v21-section-head{margin-bottom:28px}
+.v21-home .savo-quick-head .v21-section-head p{color:var(--savo-shell-discovery);font-size:10.5px;font-weight:700;letter-spacing:.09em}
+.v21-home .savo-quick-head .v21-section-head h2{color:var(--savo-shell-text);font-size:27px}
+.v21-home .savo-quick-head .v21-section-head>a{padding:0;border:0;border-radius:0;color:var(--savo-shell-discovery);background:none;font-size:13px;font-weight:700}
+.v21-home .savo-quick-head{padding:0 56px;margin-bottom:20px}
+.v21-home .savo-quick-row{display:flex;gap:13px;overflow-x:auto;padding:0 56px 4px;scrollbar-width:none}
+.v21-home .savo-quick-row::-webkit-scrollbar{display:none}
+.v21-home .savo-quick-card{flex:0 0 auto;width:185px;display:block;border:1px solid var(--savo-shell-border);border-radius:16px;overflow:hidden;background:var(--savo-shell-card);color:inherit;cursor:pointer}
+.v21-home .savo-quick-media{height:128px;position:relative;display:block;overflow:hidden}
+.v21-home .savo-quick-media img{object-fit:cover}
+.v21-home .savo-quick-media::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(24,30,44,.88) 0%,transparent 50%)}
+.v21-home .savo-quick-badge{position:absolute;top:9px;inset-inline-start:9px;z-index:1;display:inline-block;padding:3px 10px;border-radius:99px;font-family:var(--font-display),sans-serif;font-weight:700;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+.v21-home .savo-quick-badge--teal{color:var(--savo-shell-discovery);background:color-mix(in srgb,var(--savo-shell-discovery) 8%,transparent);border:1px solid color-mix(in srgb,var(--savo-shell-discovery) 16%,transparent)}
+.v21-home .savo-quick-badge--fire{color:var(--savo-shell-fire);background:color-mix(in srgb,var(--savo-shell-fire) 8%,transparent);border:1px solid color-mix(in srgb,var(--savo-shell-fire) 16%,transparent)}
+.v21-home .savo-quick-badge--gold{color:var(--savo-shell-gold);background:color-mix(in srgb,var(--savo-shell-gold) 8%,transparent);border:1px solid color-mix(in srgb,var(--savo-shell-gold) 16%,transparent)}
+.v21-home .savo-quick-info{padding:10px 12px 13px;display:block}
+.v21-home .savo-quick-name{display:block;margin-bottom:5px;color:var(--savo-shell-text);font-size:12.5px;font-weight:600;line-height:1.3}
+.v21-home .savo-quick-price{display:block;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:13.5px}
+@media(max-width:900px){
+  .v21-home .savo-quick{padding:32px 0}
+  .v21-home .savo-quick-head .v21-section-head{margin-bottom:20px}
+  .v21-home .savo-quick-head .v21-section-head h2{font-size:20px}
+  .v21-home .savo-quick-head{padding:0 22px}
+  .v21-home .savo-quick-row{padding:0 22px 4px}
+  .v21-home .savo-quick-card{width:155px}
 }

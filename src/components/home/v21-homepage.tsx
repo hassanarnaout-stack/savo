@@ -20,6 +20,7 @@ export function V21Homepage({ data, locale }: { data: HomepageViewModel; locale:
   return <div className="v21-home">
     <Hero data={data} locale={locale} />
     <SavoHour deal={data.dealOfTheHour} />
+    <QuickDiscovery data={data} />
     <FlashDealsClient deals={data.flashDeals} />
     <Trending products={data.trending} />
     <Editors products={data.editorsPicks} />
@@ -29,6 +30,80 @@ export function V21Homepage({ data, locale }: { data: HomepageViewModel; locale:
     <ProductCommerceSections justLanded={data.justLanded} bestValue={data.bestValue} endingSoon={data.endingSoon} />
     <Trust verifiedSupplierCount={data.verifiedSupplierCount} />
   </div>;
+}
+
+/**
+ * QuickDiscovery — Phase 3 V22 Homepage Migration.
+ * Ported from savo-new/src/App.tsx QuickDiscovery() (horizontal
+ * scroll strip, "Today on SAVO / What's Happening Now").
+ *
+ * Data source: V22's four demo labels (Just Landed, Flash Deal,
+ * Editor's, Best Value) map 1:1 onto data already computed by
+ * getHomepageViewModel() — data.justLanded, data.flashDeals,
+ * data.editorsPicks, data.bestValue. No new query, no second
+ * recommendation engine; this is pure composition of existing
+ * real Homepage data. Deduplicated by product id so the same
+ * product never appears twice if it qualifies for more than one
+ * category. Renders nothing if no real items qualify.
+ */
+type QuickDiscoveryTone = "teal" | "fire" | "gold";
+type QuickDiscoveryItem = { id: string; slug: string; name: string; image: string; price: number; originalPrice: number; label: string; tone: QuickDiscoveryTone };
+
+function buildQuickDiscoveryItems(data: HomepageViewModel): QuickDiscoveryItem[] {
+  const seen = new Set<string>();
+  const items: QuickDiscoveryItem[] = [];
+  const take = (
+    source: { id: string; slug: string; name: string; image: string | null; price: number; originalPrice: number }[],
+    label: string,
+    tone: QuickDiscoveryTone,
+    max: number,
+  ) => {
+    let added = 0;
+    for (const p of source) {
+      if (added >= max || items.length >= 6) break;
+      if (seen.has(p.id) || !p.image) continue;
+      seen.add(p.id);
+      items.push({ id: p.id, slug: p.slug, name: p.name, image: p.image, price: p.price, originalPrice: p.originalPrice, label, tone });
+      added++;
+    }
+  };
+  take(data.justLanded, "Just Landed", "teal", 2);
+  take(data.flashDeals.map((d) => ({ id: d.id, slug: d.slug, name: d.name, image: d.image, price: d.flashPrice, originalPrice: d.originalPrice })), "Flash Deal", "fire", 2);
+  take(data.editorsPicks, "Editor's", "gold", 1);
+  take(data.bestValue, "Best Value", "teal", 1);
+  return items;
+}
+
+function QuickDiscovery({ data }: { data: HomepageViewModel }) {
+  const items = buildQuickDiscoveryItems(data);
+  if (!items.length) return null;
+  return (
+    <section className="savo-quick">
+      <div className="savo-quick-head">
+        <SectionHeader eyebrow="Today on SAVO" title="What's Happening Now" href="/products?sort=newest" link="See all" />
+      </div>
+      <div className="savo-quick-row">
+        {items.map((item) => {
+          const pct = Math.max(0, Math.round((1 - item.price / item.originalPrice) * 100));
+          return (
+            <Link href={'/products/' + item.slug} key={item.id} className="savo-quick-card">
+              <span className="savo-quick-media">
+                <Image src={item.image} alt={item.name} fill sizes="185px" />
+                <span className={'savo-quick-badge savo-quick-badge--' + item.tone}>{item.label}</span>
+              </span>
+              <span className="savo-quick-info">
+                <span className="savo-quick-name">{item.name}</span>
+                <span className="savo-quick-price">
+                  {kd(item.price)}
+                  {pct > 0 && ' · -' + pct + '%'}
+                </span>
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
 }
 
 /**
