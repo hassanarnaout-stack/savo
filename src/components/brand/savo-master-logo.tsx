@@ -29,6 +29,19 @@ import React from "react";
  * (the old rounded-square "wavy S" mark) is untouched by this file —
  * per the brief, existing occurrences are not replaced yet in this
  * phase to avoid regressing pages that render it today.
+ *
+ * Discovery Point motion (approved SAVO motion identity): the point
+ * is a separate <path> from the four letterforms specifically so it
+ * can move independently — S/A/V/O never animate, only the point
+ * does. Pure CSS keyframe animation (see .savo-logo-point in
+ * globals.css): a single 1s translate-only pass through the A's
+ * internal negative space, back to its exact resting position, once
+ * per mount. No JS/client component needed — this keeps SAVOLogo a
+ * server component everywhere it's already used (header, footer).
+ * Respects prefers-reduced-motion (falls back to the static resting
+ * point). Opt-in via `animated` — defaults to false, so every
+ * existing call site (header, footer) stays on the static resting
+ * logo until a call site explicitly asks for motion.
  */
 export type SAVOLogoVariant = "primary-dark" | "primary-light" | "mono-white" | "mono-black";
 
@@ -36,6 +49,8 @@ export interface SAVOLogoProps extends React.SVGAttributes<SVGSVGElement> {
   title?: string;
   pointColor?: string;
   variant?: SAVOLogoVariant;
+  /** Discovery Point motion on mount. Opt-in — defaults to false (static resting logo). */
+  animated?: boolean;
 }
 
 const VARIANT_COLORS: Record<SAVOLogoVariant, { letters: string; point: string }> = {
@@ -45,7 +60,7 @@ const VARIANT_COLORS: Record<SAVOLogoVariant, { letters: string; point: string }
   "mono-black": { letters: "#0C0F16", point: "#0C0F16" }, // fully monochrome — Discovery Point included
 };
 
-export function SAVOLogo({ title = "SAVO", pointColor, variant, ...props }: SAVOLogoProps) {
+export function SAVOLogo({ title = "SAVO", pointColor, variant, animated = false, ...props }: SAVOLogoProps) {
   const preset = variant ? VARIANT_COLORS[variant] : null;
   const lettersColor = preset ? preset.letters : "currentColor";
   const resolvedPointColor = pointColor ?? (preset ? preset.point : "#00D4A1");
@@ -59,7 +74,12 @@ export function SAVOLogo({ title = "SAVO", pointColor, variant, ...props }: SAVO
         <path d="M 252 5 L 249 8 L 248 8 L 243 13 L 243 14 L 241 16 L 239 20 L 238 25 L 237 26 L 237 29 L 236 30 L 236 42 L 237 43 L 237 46 L 238 47 L 239 52 L 241 54 L 244 60 L 248 64 L 249 64 L 251 66 L 252 66 L 254 68 L 258 70 L 260 70 L 261 71 L 264 71 L 265 72 L 270 72 L 271 73 L 279 73 L 280 72 L 286 72 L 287 71 L 290 71 L 302 65 L 308 59 L 308 58 L 310 56 L 312 52 L 312 50 L 314 46 L 314 42 L 315 41 L 315 31 L 314 30 L 314 26 L 313 25 L 313 22 L 310 16 L 308 14 L 308 13 L 302 7 L 301 7 L 299 5 L 293 2 L 291 2 L 290 1 L 287 1 L 286 0 L 265 0 L 264 1 L 261 1 L 260 2 L 258 2 Z M 267 15 L 269 15 L 270 14 L 281 14 L 282 15 L 284 15 L 288 17 L 293 22 L 295 26 L 295 28 L 296 29 L 296 32 L 297 33 L 297 39 L 296 40 L 296 44 L 295 45 L 295 47 L 293 49 L 293 50 L 288 55 L 284 57 L 281 57 L 280 58 L 271 58 L 270 57 L 267 57 L 263 54 L 262 54 L 258 50 L 255 44 L 255 39 L 254 38 L 254 33 L 255 32 L 255 28 L 258 22 L 262 18 L 263 18 Z" />
         <path d="M 11 5 L 4 12 L 4 14 L 2 18 L 2 24 L 3 25 L 3 28 L 6 32 L 6 33 L 11 37 L 13 38 L 15 38 L 16 39 L 18 39 L 19 40 L 22 40 L 23 41 L 29 41 L 30 42 L 37 42 L 38 43 L 43 43 L 44 44 L 48 44 L 52 46 L 54 48 L 54 54 L 51 57 L 49 58 L 47 58 L 46 59 L 30 59 L 29 58 L 24 57 L 20 53 L 18 48 L 0 48 L 1 55 L 4 61 L 8 65 L 9 65 L 11 67 L 17 70 L 19 70 L 20 71 L 24 71 L 25 72 L 32 72 L 33 73 L 43 73 L 44 72 L 50 72 L 51 71 L 55 71 L 65 66 L 69 62 L 72 56 L 72 44 L 69 38 L 64 34 L 62 33 L 60 33 L 59 32 L 57 32 L 56 31 L 54 31 L 53 30 L 48 30 L 47 29 L 42 29 L 41 28 L 34 28 L 33 27 L 28 27 L 27 26 L 25 26 L 21 23 L 20 21 L 20 19 L 21 17 L 25 14 L 27 14 L 28 13 L 34 13 L 35 12 L 37 12 L 38 13 L 44 13 L 45 14 L 47 14 L 49 15 L 52 18 L 53 20 L 53 22 L 71 22 L 71 19 L 70 18 L 70 16 L 69 15 L 69 13 L 68 11 L 63 6 L 62 6 L 60 4 L 58 3 L 56 3 L 53 1 L 49 1 L 48 0 L 25 0 L 24 1 L 20 1 L 19 2 L 17 2 Z" />
       </g>
-      <path d="M 119 44 L 111 49 L 110 51 L 110 60 L 115 64 L 119 66 L 122 66 L 130 61 L 130 49 L 124 46 L 122 44 Z" fill={resolvedPointColor} fillRule="evenodd" />
+      <path
+        d="M 119 44 L 111 49 L 110 51 L 110 60 L 115 64 L 119 66 L 122 66 L 130 61 L 130 49 L 124 46 L 122 44 Z"
+        fill={resolvedPointColor}
+        fillRule="evenodd"
+        className={animated ? "savo-logo-point" : undefined}
+      />
     </svg>
   );
 }

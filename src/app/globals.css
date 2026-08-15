@@ -690,3 +690,27 @@
 @media(prefers-reduced-motion:reduce){
   .v21-home .savo-hero-product{animation:none}
 }
+
+/* Discovery Point motion — approved SAVO motion identity (Final Master
+   6D.2). Translate-only, single 1s pass, back to the exact resting
+   position. Amplitude is small and asymmetric (more room downward
+   than upward) because the Discovery Point sits inside the A's
+   triangular counter, which narrows sharply toward the apex — the
+   bounds below were checked against that geometry so the point never
+   crosses the inner letter edges. Letters (S/A/V/O) are a separate
+   <g> and are never targeted by this rule. */
+@keyframes savo-logo-point-motion {
+  0%   { transform: translate(0, 0); }
+  35%  { transform: translate(-2.5px, 3px); }
+  70%  { transform: translate(2.5px, -2px); }
+  100% { transform: translate(0, 0); }
+}
+.savo-logo-point {
+  animation: savo-logo-point-motion 1s ease-in-out 1;
+  animation-fill-mode: both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .savo-logo-point { animation: none; }
+}
