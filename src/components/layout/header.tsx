@@ -56,8 +56,10 @@ export async function Header() {
       <AnnouncementTicker items={SHELL_ANNOUNCEMENTS} />
       <div className="savo-header-primary">
         <Link href="/" className="savo-header-logo" aria-label="SAVO home">
-          <SAVOLogo variant="primary-light" style={{ height: 32, width: "auto" }} />
+          <SAVOLogo variant="primary-light" style={{ height: 28, width: "auto" }} />
         </Link>
+
+        <DesktopNavigation locale={locale} />
 
         <form action={`/${locale}/products`} className="savo-header-search">
           <div>
@@ -90,7 +92,7 @@ export async function Header() {
             <User />
             {isPlusMember && (
               <span className="savo-plus-indicator">
-                <PlusBadge size="xs" />
+                <PlusBadge size="xs" variant="dark" />
               </span>
             )}
           </Link>
@@ -98,7 +100,6 @@ export async function Header() {
           <MobileNav categories={categories} locale={locale} />
         </div>
       </div>
-      <DesktopNavigation locale={locale} />
     </header>
   );
 }
