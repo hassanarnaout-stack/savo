@@ -1,24 +1,29 @@
 /**
- * AnnouncementTicker — Phase 2 Global Shell Migration.
+ * AnnouncementTicker — the single global shell ticker.
  * ============================================================
- * A clean presentational integration point for a scrolling
- * announcement strip. No admin UI, no database model, no API route —
- * per the brief, this phase does not build a full admin feature.
- * `items` is a plain array passed in by the caller; a future phase
- * can wire this to an admin-controlled source (e.g. a
- * SiteAnnouncement Prisma model) without changing this component's
- * contract.
+ * Ported 1:1 from the approved V22 source (`DiscoveryTicker`,
+ * savo-new/src/App.tsx). V22 defines exactly one ticker, mounted
+ * at the top of Nav — there is no second "lower" ticker in the
+ * approved design. The legacy Homepage `.v21-ticker` strip that
+ * used to run beneath the hero has been removed; it had no V22
+ * counterpart.
  *
- * Uses the FINAL LOCKED Phase 1 brand tokens (savo-shell-* CSS
- * variables) — intentionally NOT the same `.v21-ticker` class the
- * existing Homepage Ticker() function uses (a separate, out-of-scope
- * component with its own selector).
+ * `items` is a plain array passed in by the caller (no admin UI,
+ * no database model, no API route — a future phase can wire this
+ * to an admin-controlled source, e.g. a SiteAnnouncement Prisma
+ * model, without changing this component's contract).
  *
- * Content color: each item's leading `icon` gets a semantic accent
- * color per its `tone` (Brand Kit rule — accent on icon/keyword only,
- * never the whole message). The message `text` itself always stays
- * on the neutral SAVO Text color for readability. Background, height,
- * layout, and the scrolling/rotation behavior are untouched.
+ * Visual contract (matches V22 exactly):
+ * - Fixed-height row, SAVO Surface background, single bottom border.
+ * - Items render as a continuous horizontal marquee (doubled list,
+ *   translateX 0 → -50%, 55s linear loop, pauses on hover, disabled
+ *   under prefers-reduced-motion).
+ * - Each item is a pill separated by a trailing border, optionally
+ *   linkable (`item.link`, defaults to "#" like V22).
+ * - Icon + text both take the item's semantic tone color (V22 colors
+ *   the whole item, not just the icon).
+ * - RTL items (`item.rtl`) render right-to-left in Cairo; LTR items
+ *   render in Manrope — matching V22's bilingual ticker content.
  */
 export type AnnouncementTone = "default" | "discovery" | "urgency" | "premium";
 
@@ -26,6 +31,8 @@ export interface AnnouncementItem {
   icon: string;
   text: string;
   tone?: AnnouncementTone;
+  link?: string;
+  rtl?: boolean;
 }
 
 export interface AnnouncementTickerProps {
@@ -41,13 +48,21 @@ const TONE_COLOR: Record<AnnouncementTone, string> = {
 
 export function AnnouncementTicker({ items }: AnnouncementTickerProps) {
   if (!items.length) return null;
+  const doubled = [...items, ...items];
   return (
     <div className="savo-shell-ticker" role="marquee" aria-label="Announcements">
-      <div>
-        {[...items, ...items].map((item, index) => (
-          <span key={item.text + index}>
-            <b style={{ color: TONE_COLOR[item.tone ?? "default"] }}>{item.icon}</b> {item.text}
-          </span>
+      <div className="savo-shell-ticker-track">
+        {doubled.map((item, index) => (
+          <a
+            key={item.text + index}
+            href={item.link ?? "#"}
+            dir={item.rtl ? "rtl" : "ltr"}
+            className="savo-shell-ticker-item"
+            style={{ color: TONE_COLOR[item.tone ?? "default"] }}
+          >
+            <span className="savo-shell-ticker-icon">{item.icon}</span>
+            {item.text}
+          </a>
         ))}
       </div>
     </div>

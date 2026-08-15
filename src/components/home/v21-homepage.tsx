@@ -18,7 +18,6 @@ function SectionHeader({ eyebrow, title, href, link }: { eyebrow: React.ReactNod
 export function V21Homepage({ data, locale }: { data: HomepageViewModel; locale: string }) {
   return <div className="v21-home">
     <section className="v21-hero"><div className="v21-hero-grid"><div className="v21-hero-copy">{data.flashDeals[0] && <div className="v21-sale-pill"><i /><span>Flash Sale ends in</span><HomeCountdown endsAt={data.flashDeals[0].endsAt} /></div>}<h1>DISCOVER<br />THE<br /><em>EXCEPTIONAL</em></h1><p dir="rtl">عالمك للاكتشاف — منتجات استثنائية بأسعار لا تُصدّق</p><form action={'/' + locale + '/products'} className="v21-hero-search"><Search size={16} /><input name="q" placeholder={locale === "ar" ? "ابحث عن المنتجات..." : "Search deals..."} /></form><div className="v21-hero-actions"><Link href="/products?type=DEAL"><Zap size={17} /> Shop Flash Deals</Link><Link href="/mystery-boxes">Open Mystery Box</Link></div></div><div className="v21-hero-products">{data.heroProducts.map((product, index) => <Link href={'/products/' + product.slug} key={product.id} style={{ "--delay": index * .9 + "s" } as React.CSSProperties}><span className="v21-hero-thumb"><ProductImage product={product} sizes="58px" /></span><div><small>{product.brand ?? product.category}</small><h3>{product.name}</h3><p><strong>{kd(product.price)}</strong><del>{kd(product.originalPrice)}</del>{discount(product) > 0 && <b>-{discount(product)}%</b>}</p></div></Link>)}</div></div></section>
-    <Ticker />
     <FlashDealsClient deals={data.flashDeals} />
     <Trending products={data.trending} />
     <Editors products={data.editorsPicks} />
@@ -28,11 +27,6 @@ export function V21Homepage({ data, locale }: { data: HomepageViewModel; locale:
     <ProductCommerceSections justLanded={data.justLanded} bestValue={data.bestValue} endingSoon={data.endingSoon} />
     <Trust verifiedSupplierCount={data.verifiedSupplierCount} />
   </div>;
-}
-
-function Ticker() {
-  const items = ["✨ Discover real SAVO savings", "🛍️ Products from approved suppliers", "📦 Track eligible orders", "🛟 Rescue Deals show expiry information", "🎁 Mystery Boxes use configured value ranges", "🌍 Shop in English or Arabic", "⚡ Live deals use allocated stock", "✓ Real products. Real availability."];
-  return <div className="v21-ticker"><div>{[...items, ...items].map((item, index) => <span key={item + index}>{item}</span>)}</div></div>;
 }
 
 function Trending({ products }: { products: HomeProduct[] }) {
