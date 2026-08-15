@@ -124,7 +124,7 @@
 /* Phase 2 — Global Shell Migration: AnnouncementTicker (savo-shell-*
    tokens). Separate from .v21-ticker (Homepage, out of scope, stays
    on the old teal value untouched). */
-.savo-shell-ticker { overflow: hidden; padding: 8px 0; color: var(--savo-shell-ink); background: var(--savo-shell-discovery); font-size: 11px; font-weight: 800; white-space: nowrap; }
+.savo-shell-ticker { overflow: hidden; padding: 8px 0; color: var(--savo-shell-text); background: var(--savo-shell-ink); font-size: 11px; font-weight: 800; white-space: nowrap; }
 .savo-shell-ticker > div { width: max-content; display: flex; animation: savo-shell-ticker-scroll 26s linear infinite; }
 .savo-shell-ticker span { padding-inline: 28px; }
 @keyframes savo-shell-ticker-scroll { to { transform: translateX(-50%); } }
@@ -144,15 +144,15 @@
 .store-shell { min-height: 100vh; }
 .store-scroll > main { min-height: 1px; }
 .savo-site-header { position: sticky; z-index: 200; top: 0; color: white; background: var(--savo-shell-ink); font-family: var(--font-manrope), sans-serif; }
-.savo-header-primary { min-height: 64px; padding: 14px 40px; display: flex; align-items: center; gap: 20px; }
+.savo-header-primary { min-height: 52px; padding: 10px 24px; display: flex; align-items: center; gap: 20px; }
 .savo-header-logo { flex: none; }
-.savo-header-search { width: 100%; max-width: 500px; flex: 1; }
+.savo-header-search { width: 100%; max-width: 320px; flex: 1 1 240px; min-width: 0; }
 .savo-header-search > div { position: relative; }
-.savo-header-search svg { width: 15px; height: 15px; position: absolute; z-index: 1; inset-inline-start: 14px; top: 50%; color: var(--savo-muted); transform: translateY(-50%); pointer-events: none; }
-.savo-header-search input { width: 100%; padding: 10px 16px; padding-inline-start: 42px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; outline: none; color: white; background: var(--savo-dark-navy); font-size: 13px; transition: border-color .15s ease, box-shadow .15s ease; }
-.savo-header-search input::placeholder { color: var(--savo-muted); opacity: 1; }
-.savo-header-search input:focus { border-color: var(--savo-shell-discovery); box-shadow: 0 0 0 3px rgba(0,201,167,.18); }
-.savo-header-actions { margin-inline-start: auto; display: flex; align-items: center; gap: 14px; }
+.savo-header-search svg { width: 15px; height: 15px; position: absolute; z-index: 1; inset-inline-start: 14px; top: 50%; color: var(--savo-shell-muted); transform: translateY(-50%); pointer-events: none; }
+.savo-header-search input { width: 100%; padding: 8px 14px; padding-inline-start: 40px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; outline: none; color: white; background: var(--savo-shell-surface); font-size: 13px; transition: border-color .15s ease, box-shadow .15s ease; }
+.savo-header-search input::placeholder { color: var(--savo-shell-muted); opacity: 1; }
+.savo-header-search input:focus { border-color: var(--savo-shell-discovery); box-shadow: 0 0 0 3px rgba(0,212,161,.18); }
+.savo-header-actions { flex: none; margin-inline-start: auto; display: flex; align-items: center; gap: 14px; }
 .savo-header-action, .savo-mobile-search, .savo-menu-button, .savo-cart-button, .savo-locale-switcher { position: relative; border: 0; background: none; color: var(--savo-muted); display: inline-grid; place-items: center; cursor: pointer; transition: color .15s ease; }
 .savo-header-action, .savo-mobile-search, .savo-menu-button, .savo-cart-button { width: 24px; height: 32px; padding: 0; }
 .savo-header-action:hover, .savo-mobile-search:hover, .savo-menu-button:hover, .savo-cart-button:hover, .savo-locale-switcher:hover { color: white; }
@@ -164,9 +164,9 @@
 .savo-locale-switcher { min-height: 32px; padding: 0 4px; grid-auto-flow: column; gap: 5px; font-size: 12px; font-weight: 600; }
 .savo-locale-switcher svg { width: 16px; height: 16px; }
 .savo-mobile-search, .savo-menu-button { display: none; }
-.savo-desktop-nav { padding-inline: 40px; border-bottom: 1px solid rgba(255,255,255,.08); background: var(--savo-dark-navy); }
-.savo-desktop-nav > div { max-width: 1280px; margin-inline: auto; display: flex; }
-.savo-desktop-nav > div > a, .savo-deals-nav > a { padding: 14px 16px; border-bottom: 2px solid transparent; color: var(--savo-muted); display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; transition: color .15s ease, border-color .15s ease; }
+.savo-desktop-nav { flex: none; min-width: 0; }
+.savo-desktop-nav > div { display: flex; }
+.savo-desktop-nav > div > a, .savo-deals-nav > a { padding: 8px 12px; border-bottom: 2px solid transparent; color: var(--savo-shell-muted); display: flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; white-space: nowrap; transition: color .15s ease, border-color .15s ease; }
 .savo-desktop-nav > div > a:hover, .savo-deals-nav > a:hover { color: white; }
 .savo-desktop-nav > div > a.active, .savo-deals-nav > a.active { border-bottom-color: var(--savo-shell-discovery); color: white; }
 .savo-deals-nav { position: relative; }

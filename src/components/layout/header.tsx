@@ -90,12 +90,8 @@ export async function Header() {
             aria-label={nav("account")}
           >
             <User />
-            {isPlusMember && (
-              <span className="savo-plus-indicator">
-                <PlusBadge size="xs" variant="dark" />
-              </span>
-            )}
           </Link>
+          {isPlusMember && <PlusBadge size="xs" variant="dark" />}
           <CartButton />
           <MobileNav categories={categories} locale={locale} />
         </div>
