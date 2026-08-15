@@ -82,6 +82,26 @@ const config: Config = {
           border: "#E8E8EA",
           success: "#22C55E",
           warn: "#F59E0B",
+          // ---------------------------------------------------------------
+          // FINAL LOCKED BRAND — SAVO Phase 1 Brand Foundation Migration.
+          // This is the approved, production-locked identity going forward.
+          // Purely additive: does NOT replace saveo.emerald/gold (legacy)
+          // or saveo.ink/primary/accent (the earlier Figma Make layer above)
+          // — nothing already using those breaks. New/migrated components
+          // should adopt this layer explicitly via saveo.discovery / .fire /
+          // .gold / .surface / .text / .muted / .light / .ink2 below.
+          // ---------------------------------------------------------------
+          discovery: "#00D4A1", // SAVO Discovery — primary accent, "normal" SAVO experiences
+          // Named `ink2` (not `ink`) to avoid colliding with the existing
+          // saveo.ink.{DEFAULT,mid,low} object from the earlier Figma Make
+          // layer — both are real, both stay, this is the new locked value.
+          ink2: "#0C0F16", // SAVO Ink — final locked dark surface
+          surfaceDark: "#141820", // SAVO Surface — elevated dark surface (cards/panels on ink2)
+          textLight: "#EEF2FF", // SAVO Text — foreground text on dark surfaces
+          fire2: "#FF4D0F", // SAVO Fire — urgency / SAVO Hour / flash / low stock (final locked value)
+          gold2: "#E8A020", // SAVO Gold — premium / SAVO Plus (final locked value)
+          muted2: "#7A8499", // SAVO Muted — secondary text on dark surfaces
+          light: "#F3F5F9", // SAVO Light — light surface / background
         },
       },
       fontFamily: {
@@ -99,6 +119,12 @@ const config: Config = {
         xl2: "1.25rem",
         // New — matches Figma Make's DealCard radius (16px) precisely.
         card: "1rem",
+        // FINAL LOCKED BRAND — corner language (Phase 1 Step 7). Additive:
+        // xl2/card above are untouched; new components opt into these.
+        "savo-section": "24px",
+        "savo-card": "16px",
+        "savo-button": "10px",
+        "savo-badge": "6px",
       },
       boxShadow: {
         card: "0 2px 10px -2px rgba(11,12,14,0.08), 0 1px 3px -1px rgba(11,12,14,0.06)",
