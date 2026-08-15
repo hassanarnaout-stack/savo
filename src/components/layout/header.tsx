@@ -10,12 +10,12 @@ import { auth } from "@/lib/auth";
 import { MembershipService } from "@/lib/services/membership-service";
 import { SAVOLogo } from "@/components/brand/savo-master-logo";
 import { DesktopNavigation } from "@/components/layout/storefront-navigation";
-import { AnnouncementTicker } from "@/components/layout/announcement-ticker";
+import { AnnouncementTicker, type AnnouncementItem } from "@/components/layout/announcement-ticker";
 
-const SHELL_ANNOUNCEMENTS = [
-  "🚚 Free delivery on SAVO Plus orders",
-  "🎁 New Mystery Boxes every week",
-  "🇰🇼 Shop in English or Arabic",
+const SHELL_ANNOUNCEMENTS: AnnouncementItem[] = [
+  { icon: "🚚", text: "Free delivery on SAVO Plus orders", tone: "premium" },
+  { icon: "🎁", text: "New Mystery Boxes every week", tone: "discovery" },
+  { icon: "🇰🇼", text: "Shop in English or Arabic", tone: "default" },
 ];
 
 async function getFeaturedCategories() {
