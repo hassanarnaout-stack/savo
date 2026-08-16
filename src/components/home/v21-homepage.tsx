@@ -203,10 +203,72 @@ function Editors({ products }: { products: HomeProduct[] }) {
   return <section className="v21-editors"><div className="v21-shell"><SectionHeader eyebrow={<><BookOpen size={13} /> Editor&apos;s Selection · اختيارات المحرر</>} title="Curated for you." href="/products?badge=EDITORS_PICK" link="See all picks" /><div className="v21-editors-grid"><Link className="v21-editors-hero" href={'/products/' + hero.slug}><ProductImage product={hero} sizes="(max-width: 900px) 100vw, 50vw" /><i /><span>EDITOR&apos;S CHOICE</span><div>{hero.nameAr && <small dir="rtl">{hero.nameAr}</small>}<h3>{hero.name}</h3><p><strong>{kd(hero.price)}</strong><del>{kd(hero.originalPrice)}</del></p></div></Link><div className="v21-editors-support">{support.map((product, index) => <Link href={'/products/' + product.slug} key={product.id}><span className="v21-editors-thumb"><ProductImage product={product} sizes="160px" /></span><section><b>EDITORS PICK #{index + 2}</b><small>{product.brand ?? product.category}</small><h3>{product.name}</h3>{product.nameAr && <p dir="rtl">{product.nameAr}</p>}<strong>{kd(product.price)}</strong></section></Link>)}<Link className="v21-editors-cta" href="/products?badge=EDITORS_PICK">Explore all Editor&apos;s Picks <ArrowRight size={16} /></Link></div></div></div></section>;
 }
 
+/**
+ * Categories — Phase 3 V22 Homepage Migration.
+ * Ported from savo-new/src/App.tsx Categories()/CatTile() — the
+ * 6-cell asymmetric editorial mosaic (row 1: 5fr/4fr/3fr, row 2
+ * mirrored 3fr/4fr/5fr; mobile: 1 featured + 2-col grid).
+ *
+ * Real data only: category.count/image/slug all come from
+ * getHomepageViewModel() (Prisma) — no V22 demo names ("Fashion",
+ * "Beauty & Wellness"...) or fake counts ("3,400+"). Route is the
+ * existing real `/category/{slug}` — unchanged.
+ *
+ * Documented adaptation: V22's mosaic assumes exactly 6 items. Real
+ * featured-category count varies, so this renders the exact V22
+ * mosaic only when there are 6; with fewer, it falls back to a
+ * simple even grid rather than rendering broken/empty mosaic cells
+ * or inventing placeholder categories to reach 6.
+ */
 function Categories({ categories }: { categories: HomepageViewModel["categories"] }) {
-  const themes = [["#2C1810", "#D97706"], ["#0F1F17", "#00C9A7"], ["#1C0F1A", "#E879A0"], ["#0A1628", "#60A5FA"]];
   if (!categories.length) return null;
-  return <section className="v21-categories"><div className="v21-shell"><SectionHeader eyebrow="Shop by Category · تسوق حسب الفئة" title="Your world, your choice." href="/products" link="All categories" /><div className="v21-category-grid">{categories.map((category, index) => <Link href={'/category/' + category.slug} key={category.id} style={{ "--world": themes[index][0], "--accent": themes[index][1] } as React.CSSProperties}>{category.image && <Image src={category.image} alt="" fill sizes="(max-width: 900px) 50vw, 25vw" />}<i /><div><h3>{category.name.toUpperCase()}</h3>{category.nameAr && <p dir="rtl">{category.nameAr}</p>}<footer><strong>{category.count} {category.count === 1 ? "product" : "products"}</strong><span><ArrowRight size={14} /></span></footer></div></Link>)}</div></div></section>;
+  const isMosaic = categories.length >= 6;
+  const items = isMosaic ? categories.slice(0, 6) : categories;
+
+  return (
+    <section className="savo-categories">
+      <div className="savo-categories-head">
+        <SectionHeader eyebrow="Browse SAVO" title="Shop by Category" href="/products" link="All categories" />
+      </div>
+      {isMosaic ? (
+        <div className="savo-cat-mosaic">
+          {items.map((category, i) => (
+            <CatTile key={category.id} category={category} featured={i === 0 || i === 5} tileIndex={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="savo-cat-fallback-grid">
+          {items.map((category, i) => (
+            <CatTile key={category.id} category={category} featured={i === 0} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CatTile({
+  category, featured = false, tileIndex,
+}: {
+  category: HomepageViewModel["categories"][number]; featured?: boolean; tileIndex?: number;
+}) {
+  return (
+    <Link
+      href={'/category/' + category.slug}
+      className={['savo-cat-tile', featured && 'is-featured', typeof tileIndex === 'number' && 'tile-' + tileIndex].filter(Boolean).join(' ')}
+    >
+      {category.image && <Image src={category.image} alt="" fill sizes="(max-width: 900px) 50vw, 33vw" className="object-cover" />}
+      <div className="savo-cat-tile-scrim" />
+      <div className="savo-cat-tile-copy">
+        <div className="savo-cat-tile-name">{category.name}</div>
+        {category.nameAr && <div className="savo-cat-tile-name-ar" dir="rtl">{category.nameAr}</div>}
+        <div className="savo-cat-tile-footer">
+          <span className="savo-cat-tile-count">{category.count} {category.count === 1 ? "item" : "items"}</span>
+          <span className="savo-cat-tile-browse">Browse →</span>
+        </div>
+      </div>
+    </Link>
+  );
 }
 
 function Brands({ brands }: { brands: HomepageViewModel["brands"] }) {

@@ -146,7 +146,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
   }
   return {
     heroProducts, flashDeals: deals.slice(0, 4), trending, editorsPicks,
-    categories: categories.filter((category) => category._count.products > 0).slice(0, 4).map((category) => ({
+    categories: categories.filter((category) => category._count.products > 0).slice(0, 6).map((category) => ({
       id: category.id, slug: category.slug, name: category.name, nameAr: category.nameAr,
       count: category._count.products, image: category.imageUrl ?? category.products[0]?.images[0]?.url ?? null,
     })),
