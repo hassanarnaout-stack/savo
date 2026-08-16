@@ -90,7 +90,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         ],
       },
       orderBy: SORT_OPTIONS[activeSort],
-      include: { images: { take: 1, orderBy: { sortOrder: "asc" } } },
+      include: { images: { take: 1, orderBy: { sortOrder: "asc" } }, media: { where: { type: "IMAGE_360" }, select: { id: true }, take: 1 } },
     }),
     worldTheme
       ? prisma.product.findMany({
@@ -191,7 +191,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           </div>
         )}
 
-        <ProductGrid products={serializeProducts(products) as any} />
+        <ProductGrid products={serializeProducts(products.map((pr) => ({ ...pr, has360Media: pr.media.length > 0 }))) as any} />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { requireVerifiedSupplier } from "@/lib/auth";
 import { setStockQuantity } from "@/lib/inventory";
 import { calcDiscountPct } from "@/lib/utils";
 import { validateBarcode } from "@/lib/barcode";
+import { validateMediaUrl } from "@/lib/media-url-validation";
 import { z } from "zod";
 
 const schema = z.object({
@@ -63,6 +64,13 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const barcode = body.barcode?.trim() || null;
   if (barcode) {
     const check = validateBarcode(barcode);
+    if (!check.valid) {
+      return NextResponse.json({ error: check.error }, { status: 400 });
+    }
+  }
+
+  if (body.imageUrl?.trim()) {
+    const check = validateMediaUrl(body.imageUrl.trim(), "image");
     if (!check.valid) {
       return NextResponse.json({ error: check.error }, { status: 400 });
     }

@@ -42,7 +42,7 @@ export default async function ProductsPage({ params, searchParams }: Props) {
     prisma.product.findMany({ where: { status: "ACTIVE", approvalStatus: "APPROVED" }, select: { brandName: true }, distinct: ["brandName"] }),
     // Same `where` as the grid query below — count and progress always match what's actually shown.
     prisma.product.count({ where }),
-    prisma.product.findMany({ where, orderBy, take, include: { images: { take: 1, orderBy: { sortOrder: "asc" } } } }),
+    prisma.product.findMany({ where, orderBy, take, include: { images: { take: 1, orderBy: { sortOrder: "asc" } }, media: { where: { type: "IMAGE_360" }, select: { id: true }, take: 1 } } }),
   ]);
 
   const brands = brandRows.map((r) => r.brandName).filter((b): b is string => !!b).sort();
@@ -104,7 +104,7 @@ export default async function ProductsPage({ params, searchParams }: Props) {
             </div>
           ) : (
             <>
-              <ProductGrid products={serializeProducts(visibleProducts) as any} />
+              <ProductGrid products={serializeProducts(visibleProducts.map((pr) => ({ ...pr, has360Media: pr.media.length > 0 }))) as any} />
               {hasMore && (
                 <div className="savo-products-loadmore">
                   <div className="savo-products-loadmore-count">

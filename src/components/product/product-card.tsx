@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Heart, ShoppingCart, Gift, Star, CheckCircle2 } from "lucide-react";
+import { Heart, ShoppingCart, Gift, Star, CheckCircle2, RotateCw } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { useLocale, useTranslations } from "next-intl";
 import { CountdownTimer } from "@/components/product/countdown-timer";
@@ -26,6 +26,12 @@ export interface ProductCardData {
   avgRating?: number | null;
   orderCount?: number | null;
   isFavorited?: boolean;
+  /** True only when this product has a real ProductMedia row with
+   * type IMAGE_360. Threaded through from whichever query already
+   * fetches the product (products/category/brand/homepage/PDP rails)
+   * — never a separate per-card lookup. Optional and defaults to no
+   * badge on pages that don't yet pass it through. */
+  has360Media?: boolean;
 }
 
 /**
@@ -131,6 +137,12 @@ export function ProductCard({ product, priority = false }: { product: ProductCar
 
         {typeof product.discoveryScore === "number" && product.discoveryScore >= 70 && (
           <span className="savo-pc-badge savo-pc-badge--gold savo-pc-badge--corner">💎 {product.discoveryScore}</span>
+        )}
+
+        {product.has360Media && (
+          <span className="savo-pc-360-badge" aria-label="360° view available">
+            <RotateCw className="h-3 w-3" /> 360°
+          </span>
         )}
 
         <button

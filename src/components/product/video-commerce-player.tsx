@@ -1,43 +1,34 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { Play, Volume2, VolumeX } from "lucide-react";
 
+/**
+ * SAVO Media Policy V1: poster-first / load on demand. Previously
+ * auto-played (muted) via IntersectionObserver the moment ~50% of the
+ * player scrolled into view — removed entirely. The video now stays
+ * paused, showing its first frame (`preload="metadata"`, the honest
+ * way to get poster-like behavior without a real poster-image field
+ * in the data model — no fabricated poster URL) until the person taps
+ * play. No autoplay in any context, including this one.
+ */
 export function VideoCommercePlayer({ videos }: { videos: { url: string }[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [muted, setMuted] = useState(true);
   const [playing, setPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          videoRef.current?.play().then(() => setPlaying(true)).catch(() => {});
-        } else {
-          videoRef.current?.pause();
-          setPlaying(false);
-        }
-      },
-      { threshold: 0.5 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   if (videos.length === 0) return null;
 
   return (
-    <div ref={containerRef} className="relative mx-auto aspect-[9/16] max-w-xs overflow-hidden rounded-xl2 bg-black">
+    <div className="relative mx-auto aspect-[9/16] max-w-xs overflow-hidden rounded-xl2 bg-black">
       <video
         ref={videoRef}
         src={videos[activeIndex].url}
         muted={muted}
         loop
         playsInline
+        preload="metadata"
         className="h-full w-full object-cover"
         onClick={() => {
           if (videoRef.current?.paused) { videoRef.current.play(); setPlaying(true); }
@@ -45,9 +36,13 @@ export function VideoCommercePlayer({ videos }: { videos: { url: string }[] }) {
         }}
       />
       {!playing && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
+        <button
+          onClick={() => { videoRef.current?.play(); setPlaying(true); }}
+          className="absolute inset-0 flex items-center justify-center bg-black/20"
+          aria-label="Play video"
+        >
           <Play className="h-12 w-12 text-white/90" fill="currentColor" />
-        </div>
+        </button>
       )}
       <button
         onClick={() => setMuted(!muted)}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { validateMediaUrl } from "@/lib/media-url-validation";
 
 export function AddMediaForm({ productId }: { productId: string }) {
   const router = useRouter();
@@ -12,7 +13,9 @@ export function AddMediaForm({ productId }: { productId: string }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!url) return toast.error("Enter a URL");
+    const expected = type === "VIDEO" ? "video" : "image";
+    const check = validateMediaUrl(url, expected);
+    if (!check.valid) return toast.error(check.error ?? "Enter a valid media URL");
     setSaving(true);
     try {
       const res = await fetch("/api/admin/media", {

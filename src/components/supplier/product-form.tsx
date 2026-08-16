@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { calcDiscountPct, slugify } from "@/lib/utils";
 import { validateBarcode } from "@/lib/barcode";
+import { validateMediaUrl } from "@/lib/media-url-validation";
 
 interface Category {
   id: string;
@@ -69,6 +70,14 @@ export function SupplierProductForm({ categories, initial }: { categories: Categ
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (form.imageUrl.trim()) {
+      const check = validateMediaUrl(form.imageUrl.trim(), "image");
+      if (!check.valid) {
+        toast.error(check.error ?? "Invalid image URL");
+        return;
+      }
+    }
 
     if (form.barcode.trim()) {
       const check = validateBarcode(form.barcode.trim());
@@ -143,8 +152,16 @@ export function SupplierProductForm({ categories, initial }: { categories: Categ
             <option value="RESCUE">Savo Rescue Deal (near-expiry)</option>
           </select>
         </Field>
-        <Field label="Primary Image URL">
-          <input value={form.imageUrl} onChange={(e) => set("imageUrl", e.target.value)} className="input" placeholder="https://..." />
+        <Field label="Primary Image URL (paste a link — file upload is not available yet)">
+          <input
+            value={form.imageUrl}
+            onChange={(e) => set("imageUrl", e.target.value)}
+            className="input"
+            placeholder="https://your-image-host.com/product.jpg"
+          />
+          <p className="mt-1.5 text-xs text-saveo-muted">
+            Best results: 1600×1600px (1200×1200px minimum), square, plain background, no watermark or price overlay.
+          </p>
         </Field>
         <Field label="Barcode (optional)">
           <input

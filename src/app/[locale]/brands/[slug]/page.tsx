@@ -35,6 +35,7 @@ export default async function BrandDetailPage({ params }: { params: Promise<{ sl
     select: {
       id: true, name: true, nameAr: true, slug: true, originalPrice: true, saveoPrice: true, stockQty: true,
       type: true, dealEndsAt: true, images: { take: 1, orderBy: { sortOrder: "asc" } },
+      media: { where: { type: "IMAGE_360" }, select: { id: true }, take: 1 },
     },
     orderBy: { orderCount: "desc" },
   });
@@ -60,7 +61,7 @@ export default async function BrandDetailPage({ params }: { params: Promise<{ sl
           </span>
         </div>
 
-        <ProductGrid products={serializeProducts(products) as any} />
+        <ProductGrid products={serializeProducts(products.map((pr) => ({ ...pr, has360Media: pr.media.length > 0 }))) as any} />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { requireVerifiedSupplier } from "@/lib/auth";
 import { setStockQuantity } from "@/lib/inventory";
 import { calcDiscountPct, slugify } from "@/lib/utils";
 import { validateBarcode } from "@/lib/barcode";
+import { validateMediaUrl } from "@/lib/media-url-validation";
 import { NotificationService } from "@/lib/notifications/service";
 import { z } from "zod";
 
@@ -47,6 +48,14 @@ export async function POST(req: NextRequest) {
   const barcode = body.barcode?.trim() || null;
   if (barcode) {
     const check = validateBarcode(barcode);
+    if (!check.valid) {
+      return NextResponse.json({ error: check.error }, { status: 400 });
+    }
+  }
+
+  const imageUrl = body.imageUrl?.trim() || null;
+  if (imageUrl) {
+    const check = validateMediaUrl(imageUrl, "image");
     if (!check.valid) {
       return NextResponse.json({ error: check.error }, { status: 400 });
     }

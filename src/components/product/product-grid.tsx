@@ -46,7 +46,7 @@ export function ProductRail({
         <h2 className="savo-pdp-rail-title">{title}</h2>
         {subtitle && <p className="mt-1 text-sm text-saveo-muted">{subtitle}</p>}
       </div>
-      <div className="flex gap-3.5 overflow-x-auto pb-2">
+      <div className="savo-pdp-rail-row">
         {products.map((p) => (
           <div
             key={p.id}

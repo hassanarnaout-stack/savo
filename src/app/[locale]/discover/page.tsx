@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { getLocale } from "next-intl/server";
-import { getNewArrivals, getTrending, getLimitedDeals } from "@/lib/discovery-engine";
-import { BundleService } from "@/lib/services/bundle-service";
+import { getNewArrivals, getTrending } from "@/lib/discovery-engine";
 import { serializeProducts } from "@/lib/utils";
 import { ProductRail } from "@/components/product/product-grid";
 import { Link } from "@/i18n/routing";
 import { WORLD_THEMES } from "@/lib/world-themes";
 import { Sparkles, Gift, TrendingUp, Crown, Zap, Layers, Package } from "lucide-react";
 import { getLaunchFlags } from "@/lib/launch-flags";
+import Image from "next/image";
 
 /**
  * Site-wide performance pass: this page reads zero session/user-specific
@@ -36,26 +36,25 @@ function getMethodLinks(FEATURE_FLAGS: Awaited<ReturnType<typeof getLaunchFlags>
 
 /**
  * Ported from the latest V22 export (CustomerPages.tsx, DiscoverPage()).
- * V22's "Discovery Worlds" cards use fabricated stock photography per
- * world — production has no per-world image field, so each card uses
- * the SAME real gradient WorldHero already renders for that world
- * (WorldTheme.accentGradientFrom/To) plus the real heroEmoji/tagline,
- * instead of an invented photo. "Quick Ways In" is production's
- * existing real, flag-gated entry-point list (unchanged logic),
- * restyled as V22's pill row. Bundles/rails below are the same real
- * data as before — presentation only.
+ * Corrective pass: V22's real world card is a real background PHOTO
+ * (opacity ~0.35) + dark gradient overlay + a small accent dot + name
+ * + one-line tagline — not a flat Tailwind gradient with a large emoji
+ * icon (what this page rendered before, which had no imagery at all
+ * and read as too text-heavy versus the Figma source). Now uses each
+ * world category's real image (imageUrl, or its first real product's
+ * image as fallback — same pattern as the homepage Categories mosaic),
+ * with the real heroTagline. No fabricated photography.
  */
+const WORLD_ACCENTS = ["var(--savo-shell-discovery)", "var(--savo-shell-gold)", "var(--savo-shell-fire)"];
 export default async function DiscoverPage() {
   const FEATURE_FLAGS = await getLaunchFlags();
   const locale = await getLocale();
   const isArabic = locale === "ar";
 
-  const [newArrivals, trending, limitedDeals, bundles, worldCategories] = await Promise.all([
+  const [newArrivals, trending, worldCategories] = await Promise.all([
     getNewArrivals(8),
     getTrending(8),
-    getLimitedDeals(8),
-    BundleService.getActiveBundles(),
-    prisma.category.findMany({ where: { slug: { in: Object.keys(WORLD_THEMES) } }, select: { name: true, nameAr: true, slug: true, icon: true } }),
+    prisma.category.findMany({ where: { slug: { in: Object.keys(WORLD_THEMES) } }, select: { name: true, nameAr: true, slug: true, imageUrl: true, products: { take: 1, where: { images: { some: {} } }, select: { images: { take: 1, orderBy: { sortOrder: "asc" }, select: { url: true } } } } } }),
   ]);
 
   return (
@@ -73,17 +72,19 @@ export default async function DiscoverPage() {
           <div className="savo-products-eyebrow">{isArabic ? "عوالم الاكتشاف" : "Discovery Worlds"}</div>
           <h2 className="savo-discover-worlds-title">{isArabic ? "أين تريد الذهاب اليوم؟" : "Where do you want to go today?"}</h2>
           <div className="savo-discover-worlds-grid">
-            {worldCategories.map((c) => {
+            {worldCategories.map((c, i) => {
               const theme = WORLD_THEMES[c.slug];
+              const image = c.imageUrl ?? c.products[0]?.images[0]?.url ?? null;
+              const accent = WORLD_ACCENTS[i % WORLD_ACCENTS.length];
               return (
-                <Link
-                  key={c.slug}
-                  href={`/category/${c.slug}`}
-                  className={`savo-discover-world bg-gradient-to-br ${theme.accentGradientFrom} ${theme.accentGradientTo}`}
-                >
-                  <span className="savo-discover-world-emoji">{theme.heroEmoji}</span>
-                  <span className="savo-discover-world-name">{isArabic && c.nameAr ? c.nameAr : c.name}</span>
-                  <span className="savo-discover-world-desc">{isArabic ? theme.heroTaglineAr : theme.heroTagline}</span>
+                <Link key={c.slug} href={`/category/${c.slug}`} className="savo-discover-world" style={{ "--world-accent": accent } as React.CSSProperties}>
+                  {image && <Image src={image} alt="" fill sizes="(max-width: 900px) 50vw, 33vw" className="savo-discover-world-img" />}
+                  <span className="savo-discover-world-scrim" />
+                  <span className="savo-discover-world-copy">
+                    <span className="savo-discover-world-dot" />
+                    <span className="savo-discover-world-name">{isArabic && c.nameAr ? c.nameAr : c.name}</span>
+                    <span className="savo-discover-world-desc">{isArabic ? theme.heroTaglineAr : theme.heroTagline}</span>
+                  </span>
                 </Link>
               );
             })}
@@ -105,21 +106,6 @@ export default async function DiscoverPage() {
 
       {trending.length > 0 && <ProductRail title={isArabic ? "🔥 الأكثر رواجاً" : "🔥 Trending Now"} products={serializeProducts(trending) as any} />}
       {newArrivals.length > 0 && <ProductRail title={isArabic ? "🆕 وصل حديثاً" : "🆕 New Arrivals"} products={serializeProducts(newArrivals) as any} />}
-      {limitedDeals.length > 0 && <ProductRail title={isArabic ? "⏳ عروض محدودة" : "⏳ Limited Deals"} products={serializeProducts(limitedDeals) as any} />}
-
-      {bundles.length > 0 && (
-        <div className="savo-category-shell savo-discover-bundles">
-          <div className="savo-products-eyebrow">{isArabic ? "حزم موفّرة" : "Bundles"}</div>
-          <div className="savo-discover-bundles-grid">
-            {bundles.slice(0, 6).map((b: any) => (
-              <div key={b.id} className="savo-discover-bundle-card">
-                <p className="savo-discover-bundle-name">{b.name}</p>
-                <p className="savo-discover-bundle-count">{b.items?.length ?? 0} {isArabic ? "منتجات" : "items"}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

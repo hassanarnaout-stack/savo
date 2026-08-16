@@ -764,6 +764,7 @@
 .savo-pc-badge--corner{top:auto;bottom:12px}
 .savo-pc-discount{position:absolute;top:12px;inset-inline-end:12px;z-index:2;padding:3px 8px;border-radius:7px;color:#fff;background:var(--savo-shell-fire);font-family:var(--font-display),sans-serif;font-weight:800;font-size:11px}
 .savo-pc-heart{width:27px;height:27px;position:absolute;bottom:44px;inset-inline-end:11px;z-index:2;border:1px solid color-mix(in srgb,white 14%,transparent);border-radius:50%;color:var(--savo-shell-muted);background:rgba(12,15,22,.6);backdrop-filter:blur(8px);display:grid;place-items:center;cursor:pointer}
+.savo-pc-360-badge{position:absolute;bottom:11px;inset-inline-start:11px;z-index:2;display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:99px;color:var(--savo-shell-text);background:rgba(12,15,22,.65);backdrop-filter:blur(8px);font-size:9.5px;font-weight:700}
 .savo-pc-heart svg{width:13px;height:13px}
 .savo-pc-heart.is-liked{color:var(--savo-shell-fire)}
 .savo-pc-oos{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:rgba(12,15,22,.72)}
