@@ -1230,3 +1230,16 @@
   .savo-discover-worlds-grid{grid-template-columns:repeat(2,1fr)}
   .savo-discover-bundles-grid{grid-template-columns:1fr}
 }
+
+/* Shared canonical product grid — used by /products, /category/[slug],
+   /brands/[slug], /favorites. Explicit auto-fill/minmax grid instead of
+   Tailwind's grid-cols-2/sm:3/lg:4 utilities — matches V22's intent (2
+   cols mobile / 3-4 desktop) while reliably filling the real container
+   width in any layout context (sidebar-constrained /products, full-
+   width /category), same pattern as QuickDiscovery/Brands/Categories.
+   Restored — this rule was dropped during an earlier globals.css
+   rebuild, same class of regression as the Discover/Brands/Mystery
+   Boxes CSS blocks fixed previously. */
+.savo-product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:640px){.savo-product-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}}
+@media(min-width:1280px){.savo-product-grid{gap:16px}}
