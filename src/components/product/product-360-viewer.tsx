@@ -36,7 +36,7 @@ export function Product360Viewer({ frames }: { frames: { url: string }[] }) {
         onTouchEnd={() => { dragging.current = false; }}
         onTouchMove={(e) => handleMove(e.touches[0].clientX)}
       >
-        <Image src={frames[frameIndex].url} alt="360 view" fill className="pointer-events-none object-contain" priority />
+        <Image src={frames[frameIndex].url} alt="360 view" fill sizes="(max-width: 900px) 100vw, 500px" className="pointer-events-none object-contain" />
         <div className="absolute bottom-3 start-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-xs text-white">
           <RotateCw className="h-3.5 w-3.5" />
           Drag to rotate

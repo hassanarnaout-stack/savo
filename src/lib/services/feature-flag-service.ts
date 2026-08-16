@@ -48,6 +48,15 @@ export class FeatureFlagService {
     return flag?.enabled ?? false;
   }
 
+  /** Same fail-closed semantics as isEnabledFailClosed, batched: one query for N keys instead of N. */
+  static async getAllFailClosed<K extends FeatureFlagKey>(keys: readonly K[]): Promise<Record<K, boolean>> {
+    const rows = await prisma.featureFlag.findMany({ where: { key: { in: Array.from(keys) } }, select: { key: true, enabled: true } });
+    const enabledByKey = new Map(rows.map((r) => [r.key, r.enabled]));
+    const result = {} as Record<K, boolean>;
+    for (const key of keys) result[key] = enabledByKey.get(key) ?? false;
+    return result;
+  }
+
   static async setEnabled(key: FeatureFlagKey, enabled: boolean) {
     return prisma.featureFlag.upsert({
       where: { key },

@@ -9,7 +9,14 @@ import { WORLD_THEMES } from "@/lib/world-themes";
 import { Sparkles, Gift, TrendingUp, Crown, Zap, Layers, Package } from "lucide-react";
 import { getLaunchFlags } from "@/lib/launch-flags";
 
-export const dynamic = "force-dynamic";
+/**
+ * Site-wide performance pass: this page reads zero session/user-specific
+ * data (verified — no auth()/cookies()/headers() anywhere below), so
+ * force-dynamic was forcing a fresh render on every single request for
+ * no real reason. Same ISR pattern already used on /products and
+ * /category/[slug].
+ */
+export const revalidate = 30;
 
 function getMethodLinks(FEATURE_FLAGS: Awaited<ReturnType<typeof getLaunchFlags>>) {
   const links = [{ href: "/products?sort=newest", icon: Sparkles, labelEn: "New Arrivals", labelAr: "وصل حديثاً" }];

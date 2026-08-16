@@ -5,7 +5,12 @@ import { MysteryBoxTiers } from "@/components/home/mystery-box-tiers";
 import { Sparkles, Gift, ShieldCheck, TrendingUp } from "lucide-react";
 import { getLaunchFlags } from "@/lib/launch-flags";
 
-export const dynamic = "force-dynamic";
+/**
+ * Site-wide performance pass: zero session/user-specific reads on this
+ * page (verified) — force-dynamic was unnecessary. Same ISR pattern as
+ * /products, /category/[slug], /discover.
+ */
+export const revalidate = 30;
 
 const FAQ_EN = [
   { q: "How do you decide what's in the box?", a: "Each box draws from a curated pool of products picked by the supplier, with your minimum guaranteed value always honored." },

@@ -1079,3 +1079,154 @@
   .savo-pdp-facts{grid-template-columns:1fr}
   .savo-pdp-related-grid{grid-template-columns:repeat(2,1fr)}
 }
+
+/* ==========================================================================
+   Brands — Batch 1 V22 Customer UI Migration. Ported from the latest
+   V22 export (src/CustomerPages.tsx, BrandsPage()/BrandCard()). Real
+   production brands (Product.brandName), no Figma demo names.
+   ========================================================================== */
+.savo-brands-page{background:var(--savo-shell-ink);min-height:100vh;color:var(--savo-shell-text);padding:0 52px 60px}
+.savo-brands-intro{padding:36px 0 28px;border-bottom:1px solid var(--savo-shell-border)}
+.savo-brands-sub{margin:10px 0 0;max-width:520px;color:var(--savo-shell-muted);font-size:13.5px;line-height:1.65}
+.savo-brands-section-label{margin-bottom:16px;color:var(--savo-shell-muted);font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+.savo-brands-featured{padding:32px 0 0}
+.savo-brands-featured-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:36px}
+.savo-brand-card{display:block;padding:20px;border-radius:16px;border:1px solid var(--savo-shell-border);background:var(--savo-shell-surface);transition:all .2s}
+.savo-brand-card-logo{width:48px;height:48px;margin-bottom:14px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display),sans-serif;font-weight:900;font-size:14px}
+.savo-brand-card-name{display:block;margin-bottom:4px;font-family:var(--font-display),sans-serif;font-weight:700;font-size:13.5px;color:var(--savo-shell-text);letter-spacing:-.01em}
+.savo-brand-card-count{display:block;font-size:11px;font-weight:700}
+.savo-brand-card--teal .savo-brand-card-logo{background:color-mix(in srgb,var(--savo-shell-discovery) 12%,transparent);border:1px solid color-mix(in srgb,var(--savo-shell-discovery) 25%,transparent);color:var(--savo-shell-discovery)}
+.savo-brand-card--teal .savo-brand-card-count{color:var(--savo-shell-discovery)}
+.savo-brand-card--gold .savo-brand-card-logo{background:color-mix(in srgb,var(--savo-shell-gold) 12%,transparent);border:1px solid color-mix(in srgb,var(--savo-shell-gold) 25%,transparent);color:var(--savo-shell-gold)}
+.savo-brand-card--gold .savo-brand-card-count{color:var(--savo-shell-gold)}
+.savo-brand-card--fire .savo-brand-card-logo{background:color-mix(in srgb,var(--savo-shell-fire) 12%,transparent);border:1px solid color-mix(in srgb,var(--savo-shell-fire) 25%,transparent);color:var(--savo-shell-fire)}
+.savo-brand-card--fire .savo-brand-card-count{color:var(--savo-shell-fire)}
+@media(hover:hover) and (pointer:fine){
+  .savo-brand-card--teal:hover{background:var(--savo-shell-card);border-color:color-mix(in srgb,var(--savo-shell-discovery) 35%,transparent)}
+  .savo-brand-card--gold:hover{background:var(--savo-shell-card);border-color:color-mix(in srgb,var(--savo-shell-gold) 35%,transparent)}
+  .savo-brand-card--fire:hover{background:var(--savo-shell-card);border-color:color-mix(in srgb,var(--savo-shell-fire) 35%,transparent)}
+}
+.savo-brands-all{padding-top:32px;padding-bottom:48px;border-top:1px solid var(--savo-shell-border)}
+.savo-brands-search{display:flex;align-items:center;gap:9px;max-width:360px;height:41px;margin-bottom:20px;padding:0 16px;border-radius:12px;border:1px solid color-mix(in srgb,white 14%,transparent);background:var(--savo-shell-surface);color:var(--savo-shell-muted)}
+.savo-brands-search input{flex:1;border:0;outline:0;background:none;color:var(--savo-shell-text);font-size:13px}
+.savo-brands-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.savo-brands-row{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:12px;border:1px solid var(--savo-shell-border);background:var(--savo-shell-surface);transition:all .18s}
+.savo-brands-row-avatar{width:32px;height:32px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--savo-shell-discovery) 10%,transparent);border:1px solid color-mix(in srgb,var(--savo-shell-discovery) 20%,transparent);font-family:var(--font-display),sans-serif;font-weight:900;font-size:11px;color:var(--savo-shell-discovery)}
+.savo-brands-row-name{font-size:12.5px;font-weight:600;color:var(--savo-shell-text)}
+@media(hover:hover) and (pointer:fine){
+  .savo-brands-row:hover{background:var(--savo-shell-card);border-color:color-mix(in srgb,var(--savo-shell-discovery) 30%,transparent)}
+}
+@media(max-width:900px){
+  .savo-brands-page{padding:0 20px 48px}
+  .savo-brands-featured-grid,.savo-brands-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+/* ==========================================================================
+   Category Detail — Batch 1 V22 Customer UI Migration.
+   ========================================================================== */
+.savo-category-page{background:var(--savo-shell-ink);min-height:100vh;color:var(--savo-shell-text)}
+.savo-breadcrumb{display:flex;align-items:center;gap:8px;padding:16px 52px;color:var(--savo-shell-muted);font-size:11px;border-bottom:1px solid var(--savo-shell-border)}
+.savo-breadcrumb a{color:var(--savo-shell-muted)}
+.savo-breadcrumb span:last-child{color:var(--savo-shell-text)}
+.savo-category-hero{padding:32px 52px 28px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;background:var(--savo-shell-surface);border-bottom:1px solid var(--savo-shell-border)}
+.savo-category-hero-copy h1{font-family:var(--font-display),sans-serif;font-weight:900;font-size:34px;color:var(--savo-shell-text);margin:0 0 8px;letter-spacing:-.03em}
+.savo-category-hero-copy p{margin:0;color:var(--savo-shell-muted);font-size:13px;line-height:1.6;max-width:520px}
+.savo-category-hero-count{text-align:end}
+.savo-category-hero-count>div{font-family:var(--font-display),sans-serif;font-weight:900;font-size:24px;color:var(--savo-shell-text);line-height:1}
+.savo-category-hero-count>span{font-size:11px;color:var(--savo-shell-muted);font-weight:600}
+.savo-category-shell{padding:0 52px 56px}
+.savo-category-toolbar{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--savo-shell-border);flex-wrap:wrap;gap:10px}
+.savo-category-subchips{display:flex;flex-wrap:wrap;gap:8px;padding:20px 0 4px}
+.savo-category-top-brands{padding-top:6px;padding-bottom:6px}
+@media(max-width:900px){
+  .savo-breadcrumb,.savo-category-hero,.savo-category-shell{padding-inline:20px}
+  .savo-category-hero-copy h1{font-size:24px}
+}
+
+/* ==========================================================================
+   Brand Detail — Batch 1 V22 Customer UI Migration.
+   ========================================================================== */
+.savo-brand-detail-page{background:var(--savo-shell-ink);min-height:100vh;color:var(--savo-shell-text)}
+.savo-brand-detail-hero{padding:40px 52px 32px;display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;background:var(--savo-shell-surface);border-bottom:1px solid var(--savo-shell-border)}
+.savo-brand-detail-logo{width:80px;height:80px;flex-shrink:0;border-radius:20px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--savo-shell-gold) 12%,transparent);border:1px solid color-mix(in srgb,var(--savo-shell-gold) 28%,transparent);color:var(--savo-shell-gold);font-family:var(--font-display),sans-serif;font-weight:900;font-size:22px}
+.savo-brand-detail-copy{flex:1;min-width:200px}
+.savo-brand-detail-copy h1{margin:0 0 14px;font-family:var(--font-display),sans-serif;font-weight:900;font-size:30px;color:var(--savo-shell-text);letter-spacing:-.025em}
+.savo-brand-detail-stat>div{font-family:var(--font-display),sans-serif;font-weight:900;font-size:20px;color:var(--savo-shell-text)}
+.savo-brand-detail-stat>span{font-size:11px;color:var(--savo-shell-muted)}
+@media(max-width:900px){
+  .savo-brand-detail-hero{padding:28px 20px}
+  .savo-brand-detail-copy h1{font-size:22px}
+}
+
+/* ==========================================================================
+   Mystery Boxes — Batch 1 V22 Customer UI Migration. Engine untouched.
+   ========================================================================== */
+.savo-mystery-page{background:var(--savo-shell-ink);min-height:100vh;color:var(--savo-shell-text)}
+.savo-mystery-disabled{display:flex;flex-direction:column;align-items:center;gap:10px;padding:96px 20px;text-align:center;color:var(--savo-shell-muted)}
+.savo-mystery-disabled p{color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:17px}
+.savo-mystery-hero{padding:64px 24px;text-align:center;background:radial-gradient(ellipse at 50% 0%,color-mix(in srgb,var(--savo-shell-gold) 10%,transparent),transparent 60%),var(--savo-shell-surface);border-bottom:1px solid var(--savo-shell-border);color:var(--savo-shell-gold)}
+.savo-mystery-hero h1{margin:14px 0 0;font-family:var(--font-display),sans-serif;font-weight:900;font-size:38px;color:var(--savo-shell-text);letter-spacing:-.03em}
+.savo-mystery-hero p{max-width:520px;margin:14px auto 0;color:var(--savo-shell-muted);font-size:14px;line-height:1.7}
+.savo-mystery-shell{max-width:1000px;margin:0 auto;padding:48px 24px}
+.savo-mystery-how{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.savo-mystery-how-card{padding:26px;border-radius:16px;border:1px solid var(--savo-shell-border);background:var(--savo-shell-surface);text-align:center}
+.savo-mystery-how-icon{width:48px;height:48px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--savo-shell-discovery) 10%,transparent);color:var(--savo-shell-discovery)}
+.savo-mystery-how-title{margin:0 0 6px;font-family:var(--font-display),sans-serif;font-weight:700;font-size:14px;color:var(--savo-shell-text)}
+.savo-mystery-how-body{margin:0;font-size:12.5px;color:var(--savo-shell-muted);line-height:1.6}
+.savo-mystery-section-title{margin:0 0 24px;text-align:center;font-family:var(--font-display),sans-serif;font-weight:900;font-size:24px;color:var(--savo-shell-text)}
+.savo-mystery-tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.savo-mystery-tier{position:relative;display:block;overflow:hidden;border-radius:20px;background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);transition:all .24s}
+.savo-mystery-tier.is-featured{border-color:color-mix(in srgb,var(--tier-accent) 50%,transparent);box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.savo-mystery-tier-ribbon{padding:5px 0;text-align:center;background:var(--tier-accent);color:var(--savo-shell-ink);font-family:var(--font-display),sans-serif;font-weight:800;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.savo-mystery-tier-media{position:relative;height:200px;background:var(--savo-shell-surface)}
+.savo-mystery-tier-media img{object-fit:cover;opacity:.5;filter:blur(2px);transform:scale(1.06)}
+.savo-mystery-tier-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 60%,color-mix(in srgb,var(--tier-accent) 22%,transparent),color-mix(in srgb,var(--savo-shell-ink) 80%,transparent))}
+.savo-mystery-tier-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.savo-mystery-tier-icon::before{content:"⬡";width:52px;height:52px;border-radius:50%;border:2px solid color-mix(in srgb,var(--tier-accent) 60%,transparent);background:color-mix(in srgb,var(--tier-accent) 12%,transparent);display:flex;align-items:center;justify-content:center;font-size:22px;backdrop-filter:blur(8px)}
+.savo-mystery-tier-body{padding:18px 20px 22px}
+.savo-mystery-tier-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.savo-mystery-tier-label{font-family:var(--font-display),sans-serif;font-weight:800;font-size:17px;color:var(--tier-accent)}
+.savo-mystery-tier-price{font-family:var(--font-display),sans-serif;font-weight:900;font-size:17px;color:var(--savo-shell-text)}
+.savo-mystery-tier-name{margin:0 0 10px;font-size:13px;color:var(--savo-shell-text);font-weight:600;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.savo-mystery-tier-value{display:flex;align-items:center;gap:5px;margin:0 0 16px;font-size:11.5px;color:var(--savo-shell-muted)}
+.savo-mystery-tier-cta{display:block;width:100%;box-sizing:border-box;text-align:center;padding:11px 0;border-radius:12px;border:1px solid color-mix(in srgb,var(--tier-accent) 60%,transparent);color:var(--tier-accent);font-family:var(--font-manrope),sans-serif;font-weight:800;font-size:13.5px}
+.savo-mystery-tier.is-featured .savo-mystery-tier-cta{background:var(--tier-accent);color:var(--savo-shell-ink)}
+.savo-mystery-faq-section{max-width:720px}
+.savo-mystery-faq-list{display:flex;flex-direction:column;gap:10px}
+.savo-mystery-faq-item{padding:18px 20px;border-radius:14px;border:1px solid var(--savo-shell-border);background:var(--savo-shell-surface)}
+.savo-mystery-faq-item summary{cursor:pointer;list-style:none;font-family:var(--font-display),sans-serif;font-weight:700;font-size:13.5px;color:var(--savo-shell-text)}
+.savo-mystery-faq-item p{margin:10px 0 0;font-size:12.5px;color:var(--savo-shell-muted);line-height:1.7}
+.savo-mystery-cta-section{max-width:720px;margin:0 auto;padding:0 24px 64px;text-align:center}
+.savo-mystery-cta{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:14px;background:var(--savo-shell-discovery);color:var(--savo-shell-ink);font-family:var(--font-display),sans-serif;font-weight:800;font-size:14px}
+@media(max-width:900px){
+  .savo-mystery-hero{padding:48px 20px}
+  .savo-mystery-hero h1{font-size:28px}
+  .savo-mystery-shell{padding:36px 20px}
+  .savo-mystery-how,.savo-mystery-tiers{grid-template-columns:1fr}
+}
+
+/* ==========================================================================
+   Discover — Batch 1 V22 Customer UI Migration.
+   ========================================================================== */
+.savo-discover-page{background:var(--savo-shell-ink);min-height:100vh;color:var(--savo-shell-text)}
+.savo-discover-worlds{padding:36px 52px;border-bottom:1px solid var(--savo-shell-border)}
+.savo-discover-worlds-title{margin:6px 0 20px;font-family:var(--font-display),sans-serif;font-weight:800;font-size:22px;color:var(--savo-shell-text);letter-spacing:-.02em}
+.savo-discover-worlds-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.savo-discover-world{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:160px;padding:20px 22px;border-radius:18px;overflow:hidden;border:1px solid var(--savo-shell-border);transition:all .24s}
+.savo-discover-world-emoji{font-size:22px;margin-bottom:8px}
+.savo-discover-world-name{font-family:var(--font-display),sans-serif;font-weight:800;font-size:15px;color:var(--savo-shell-text);letter-spacing:-.01em;margin-bottom:4px}
+.savo-discover-world-desc{font-size:11px;color:rgba(255,255,255,.7)}
+@media(hover:hover) and (pointer:fine){.savo-discover-world:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--savo-shell-discovery) 40%,transparent)}}
+.savo-discover-quick{padding:32px 52px;border-bottom:1px solid var(--savo-shell-border)}
+.savo-discover-quick-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.savo-discover-quick-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:99px;border:1px solid color-mix(in srgb,white 14%,transparent);color:var(--savo-shell-text);font-family:var(--font-manrope),sans-serif;font-size:12.5px;font-weight:600}
+.savo-discover-bundles{padding-top:32px;padding-bottom:48px}
+.savo-discover-bundles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.savo-discover-bundle-card{padding:16px;border-radius:14px;border:1px solid var(--savo-shell-border);background:var(--savo-shell-surface)}
+.savo-discover-bundle-name{margin:0;font-size:13px;font-weight:700;color:var(--savo-shell-text)}
+.savo-discover-bundle-count{margin:4px 0 0;font-size:11px;color:var(--savo-shell-muted)}
+@media(max-width:900px){
+  .savo-discover-worlds,.savo-discover-quick,.savo-discover-bundles{padding-inline:20px}
+  .savo-discover-worlds-grid{grid-template-columns:repeat(2,1fr)}
+  .savo-discover-bundles-grid{grid-template-columns:1fr}
+}
