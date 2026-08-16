@@ -29,7 +29,7 @@ const productCardSelect = {
   images: { take: 1, orderBy: { sortOrder: "asc" as const } },
 };
 
-type ProductCard = Awaited<ReturnType<typeof prisma.product.findMany<{ select: typeof productCardSelect }>>>[number];
+export type ProductCard = Awaited<ReturnType<typeof prisma.product.findMany<{ select: typeof productCardSelect }>>>[number];
 
 function dedupeById<T extends { id: string }>(items: T[]): T[] {
   const seen = new Set<string>();
@@ -86,11 +86,17 @@ export class CrossSellService {
    * Stops as soon as `take` items are gathered. Always excludes the
    * anchor product itself and anything already picked in an earlier stage.
    */
-  static async getFrequentlyBoughtTogether(productId: string, take = 3): Promise<ProductCard[]> {
-    const anchor = await prisma.product.findUnique({
-      where: { id: productId },
-      select: { ...productCardSelect, categoryId: true, supplierId: true },
-    });
+  static async getFrequentlyBoughtTogether(
+    productId: string,
+    take = 3,
+    knownAnchor?: ProductCard & { categoryId: string; supplierId: string }
+  ): Promise<ProductCard[]> {
+    const anchor =
+      knownAnchor ??
+      (await prisma.product.findUnique({
+        where: { id: productId },
+        select: { ...productCardSelect, categoryId: true, supplierId: true },
+      }));
     if (!anchor) return [];
 
     let picks: ProductCard[] = await this.getCoPurchasedProducts(productId, take);
@@ -142,11 +148,17 @@ export class CrossSellService {
   // 2. RELATED PRODUCTS — similar / same category / same brand / same supplier
   // -------------------------------------------------------------------
 
-  static async getRelatedProducts(productId: string, take = 8): Promise<ProductCard[]> {
-    const anchor = await prisma.product.findUnique({
-      where: { id: productId },
-      select: { categoryId: true, brand: true, supplierId: true },
-    });
+  static async getRelatedProducts(
+    productId: string,
+    take = 8,
+    knownAnchor?: { categoryId: string; brand: string | null; supplierId: string }
+  ): Promise<ProductCard[]> {
+    const anchor =
+      knownAnchor ??
+      (await prisma.product.findUnique({
+        where: { id: productId },
+        select: { categoryId: true, brand: true, supplierId: true },
+      }));
     if (!anchor) return [];
 
     // Curated relations first (admin/supplier-authored, highest quality signal)

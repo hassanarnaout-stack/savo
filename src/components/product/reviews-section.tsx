@@ -56,63 +56,69 @@ export function ReviewsSection({ productId, reviews, isSignedIn }: { productId: 
     }
   }
 
-  const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : null;
+  const avgRating = reviews.length > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : null;
 
   return (
-    <section className="mt-10">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-black text-saveo-emerald-700">
-          ⭐ Reviews {avgRating && `(${avgRating}/5 · ${reviews.length})`}
-        </h2>
-        {isSignedIn && (
-          <button onClick={() => setShowForm(!showForm)} className="btn-outline text-sm">Write a Review</button>
-        )}
+    <section className="savo-pdp-section">
+      <div className="savo-pdp-section-head">
+        <div className="savo-products-eyebrow">Reviews</div>
+        <div className="savo-pdp-section-title-row">
+          <h2 className="savo-pdp-section-title">Customer Experiences</h2>
+          {isSignedIn && <button onClick={() => setShowForm(!showForm)} className="savo-pdp-outline-btn">Write a Review</button>}
+        </div>
       </div>
 
       {showForm && (
-        <form onSubmit={submit} className="mb-6 rounded-xl2 border border-black/5 bg-white p-4">
-          <div className="mb-2 flex gap-1">
+        <form onSubmit={submit} className="savo-pdp-review-form">
+          <div className="savo-pdp-review-form-stars">
             {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} type="button" onClick={() => setRating(n)} className={`text-2xl ${n <= rating ? "text-saveo-gold-500" : "text-black/10"}`}>★</button>
+              <button key={n} type="button" onClick={() => setRating(n)} className={n <= rating ? "is-active" : ""}>★</button>
             ))}
           </div>
-          <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Share your experience..." rows={3} className="input mb-2 text-sm" />
-          <button type="submit" disabled={saving} className="btn-primary text-sm">Submit Review</button>
+          <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Share your experience..." rows={3} />
+          <button type="submit" disabled={saving} className="savo-pdp-solid-btn">Submit Review</button>
         </form>
       )}
 
-      <div className="space-y-4">
-        {reviews.map((r) => (
-          <div key={r.id} className="rounded-xl2 border border-black/5 bg-white p-4">
-            <div className="mb-1 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-saveo-gold-500">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
-                <span className="text-sm font-semibold">{r.user.name ?? "Savo Customer"}</span>
-                {r.isVerifiedPurchase && (
-                  <span className="flex items-center gap-1 rounded-full bg-saveo-emerald-50 px-2 py-0.5 text-[10px] font-bold text-saveo-emerald-700">
-                    <ShieldCheck className="h-3 w-3" /> Verified Purchase
-                  </span>
+      {reviews.length === 0 ? (
+        <div className="savo-pdp-reviews-empty">
+          <div className="savo-pdp-reviews-empty-icon">⬡</div>
+          <div className="savo-pdp-reviews-empty-title">No reviews yet</div>
+          <div className="savo-pdp-reviews-empty-copy">Be the first to share your experience with this product.</div>
+        </div>
+      ) : (
+        <div className="savo-pdp-reviews-grid">
+          <div className="savo-pdp-reviews-summary">
+            <div className="savo-pdp-reviews-summary-num">{avgRating!.toFixed(1)}</div>
+            <span className="savo-pdp-stars">{"★".repeat(Math.round(avgRating!))}{"☆".repeat(5 - Math.round(avgRating!))}</span>
+            <div className="savo-pdp-reviews-summary-count">{reviews.length.toLocaleString()} reviews</div>
+          </div>
+          <div className="savo-pdp-review-list">
+            {reviews.map((r) => (
+              <div key={r.id} className="savo-pdp-review-card">
+                <div className="savo-pdp-review-card-head">
+                  <div className="savo-pdp-review-avatar">{(r.user.name ?? "S")[0]}</div>
+                  <div>
+                    <div className="savo-pdp-review-name">{r.user.name ?? "Savo Customer"}</div>
+                    {r.isVerifiedPurchase && <div className="savo-pdp-review-verified"><ShieldCheck size={11} /> Verified Purchase</div>}
+                  </div>
+                  <span className="savo-pdp-stars savo-pdp-stars--sm">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+                </div>
+                {r.comment && <p className="savo-pdp-review-text">{r.comment}</p>}
+                {r.media.length > 0 && (
+                  <div className="savo-pdp-review-media">
+                    {r.media.map((m, i) => <img key={i} src={m.url} alt="" />)}
+                  </div>
                 )}
-              </div>
-            </div>
-            {r.comment && <p className="mb-2 text-sm text-saveo-emerald-700/80">{r.comment}</p>}
-            {r.media.length > 0 && (
-              <div className="mb-2 flex gap-2">
-                {r.media.map((m, i) => <img key={i} src={m.url} alt="" className="h-16 w-16 rounded-lg object-cover" />)}
-              </div>
-            )}
-            {r.replies.map((reply, i) => (
-              <div key={i} className="mt-2 rounded-lg bg-black/[0.02] p-2.5 text-xs">
-                <span className="font-bold text-saveo-emerald-700">{reply.authorLabel}:</span> {reply.content}
+                {r.replies.map((reply, i) => (
+                  <div key={i} className="savo-pdp-review-reply"><strong>{reply.authorLabel}:</strong> {reply.content}</div>
+                ))}
+                <button onClick={() => vote(r.id)} className="savo-pdp-review-helpful"><ThumbsUp size={13} /> Helpful ({r.helpfulCount})</button>
               </div>
             ))}
-            <button onClick={() => vote(r.id)} className="mt-2 flex items-center gap-1 text-xs text-saveo-emerald-700/50 hover:text-saveo-emerald-700">
-              <ThumbsUp className="h-3.5 w-3.5" /> Helpful ({r.helpfulCount})
-            </button>
           </div>
-        ))}
-        {reviews.length === 0 && <p className="text-sm text-saveo-emerald-700/40">No reviews yet — be the first to share your experience.</p>}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

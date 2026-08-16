@@ -6,11 +6,20 @@ import { MembershipService } from "@/lib/services/membership-service";
 import { brandNameToSlug } from "@/lib/brand-slug";
 import { ProductGrid } from "@/components/product/product-grid";
 import { serializeProducts } from "@/lib/utils";
-import { Sparkles } from "lucide-react";
 
-export default async function BrandDistrictPage({ params }: { params: Promise<{ slug: string }> }) {
+/**
+ * Ported from the latest V22 export (CustomerPages.tsx,
+ * BrandDetailPage()). V22's hero includes a fabricated one-line brand
+ * description ("French luxury fragrance house...") — production has
+ * no real brand description field (brandName is a plain string, no
+ * separate Brand model), so that line is omitted rather than invented.
+ * Everything else (real brand match, real products, real count, real
+ * ProductGrid/ProductCard behavior) is unchanged production logic.
+ */
+export default async function BrandDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [locale, session] = await Promise.all([getLocale(), auth()]);
+  const isArabic = locale === "ar";
   const membersOnlyFilter = await MembershipService.getVisibilityFilter(session?.user?.id);
 
   const brandRows = await prisma.product.findMany({
@@ -31,14 +40,28 @@ export default async function BrandDistrictPage({ params }: { params: Promise<{ 
   });
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <section className="saveo-aura shadow-luxury relative mb-8 overflow-hidden rounded-xl2 bg-gradient-to-br from-black to-saveo-emerald-900 p-10 text-center text-white sm:p-16">
-        <Sparkles className="mx-auto mb-3 h-10 w-10 text-saveo-gold-400" />
-        <h1 className="text-3xl font-black sm:text-5xl">{matchedBrand}</h1>
-        <p className="mt-3 text-sm text-white/60">{products.length} {locale === "ar" ? "منتج" : "products"}</p>
-      </section>
+    <div className="savo-brand-detail-page">
+      <div className="savo-brand-detail-hero">
+        <div className="savo-brand-detail-logo">{matchedBrand[0]}</div>
+        <div className="savo-brand-detail-copy">
+          <div className="savo-products-eyebrow">{isArabic ? "العلامة التجارية" : "Brand"}</div>
+          <h1>{matchedBrand}</h1>
+          <div className="savo-brand-detail-stat">
+            <div>{products.length}</div>
+            <span>{isArabic ? "منتج" : "products"}</span>
+          </div>
+        </div>
+      </div>
 
-      <ProductGrid products={serializeProducts(products) as any} />
+      <div className="savo-category-shell">
+        <div className="savo-category-toolbar">
+          <span className="savo-products-count">
+            {products.length} {isArabic ? "منتج" : products.length === 1 ? "product" : "products"}
+          </span>
+        </div>
+
+        <ProductGrid products={serializeProducts(products) as any} />
+      </div>
     </div>
   );
 }

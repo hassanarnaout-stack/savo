@@ -14,10 +14,21 @@ interface Box {
   images: { url: string }[];
 }
 
-const TIER_STYLE: Record<string, { emoji: string; ring: string }> = {
-  bronze: { emoji: "🥉", ring: "ring-amber-400/25" },
-  silver: { emoji: "🥈", ring: "ring-slate-300/25" },
-  gold: { emoji: "🥇", ring: "ring-saveo-primary/40" },
+/**
+ * Ported from the latest V22 export (CustomerPages.tsx,
+ * MysteryTierCard()). Real per-tier data only: box name/image/price
+ * come from getMysteryBoxesByTier() (the actual production Mystery
+ * Box engine) — V22's fabricated tier description ("Elevated
+ * discovery. Premium brands...") is not migrated; the real
+ * guaranteed-value line (mysteryBoxValueMin) takes its place, same
+ * as before this migration. Silver is the visually "featured" middle
+ * tier — a presentational choice (which real tier gets the accent
+ * ribbon), not a data change.
+ */
+const TIER_ACCENT: Record<string, string> = {
+  bronze: "#C47B3B",
+  silver: "var(--savo-shell-muted)",
+  gold: "var(--savo-shell-gold)",
 };
 
 export function MysteryBoxTiers({
@@ -36,36 +47,39 @@ export function MysteryBoxTiers({
   ];
 
   return (
-    <div className="grid gap-4 font-manrope sm:grid-cols-3">
+    <div className="savo-mystery-tiers">
       {entries.map(([tier, label]) => {
         const box = tiers[tier][0];
-        const style = TIER_STYLE[tier];
         if (!box) return null;
         const name = locale === "ar" && box.nameAr ? box.nameAr : box.name;
+        const featured = tier === "silver";
 
         return (
           <Link
             key={box.id}
             href={`/products/${box.slug}`}
-            className={`group relative overflow-hidden rounded-2xl bg-white/[0.06] p-5 ring-1 backdrop-blur-sm transition-transform hover:-translate-y-1 ${style.ring}`}
+            className={`savo-mystery-tier${featured ? " is-featured" : ""}`}
+            style={{ "--tier-accent": TIER_ACCENT[tier] } as React.CSSProperties}
           >
-            <div className="flex items-center justify-between">
-              <span className="text-3xl">{style.emoji}</span>
-              <span className="rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold text-saveo-ink">{label}</span>
+            {featured && <div className="savo-mystery-tier-ribbon">{locale === "ar" ? "الأكثر شعبية" : "Most popular"}</div>}
+            <div className="savo-mystery-tier-media">
+              {box.images[0] && <Image src={box.images[0].url} alt={name} fill className="object-cover" />}
+              <div className="savo-mystery-tier-glow" />
+              <div className="savo-mystery-tier-icon">⬡</div>
             </div>
-            <div className="relative mx-auto mt-4 h-32 w-32 overflow-hidden rounded-2xl bg-white/10">
-              {box.images[0] && (
-                <Image src={box.images[0].url} alt={name} fill className="object-cover transition-transform group-hover:scale-105" />
+            <div className="savo-mystery-tier-body">
+              <div className="savo-mystery-tier-head">
+                <span className="savo-mystery-tier-label">{label}</span>
+                <span className="savo-mystery-tier-price">{formatKWD(Number(box.saveoPrice))}</span>
+              </div>
+              <p className="savo-mystery-tier-name">{name}</p>
+              {box.mysteryBoxValueMin && (
+                <p className="savo-mystery-tier-value">
+                  <Award size={13} /> {labels.guaranteedValue}: {formatKWD(Number(box.mysteryBoxValueMin))}+
+                </p>
               )}
+              <span className="savo-mystery-tier-cta">{locale === "ar" ? `اكتشف ${label}` : `Discover ${label}`}</span>
             </div>
-            <p className="mt-4 line-clamp-2 text-sm font-bold text-white">{name}</p>
-            {box.mysteryBoxValueMin && (
-              <p className="mt-1 flex items-center gap-1 text-xs text-white/50">
-                <Award className="h-3.5 w-3.5" />
-                {labels.guaranteedValue}: {formatKWD(Number(box.mysteryBoxValueMin))}+
-              </p>
-            )}
-            <p className="mt-2 text-lg font-extrabold text-saveo-primary">{formatKWD(Number(box.saveoPrice))}</p>
           </Link>
         );
       })}

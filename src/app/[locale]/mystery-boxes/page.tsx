@@ -20,8 +20,17 @@ const FAQ_AR = [
   { q: "هل صناديق المفاجآت تتجدد؟", a: "أكيد، بانتظام بمفاجآت جديدة. الكمية محدودة بكل دفعة، فممكن تنفد." },
 ];
 
+/**
+ * Batch 1 V22 Customer UI Migration — presentation only. Ported from
+ * the latest V22 export (CustomerPages.tsx, MysteryBoxesPage()).
+ * ZERO changes to the Mystery Box engine: still getMysteryBoxesByTier()
+ * (real weighted tiers/pricing/guaranteed value), still gated by the
+ * exact same MYSTERY_BOX_ENABLED launch flag, same real FAQ content
+ * (unchanged — not V22 marketing copy), same CTA route.
+ */
 export default async function MysteryBoxesPage() {
   const locale = await getLocale();
+  const isArabic = locale === "ar";
   const FEATURE_FLAGS = await getLaunchFlags();
 
   // Launch Mode gate (deterministic, checked first) — falls back to the
@@ -29,95 +38,79 @@ export default async function MysteryBoxesPage() {
   // Nothing below this point is deleted — just not reached while OFF.
   if (!FEATURE_FLAGS.MYSTERY_BOX_ENABLED) {
     return (
-      <div className="mx-auto max-w-md px-4 py-24 text-center sm:px-6">
-        <Gift className="mx-auto mb-4 h-12 w-12 text-saveo-emerald-700/30" />
-        <p className="text-lg font-bold text-saveo-emerald-700">
-          {locale === "ar" ? "صناديق المفاجآت — قريباً" : "Mystery Boxes — Coming Soon"}
-        </p>
-        <p className="mt-2 text-sm text-saveo-emerald-700/50">
-          {locale === "ar" ? "هذي الميزة رح تكون متاحة قريباً." : "This feature will be available soon."}
-        </p>
+      <div className="savo-mystery-page savo-mystery-disabled">
+        <Gift size={44} />
+        <p>{isArabic ? "صناديق المفاجآت — قريباً" : "Mystery Boxes — Coming Soon"}</p>
+        <span>{isArabic ? "هذي الميزة رح تكون متاحة قريباً." : "This feature will be available soon."}</span>
       </div>
     );
   }
 
   const [tiers] = await Promise.all([getMysteryBoxesByTier()]);
-  const faq = locale === "ar" ? FAQ_AR : FAQ_EN;
-  const isAr = locale === "ar";
+  const faq = isArabic ? FAQ_AR : FAQ_EN;
 
   return (
-    <div>
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-saveo-emerald-800 to-saveo-emerald-700 py-16 text-center text-white sm:py-24">
-        <Gift className="mx-auto h-12 w-12 text-saveo-gold-400" />
-        <h1 className="mt-4 text-3xl font-black sm:text-5xl">
-          {isAr ? "صناديق المفاجآت" : "Mystery Boxes"}
-        </h1>
-        <p className="mx-auto mt-4 max-w-xl px-4 text-white/60">
-          {isAr
+    <div className="savo-mystery-page">
+      <section className="savo-mystery-hero">
+        <Gift size={40} />
+        <h1>{isArabic ? "صناديق المفاجآت" : "Mystery Boxes"}</h1>
+        <p>
+          {isArabic
             ? "قيمة مضمونة أكبر من السعر، ومفاجأة مختلفة في كل مرة. صندوق واحد، إثارة لا تنتهي."
             : "Guaranteed value beyond the price, and a different surprise every time. One box, endless excitement."}
         </p>
       </section>
 
-      {/* How it works */}
-      <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-6 sm:grid-cols-3">
+      <section className="savo-mystery-shell">
+        <div className="savo-mystery-how">
           <HowItWorksCard
-            icon={<TrendingUp className="h-6 w-6" />}
-            title={isAr ? "قيمة أكبر من السعر" : "Value Beyond Price"}
-            body={isAr ? "كل صندوق مضمون بقيمة أعلى بكثير مما تدفعه." : "Every box is guaranteed to be worth more than you pay."}
+            icon={<TrendingUp size={22} />}
+            title={isArabic ? "قيمة أكبر من السعر" : "Value Beyond Price"}
+            body={isArabic ? "كل صندوق مضمون بقيمة أعلى بكثير مما تدفعه." : "Every box is guaranteed to be worth more than you pay."}
           />
           <HowItWorksCard
-            icon={<Sparkles className="h-6 w-6" />}
-            title={isAr ? "مفاجأة حقيقية" : "A Real Surprise"}
-            body={isAr ? "المحتوى ما يُكشف إلا بعد إتمام طلبك — إثارة اكتشاف أصيلة." : "Contents stay hidden until after checkout — genuine unboxing excitement."}
+            icon={<Sparkles size={22} />}
+            title={isArabic ? "مفاجأة حقيقية" : "A Real Surprise"}
+            body={isArabic ? "المحتوى ما يُكشف إلا بعد إتمام طلبك — إثارة اكتشاف أصيلة." : "Contents stay hidden until after checkout — genuine unboxing excitement."}
           />
           <HowItWorksCard
-            icon={<ShieldCheck className="h-6 w-6" />}
-            title={isAr ? "موردون موثوقون" : "Trusted Suppliers"}
-            body={isAr ? "كل المنتجات المحتملة من موردين معتمدين بسافو." : "Every possible item comes from a Savo-verified supplier."}
+            icon={<ShieldCheck size={22} />}
+            title={isArabic ? "موردون موثوقون" : "Trusted Suppliers"}
+            body={isArabic ? "كل المنتجات المحتملة من موردين معتمدين بسافو." : "Every possible item comes from a Savo-verified supplier."}
           />
         </div>
       </section>
 
-      {/* The three boxes */}
-      <section className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        <h2 className="mb-6 text-center text-2xl font-black text-saveo-emerald-700">
-          {isAr ? "اختر مستوى مفاجأتك" : "Choose Your Tier"}
-        </h2>
+      <section className="savo-mystery-shell">
+        <h2 className="savo-mystery-section-title">{isArabic ? "اختر مستوى مفاجأتك" : "Choose Your Tier"}</h2>
         <MysteryBoxTiers
           tiers={tiers as any}
           locale={locale}
           labels={{
-            bronze: isAr ? "برونزي" : "Bronze",
-            silver: isAr ? "فضي" : "Silver",
-            gold: isAr ? "ذهبي" : "Gold",
-            guaranteedValue: isAr ? "قيمة مضمونة" : "Guaranteed value",
+            bronze: isArabic ? "برونزي" : "Bronze",
+            silver: isArabic ? "فضي" : "Silver",
+            gold: isArabic ? "ذهبي" : "Gold",
+            guaranteedValue: isArabic ? "قيمة مضمونة" : "Guaranteed value",
           }}
         />
       </section>
 
-      {/* FAQ */}
-      <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="mb-6 text-center text-2xl font-black text-saveo-emerald-700">
-          {isAr ? "الأسئلة الشائعة" : "Frequently Asked Questions"}
-        </h2>
-        <div className="space-y-3">
+      <section className="savo-mystery-shell savo-mystery-faq-section">
+        <h2 className="savo-mystery-section-title">{isArabic ? "الأسئلة الشائعة" : "Frequently Asked Questions"}</h2>
+        <div className="savo-mystery-faq-list">
           {faq.map((f, i) => (
-            <details key={i} className="card group p-5">
-              <summary className="cursor-pointer list-none font-bold text-saveo-emerald-800">{f.q}</summary>
-              <p className="mt-2 text-sm text-saveo-emerald-700/60">{f.a}</p>
+            <details key={i} className="savo-mystery-faq-item">
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
             </details>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="mx-auto max-w-3xl px-4 pb-16 text-center sm:px-6 lg:px-8">
-        <Link href="/category/mystery-boxes" className="btn-primary mx-auto">
-          <Gift className="h-4 w-4" />
-          {isAr ? "تسوّق كل الصناديق" : "Shop All Boxes"}
+      <section className="savo-mystery-cta-section">
+        <Link href="/category/mystery-boxes" className="savo-mystery-cta">
+          <Gift size={16} />
+          {isArabic ? "تسوّق كل الصناديق" : "Shop All Boxes"}
         </Link>
       </section>
     </div>
@@ -126,12 +119,10 @@ export default async function MysteryBoxesPage() {
 
 function HowItWorksCard({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
-    <div className="card p-6 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-saveo-emerald-50 text-saveo-emerald-700">
-        {icon}
-      </div>
-      <p className="mt-3 font-bold text-saveo-emerald-800">{title}</p>
-      <p className="mt-1 text-sm text-saveo-emerald-700/60">{body}</p>
+    <div className="savo-mystery-how-card">
+      <div className="savo-mystery-how-icon">{icon}</div>
+      <p className="savo-mystery-how-title">{title}</p>
+      <p className="savo-mystery-how-body">{body}</p>
     </div>
   );
 }

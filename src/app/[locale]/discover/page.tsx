@@ -18,12 +18,30 @@ function getMethodLinks(FEATURE_FLAGS: Awaited<ReturnType<typeof getLaunchFlags>
     links.push({ href: "/treasure-map", icon: Package, labelEn: "Treasure Hunt", labelAr: "رحلة الكنز" });
     links.push({ href: "/golden-ticket", icon: Crown, labelEn: "Golden Ticket", labelAr: "التذكرة الذهبية" });
   }
+  links.push({ href: "/brands", icon: Sparkles, labelEn: "Browse by Brand", labelAr: "تصفح حسب الماركة" });
+  links.push({ href: "/collections", icon: Layers, labelEn: "Curated Collections", labelAr: "تجميعات منتقاة" });
+  links.push({ href: "/products?membersOnly=true", icon: Crown, labelEn: "SAVO Plus Exclusive", labelAr: "Savo Plus حصرياً" });
+  links.push({ href: "/products?badge=EDITORS_PICK", icon: Sparkles, labelEn: "Editor's Picks", labelAr: "اختيار المحرر" });
+  links.push({ href: "/products?badge=LIMITED", icon: Zap, labelEn: "Limited Edition", labelAr: "إصدار محدود" });
+  links.push({ href: "/products?type=DEAL", icon: TrendingUp, labelEn: "Flash Sale", labelAr: "عروض فلاش" });
   return links;
 }
 
+/**
+ * Ported from the latest V22 export (CustomerPages.tsx, DiscoverPage()).
+ * V22's "Discovery Worlds" cards use fabricated stock photography per
+ * world — production has no per-world image field, so each card uses
+ * the SAME real gradient WorldHero already renders for that world
+ * (WorldTheme.accentGradientFrom/To) plus the real heroEmoji/tagline,
+ * instead of an invented photo. "Quick Ways In" is production's
+ * existing real, flag-gated entry-point list (unchanged logic),
+ * restyled as V22's pill row. Bundles/rails below are the same real
+ * data as before — presentation only.
+ */
 export default async function DiscoverPage() {
   const FEATURE_FLAGS = await getLaunchFlags();
   const locale = await getLocale();
+  const isArabic = locale === "ar";
 
   const [newArrivals, trending, limitedDeals, bundles, worldCategories] = await Promise.all([
     getNewArrivals(8),
@@ -34,80 +52,66 @@ export default async function DiscoverPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-black text-saveo-emerald-700">{locale === "ar" ? "🔍 اكتشف" : "🔍 Discover"}</h1>
-        <p className="mt-2 text-sm text-saveo-emerald-700/50">{locale === "ar" ? "طرق لا نهائية لتكتشف Savo" : "Endless ways to discover Savo"}</p>
+    <div className="savo-discover-page">
+      <div className="savo-products-intro">
+        <div className="savo-products-eyebrow">{isArabic ? "اكتشف سافو" : "Discover SAVO"}</div>
+        <div className="savo-products-heading-row">
+          <h1>{isArabic ? "ما الجديد اليوم؟" : "Find something unexpected."}</h1>
+        </div>
+        <p className="savo-brands-sub">{isArabic ? "استكشف المنتجات والعلامات والعروض وتجارب سافو." : "Explore products, brands, deals, collections and SAVO experiences."}</p>
       </div>
 
       {worldCategories.length > 0 && (
-        <section className="mb-10">
-          <h2 className="mb-4 text-lg font-bold text-saveo-emerald-700">{locale === "ar" ? "🌍 العوالم" : "🌍 Worlds"}</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-            {worldCategories.map((c) => (
-              <Link key={c.slug} href={`/category/${c.slug}`} className="card-float shadow-luxury flex flex-col items-center gap-1.5 rounded-xl2 bg-white p-4 text-center">
-                <span className="text-3xl">{c.icon}</span>
-                <span className="text-xs font-semibold text-saveo-emerald-700">{locale === "ar" && c.nameAr ? c.nameAr : c.name}</span>
-              </Link>
-            ))}
+        <div className="savo-discover-worlds">
+          <div className="savo-products-eyebrow">{isArabic ? "عوالم الاكتشاف" : "Discovery Worlds"}</div>
+          <h2 className="savo-discover-worlds-title">{isArabic ? "أين تريد الذهاب اليوم؟" : "Where do you want to go today?"}</h2>
+          <div className="savo-discover-worlds-grid">
+            {worldCategories.map((c) => {
+              const theme = WORLD_THEMES[c.slug];
+              return (
+                <Link
+                  key={c.slug}
+                  href={`/category/${c.slug}`}
+                  className={`savo-discover-world bg-gradient-to-br ${theme.accentGradientFrom} ${theme.accentGradientTo}`}
+                >
+                  <span className="savo-discover-world-emoji">{theme.heroEmoji}</span>
+                  <span className="savo-discover-world-name">{isArabic && c.nameAr ? c.nameAr : c.name}</span>
+                  <span className="savo-discover-world-desc">{isArabic ? theme.heroTaglineAr : theme.heroTagline}</span>
+                </Link>
+              );
+            })}
           </div>
-        </section>
+        </div>
       )}
 
-      <section className="mb-10">
-        <h2 className="mb-4 text-lg font-bold text-saveo-emerald-700">{locale === "ar" ? "✨ طرق سريعة" : "✨ Quick Ways In"}</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="savo-discover-quick">
+        <div className="savo-products-eyebrow">{isArabic ? "طرق سريعة للدخول" : "Quick ways in"}</div>
+        <div className="savo-discover-quick-row">
           {getMethodLinks(FEATURE_FLAGS).map((m) => (
-            <Link key={m.href} href={m.href} className="card-float shadow-luxury flex items-center gap-2.5 rounded-xl2 bg-white p-4">
-              <m.icon className="h-5 w-5 text-saveo-gold-500" />
-              <span className="text-sm font-semibold text-saveo-emerald-700">{locale === "ar" ? m.labelAr : m.labelEn}</span>
+            <Link key={m.href} href={m.href} className="savo-discover-quick-pill">
+              <m.icon size={13} />
+              {isArabic ? m.labelAr : m.labelEn}
             </Link>
           ))}
-          <Link href="/brands" className="card-float shadow-luxury flex items-center gap-2.5 rounded-xl2 bg-white p-4">
-            <Sparkles className="h-5 w-5 text-saveo-gold-500" />
-            <span className="text-sm font-semibold text-saveo-emerald-700">{locale === "ar" ? "تصفح حسب الماركة" : "Browse by Brand"}</span>
-          </Link>
-          <Link href="/collections" className="card-float shadow-luxury flex items-center gap-2.5 rounded-xl2 bg-white p-4">
-            <Layers className="h-5 w-5 text-saveo-gold-500" />
-            <span className="text-sm font-semibold text-saveo-emerald-700">{locale === "ar" ? "تجميعات منتقاة" : "Curated Collections"}</span>
-          </Link>
-          <Link href="/products?membersOnly=true" className="card-float shadow-luxury flex items-center gap-2.5 rounded-xl2 bg-white p-4">
-            <Crown className="h-5 w-5 text-saveo-gold-500" />
-            <span className="text-sm font-semibold text-saveo-emerald-700">{locale === "ar" ? "Savo Plus حصرياً" : "Savo Plus Exclusive"}</span>
-          </Link>
-          <Link href="/products?badge=EDITORS_PICK" className="card-float shadow-luxury flex items-center gap-2.5 rounded-xl2 bg-white p-4">
-            <Sparkles className="h-5 w-5 text-saveo-gold-500" />
-            <span className="text-sm font-semibold text-saveo-emerald-700">{locale === "ar" ? "اختيار المحرر" : "Editor's Picks"}</span>
-          </Link>
-          <Link href="/products?badge=LIMITED" className="card-float shadow-luxury flex items-center gap-2.5 rounded-xl2 bg-white p-4">
-            <Zap className="h-5 w-5 text-saveo-gold-500" />
-            <span className="text-sm font-semibold text-saveo-emerald-700">{locale === "ar" ? "إصدار محدود" : "Limited Edition"}</span>
-          </Link>
-          <Link href="/products?type=DEAL" className="card-float shadow-luxury flex items-center gap-2.5 rounded-xl2 bg-white p-4">
-            <TrendingUp className="h-5 w-5 text-saveo-gold-500" />
-            <span className="text-sm font-semibold text-saveo-emerald-700">{locale === "ar" ? "عروض فلاش" : "Flash Sale"}</span>
-          </Link>
         </div>
-      </section>
+      </div>
 
-      {trending.length > 0 && <ProductRail title={locale === "ar" ? "🔥 الأكثر رواجاً" : "🔥 Trending Now"} products={serializeProducts(trending) as any} />}
-      {newArrivals.length > 0 && <ProductRail title={locale === "ar" ? "🆕 وصل حديثاً" : "🆕 New Arrivals"} products={serializeProducts(newArrivals) as any} />}
-      {limitedDeals.length > 0 && <ProductRail title={locale === "ar" ? "⏳ عروض محدودة" : "⏳ Limited Deals"} products={serializeProducts(limitedDeals) as any} />}
+      {trending.length > 0 && <ProductRail title={isArabic ? "🔥 الأكثر رواجاً" : "🔥 Trending Now"} products={serializeProducts(trending) as any} />}
+      {newArrivals.length > 0 && <ProductRail title={isArabic ? "🆕 وصل حديثاً" : "🆕 New Arrivals"} products={serializeProducts(newArrivals) as any} />}
+      {limitedDeals.length > 0 && <ProductRail title={isArabic ? "⏳ عروض محدودة" : "⏳ Limited Deals"} products={serializeProducts(limitedDeals) as any} />}
 
       {bundles.length > 0 && (
-        <section className="py-6">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-saveo-emerald-700">
-            <Layers className="h-5 w-5" /> {locale === "ar" ? "حزم موفّرة" : "Bundles"}
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="savo-category-shell savo-discover-bundles">
+          <div className="savo-products-eyebrow">{isArabic ? "حزم موفّرة" : "Bundles"}</div>
+          <div className="savo-discover-bundles-grid">
             {bundles.slice(0, 6).map((b: any) => (
-              <div key={b.id} className="card-float shadow-luxury rounded-xl2 bg-white p-4">
-                <p className="text-sm font-bold text-saveo-emerald-700">{b.name}</p>
-                <p className="mt-1 text-xs text-saveo-emerald-700/50">{b.items?.length ?? 0} {locale === "ar" ? "منتجات" : "items"}</p>
+              <div key={b.id} className="savo-discover-bundle-card">
+                <p className="savo-discover-bundle-name">{b.name}</p>
+                <p className="savo-discover-bundle-count">{b.items?.length ?? 0} {isArabic ? "منتجات" : "items"}</p>
               </div>
             ))}
           </div>
-        </section>
+        </div>
       )}
     </div>
   );

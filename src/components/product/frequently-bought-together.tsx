@@ -50,26 +50,26 @@ export function FrequentlyBoughtTogether({ items }: { items: ProductCardData[] }
   }
 
   return (
-    <section className="pdp-fbt-section">
-      <div className="v21-shell">
-        <header><p>BETTER TOGETHER</p><h2>{p("fbtTitle")}</h2></header>
-        <div className="pdp-fbt-panel">
-          <div className="pdp-fbt-products">
+    <section className="savo-pdp-fbt">
+      <div className="savo-pdp-fbt-shell">
+        <header className="savo-pdp-fbt-head"><p>BETTER TOGETHER</p><h2>{p("fbtTitle")}</h2></header>
+        <div className="savo-pdp-fbt-panel">
+          <div className="savo-pdp-fbt-products">
             {items.map((item, idx) => {
               const displayName = locale === "ar" && item.nameAr ? item.nameAr : item.name;
               return (
-                <div key={item.id} className="pdp-fbt-item">
+                <div key={item.id} className="savo-pdp-fbt-item">
                   <label>
                     <input type="checkbox" checked={selected.has(item.id)} onChange={() => toggle(item.id)} />
-                    <div className="pdp-fbt-image"><Image src={item.images[0]?.url ?? "/placeholder-product.svg"} alt={displayName} fill sizes="(max-width: 560px) 145px, 92px" /></div>
+                    <div className="savo-pdp-fbt-image"><Image src={item.images[0]?.url ?? "/placeholder-product.svg"} alt={displayName} fill sizes="(max-width: 560px) 145px, 92px" /></div>
                     <span><strong>{displayName}</strong><b>{formatKWD(Number(item.saveoPrice))}</b></span>
                   </label>
-                  {idx < items.length - 1 && <Plus className="pdp-fbt-plus" />}
+                  {idx < items.length - 1 && <Plus className="savo-pdp-fbt-plus" />}
                 </div>
               );
             })}
           </div>
-          <div className="pdp-fbt-summary"><small>{selected.size} selected</small><strong>{formatKWD(total)}</strong><button onClick={addBundle}>{p("addBundle")}</button></div>
+          <div className="savo-pdp-fbt-summary"><small>{selected.size} selected</small><strong>{formatKWD(total)}</strong><button onClick={addBundle}>{p("addBundle")}</button></div>
         </div>
       </div>
     </section>

@@ -1,44 +1,45 @@
 import { prisma } from "@/lib/prisma";
 import { getLocale } from "next-intl/server";
-import { Link } from "@/i18n/routing";
 import { brandNameToSlug } from "@/lib/brand-slug";
-import { Sparkles } from "lucide-react";
+import { BrandsBrowser } from "@/components/brand/brands-browser";
 
+/**
+ * Ported from the latest V22 export (src/CustomerPages.tsx, BrandsPage()).
+ * Real production brands only — grouped and counted from Product.brandName
+ * (there's no separate Brand model). No Figma demo names (Ferrero Rocher,
+ * KitKat, Lindt...).
+ *
+ * "Featured brands" in V22 shows a curated 4-card row with a one-line
+ * description per brand — production has no curation flag or brand
+ * description field to back that, so this uses a real, defensible
+ * substitute instead: the top 4 real brands by order volume
+ * (Product.orderCount), and omits the description line entirely rather
+ * than inventing marketing copy. Search is a small client island
+ * (BrandsBrowser) — the only genuinely interactive piece of this page.
+ */
 export default async function BrandsPage() {
   const locale = await getLocale();
+  const isArabic = locale === "ar";
 
-  const rows = await prisma.product.findMany({
+  const rows = await prisma.product.groupBy({
+    by: ["brandName"],
     where: { status: "ACTIVE", approvalStatus: "APPROVED", brandName: { not: null } },
-    select: { brandName: true },
-    distinct: ["brandName"],
-    orderBy: { brandName: "asc" },
+    _count: { _all: true },
+    _sum: { orderCount: true },
   });
 
-  const brands = rows.map((r) => r.brandName!).filter(Boolean);
+  const brands = rows
+    .map((r) => ({ name: r.brandName!, productCount: r._count._all, orderVolume: r._sum.orderCount ?? 0 }))
+    .filter((b) => b.name)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const featured = [...brands].sort((a, b) => b.orderVolume - a.orderVolume).slice(0, 4);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="mb-8 text-center text-3xl font-black text-saveo-emerald-700">
-        {locale === "ar" ? "🏷️ الماركات" : "🏷️ Brands"}
-      </h1>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {brands.map((brandName) => (
-          <Link
-            key={brandName}
-            href={`/brands/${brandNameToSlug(brandName)}`}
-            className="card-float shadow-luxury flex flex-col items-center gap-2 rounded-xl2 bg-white p-5 text-center"
-          >
-            <Sparkles className="h-6 w-6 text-saveo-gold-500" />
-            <p className="text-sm font-bold text-saveo-emerald-700">{brandName}</p>
-          </Link>
-        ))}
-        {brands.length === 0 && (
-          <p className="col-span-full py-12 text-center text-sm text-saveo-emerald-700/40">
-            {locale === "ar" ? "صفر ماركات متاحة حالياً." : "No brands available yet."}
-          </p>
-        )}
-      </div>
-    </div>
+    <BrandsBrowser
+      brands={brands.map((b) => ({ name: b.name, slug: brandNameToSlug(b.name), productCount: b.productCount }))}
+      featured={featured.map((b) => ({ name: b.name, slug: brandNameToSlug(b.name), productCount: b.productCount }))}
+      isArabic={isArabic}
+    />
   );
 }

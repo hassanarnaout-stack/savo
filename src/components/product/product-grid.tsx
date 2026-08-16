@@ -1,19 +1,24 @@
 "use client";
 
+import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { ProductCard, type ProductCardData } from "@/components/product/product-card";
 import { RecommendationAnalytics, type RecommendationSource } from "@/lib/recommendation-analytics";
-import { LuxuryEmptyState } from "@/components/ui/luxury-empty-state";
 
 export function ProductGrid({ products }: { products: ProductCardData[] }) {
   const common = useTranslations("common");
 
   if (products.length === 0) {
-    return <LuxuryEmptyState title={common("noResults")} ctaLabel={common("continueShopping")} ctaHref="/products" />;
+    return (
+      <div className="savo-products-empty">
+        <div className="savo-products-empty-title">{common("noResults")}</div>
+        <Link href="/products" className="savo-products-empty-cta">{common("continueShopping")}</Link>
+      </div>
+    );
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="savo-product-grid">
       {products.map((p, index) => (
         <ProductCard key={p.id} product={p} priority={index < 4} />
       ))}
@@ -36,9 +41,9 @@ export function ProductRail({
   if (products.length === 0) return null;
 
   return (
-    <section className="py-6">
-      <div className="mb-5">
-        <h2 className="font-display text-xl font-extrabold tracking-tight text-saveo-ink">{title}</h2>
+    <section className="savo-pdp-section">
+      <div className="savo-pdp-section-head">
+        <h2 className="savo-pdp-rail-title">{title}</h2>
         {subtitle && <p className="mt-1 text-sm text-saveo-muted">{subtitle}</p>}
       </div>
       <div className="flex gap-3.5 overflow-x-auto pb-2">

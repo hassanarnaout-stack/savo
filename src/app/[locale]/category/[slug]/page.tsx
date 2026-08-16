@@ -7,7 +7,6 @@ import { auth } from "@/lib/auth";
 import { MembershipService } from "@/lib/services/membership-service";
 import { getLocale } from "next-intl/server";
 import type { Metadata } from "next";
-import { Breadcrumb } from "@/components/admin/breadcrumb";
 import { CategorySortSelect } from "@/components/product/category-sort-select";
 import { SponsoredProductsRail } from "@/components/product/sponsored-products-rail";
 import { getWorldTheme } from "@/lib/world-themes";
@@ -41,6 +40,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+/**
+ * Ported from the latest V22 export (src/CustomerPages.tsx,
+ * CategoryPage()) — dark hero band, toolbar, product grid. V22's
+ * source is a simplified demo (no World theming, subcategories,
+ * best-seller/mystery-box rails, or sponsored placements); those are
+ * all real production features and are preserved exactly, just
+ * re-skinned to the same dark tokens as the hero band around them.
+ * `Breadcrumb` no longer imported from @/components/admin/breadcrumb
+ * (a shared ADMIN component) — replaced with a small local V22-styled
+ * breadcrumb so the admin component stays untouched.
+ */
 export default async function CategoryPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const { sort } = await searchParams;
@@ -53,6 +63,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
   if (!category || !category.isActive) notFound();
 
+  const isArabic = locale === "ar";
   const membersOnlyFilter = await MembershipService.getVisibilityFilter(session?.user?.id);
 
   const SORT_OPTIONS: Record<string, any> = {
@@ -107,80 +118,81 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       : Promise.resolve([]),
   ]);
 
+  const categoryName = isArabic && category.nameAr ? category.nameAr : category.name;
+  const categoryDescription = isArabic && category.descriptionAr ? category.descriptionAr : category.description;
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <Breadcrumb
-        items={[
-          { label: "Home", href: `/${locale}` },
-          { label: "Products", href: `/${locale}/products` },
-          { label: category.name },
-        ]}
-      />
+    <div className="savo-category-page">
+      <nav className="savo-breadcrumb" aria-label="Breadcrumb">
+        <Link href="/">{isArabic ? "الرئيسية" : "Home"}</Link>
+        <span>/</span>
+        <Link href="/products">{isArabic ? "المنتجات" : "Products"}</Link>
+        <span>/</span>
+        <span>{categoryName}</span>
+      </nav>
+
+      <div className="savo-category-hero">
+        <div className="savo-category-hero-copy">
+          <div className="savo-products-eyebrow">{isArabic ? "الفئة" : "Category"}</div>
+          <h1>{categoryName}</h1>
+          {categoryDescription && <p>{categoryDescription}</p>}
+        </div>
+        <div className="savo-category-hero-count">
+          <div>{products.length}</div>
+          <span>{isArabic ? "منتج" : "discoveries"}</span>
+        </div>
+      </div>
 
       {worldTheme && (
-        <div className="mb-8">
+        <div className="savo-category-shell">
           <WorldHero theme={worldTheme} categoryName={category.name} categoryNameAr={category.nameAr} locale={locale} productCount={products.length} />
         </div>
       )}
 
       {worldTheme && bestSellers.length > 0 && (
-        <ProductRail title={locale === "ar" ? "⭐ الأكثر مبيعاً" : "⭐ Best Sellers"} products={serializeProducts(bestSellers) as any} />
+        <ProductRail title={isArabic ? "⭐ الأكثر مبيعاً" : "⭐ Best Sellers"} products={serializeProducts(bestSellers) as any} />
       )}
 
       {worldTheme && category.slug !== "mystery-boxes" && mysteryBoxesInCategory.length > 0 && (
-        <ProductRail title={locale === "ar" ? "🎁 صناديق مفاجآت" : "🎁 Mystery Boxes"} products={serializeProducts(mysteryBoxesInCategory) as any} />
+        <ProductRail title={isArabic ? "🎁 صناديق مفاجآت" : "🎁 Mystery Boxes"} products={serializeProducts(mysteryBoxesInCategory) as any} />
       )}
 
       {worldTheme && worldBrands.length > 0 && (
-        <section className="py-6">
-          <h2 className="mb-4 text-lg font-bold text-saveo-emerald-700">{locale === "ar" ? "🏆 أفضل الماركات" : "🏆 Top Brands"}</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+        <section className="savo-category-shell savo-category-top-brands">
+          <div className="savo-brands-section-label">{isArabic ? "🏆 أفضل الماركات" : "🏆 Top Brands"}</div>
+          <div className="savo-brands-grid">
             {worldBrands.map((b) => b.brandName && (
-              <Link
-                key={b.brandName}
-                href={`/brands/${brandNameToSlug(b.brandName)}`}
-                className="card-float shadow-luxury flex flex-col items-center gap-1.5 rounded-xl2 bg-white p-4 text-center"
-              >
-                <p className="text-sm font-bold text-saveo-emerald-700">{b.brandName}</p>
-                <p className="text-xs text-saveo-emerald-700/50">{b._count} {locale === "ar" ? "منتج" : "products"}</p>
+              <Link key={b.brandName} href={`/brands/${brandNameToSlug(b.brandName)}`} className="savo-brands-row">
+                <span className="savo-brands-row-avatar">{b.brandName[0]}</span>
+                <span className="savo-brands-row-name">{b.brandName} · {b._count}</span>
               </Link>
             ))}
           </div>
         </section>
       )}
 
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="text-3xl">{category.icon ?? "🛍️"}</span>
-          <div>
-            <h1 className="text-2xl font-bold">
-              {category.name} <span className="text-base font-normal text-saveo-emerald-700/40">({products.length})</span>
-            </h1>
-            {category.description && (
-              <p className="text-sm text-saveo-emerald-700/50">{category.description}</p>
-            )}
+      <div className="savo-category-shell">
+        <div className="savo-category-toolbar">
+          <span className="savo-products-count">
+            {products.length} {isArabic ? "منتج" : products.length === 1 ? "product" : "products"}
+          </span>
+          <CategorySortSelect />
+        </div>
+
+        <SponsoredProductsRail placementType="CATEGORY_TOP" locale={locale} />
+
+        {category.children.length > 0 && (
+          <div className="savo-category-subchips">
+            {category.children.map((c) => (
+              <Link key={c.id} href={`/category/${c.slug}`} className="savo-products-catpill">
+                {isArabic && c.nameAr ? c.nameAr : c.name}
+              </Link>
+            ))}
           </div>
-        </div>
-        <CategorySortSelect />
+        )}
+
+        <ProductGrid products={serializeProducts(products) as any} />
       </div>
-
-      <SponsoredProductsRail placementType="CATEGORY_TOP" locale={locale} />
-
-      {category.children.length > 0 && (
-        <div className="mb-6 flex flex-wrap gap-2">
-          {category.children.map((c) => (
-            <Link
-              key={c.id}
-              href={`/category/${c.slug}`}
-              className="rounded-full bg-saveo-emerald-700/5 px-3.5 py-1.5 text-xs font-semibold"
-            >
-              {c.name}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      <ProductGrid products={serializeProducts(products) as any} />
     </div>
   );
 }

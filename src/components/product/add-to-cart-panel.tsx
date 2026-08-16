@@ -18,20 +18,59 @@ interface ProductInput {
   stockQty: number;
 }
 
+/**
+ * The favorite button previously had no onClick at all — never wired
+ * up. Reuses the exact same canonical favorites implementation
+ * already used by ProductCard (product-card.tsx): same /api/favorites
+ * POST contract, same optimistic-update pattern, same 401 handling.
+ * No new favorites system, no duplicate API logic.
+ */
 export function AddToCartPanel({
   product,
   isMysteryBox = false,
   userId = null,
+  isFavorited: initialFavorited = false,
 }: {
   product: ProductInput;
   isMysteryBox?: boolean;
   userId?: string | null;
+  isFavorited?: boolean;
 }) {
   const [qty, setQty] = useState(1);
   const addItem = useCartStore((s) => s.addItem);
   const p = useTranslations("product");
   const common = useTranslations("common");
   const outOfStock = product.stockQty <= 0;
+
+  const [favorited, setFavorited] = useState(initialFavorited);
+  const [favoriteBusy, setFavoriteBusy] = useState(false);
+
+  async function handleToggleFavorite() {
+    if (favoriteBusy) return;
+    setFavoriteBusy(true);
+    const optimistic = !favorited;
+    setFavorited(optimistic);
+    try {
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id }),
+      });
+      if (res.status === 401) {
+        setFavorited(!optimistic);
+        toast.error("Sign in to save favorites");
+        return;
+      }
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setFavorited(data.favorited);
+    } catch {
+      setFavorited(!optimistic);
+      toast.error("Could not update favorites");
+    } finally {
+      setFavoriteBusy(false);
+    }
+  }
 
   return (
     <div className="pdp-buy-row">
@@ -76,10 +115,12 @@ export function AddToCartPanel({
       </button>
 
       <button
-        className="pdp-wishlist pdp-wishlist-icon"
-        aria-label="Add to favorites"
+        onClick={handleToggleFavorite}
+        disabled={favoriteBusy}
+        className={`pdp-wishlist pdp-wishlist-icon${favorited ? " is-liked" : ""}`}
+        aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
       >
-        <Heart className="h-4 w-4" />
+        <Heart className="h-4 w-4" fill={favorited ? "currentColor" : "none"} />
       </button>
     </div>
   );

@@ -23,7 +23,7 @@ export function CategorySortSelect() {
         params.set("sort", e.target.value);
         router.push(`${pathname}?${params.toString()}`);
       }}
-      className="rounded-full border border-black/10 px-3 py-1.5 text-sm"
+      className="savo-products-sort"
     >
       {OPTIONS.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
