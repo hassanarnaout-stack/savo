@@ -29,15 +29,24 @@ export interface ProductCardData {
 }
 
 /**
- * Design Language v2 — Figma Make visual parity (PHASE 1).
- * Structural port of Figma Make's `DealCard` (see src/app/App.tsx:225 in the
- * Figma source): ink discount badge, fire wishlist-liked state, teal price +
- * "Save X" line, stock bar, fire CTA. Cart/favorites logic below is
- * byte-for-byte identical to the previous version — only the JSX/classes
- * changed. Figma's `brand` and `categoryEn` row was intentionally NOT
- * reproduced: SAVO's ProductCardData contract has no such fields at this
- * layer, and inventing them would mean fake data — flagged in the PHASE 1
- * report as a known, deliberate gap rather than a silent omission.
+ * Ported from the approved V22 source (savo-new/src/App.tsx, PC() —
+ * the canonical product-card component used inside DiscoveryHub).
+ * Structural/visual replacement of the previous "Figma Make Design
+ * Language v2" card — that presentation is retired, not layered
+ * under this one. Cart/favorites logic below is unchanged from the
+ * previous version (same functions, same state, same API calls) —
+ * only the JSX/classes were replaced to match V22.
+ *
+ * Two real, documented adaptations from the literal V22 PC source:
+ * 1. V22's `rating`/`reviews` fields are shown unconditionally (V22
+ *    is a static prototype). Here they only render when genuine
+ *    `avgRating`/`orderCount` data exists — never fabricated.
+ * 2. `CountdownTimer` (for real DEAL/dealEndsAt products) keeps its
+ *    existing default styling rather than a V22-matched treatment:
+ *    it's a shared component also used by the Product Detail page,
+ *    Flash Deal banner/rail, and the Hunt campaign experience — all
+ *    out of scope for this card-only migration, and none of those
+ *    surfaces should be touched to avoid unintended regressions.
  */
 export function ProductCard({ product, priority = false }: { product: ProductCardData; priority?: boolean }) {
   const addItem = useCartStore((s) => s.addItem);
@@ -58,7 +67,6 @@ export function ProductCard({ product, priority = false }: { product: ProductCar
   const saveoPrice = Number(product.saveoPrice);
   const discountPct = calcDiscountPct(originalPrice, saveoPrice);
   const lowStock = !outOfStock && product.stockQty > 0 && product.stockQty <= 5;
-  const stockPct = Math.max(0, Math.min(100, Math.round((product.stockQty / 20) * 100))); // 20 units ≈ "full" bar, matches Figma's maxStock-relative bar without needing a maxStock field SAVO doesn't have
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
@@ -103,118 +111,93 @@ export function ProductCard({ product, priority = false }: { product: ProductCar
     }
   }
 
+  const hasRating = typeof product.avgRating === "number" && product.avgRating > 0;
+  const hasOrders = typeof product.orderCount === "number" && product.orderCount > 0;
+
   return (
-    <article className="product-card group flex flex-col">
-      <div className="product-media">
-        <Link href={`/products/${product.slug}`} aria-label={displayName} className="product-image-link">
+    <article className="savo-pc group flex flex-col">
+      <div className="savo-pc-media">
+        <Link href={`/products/${product.slug}`} aria-label={displayName} className="savo-pc-image-link">
           <Image src={image} alt={displayName} fill sizes="(max-width: 640px) 50vw, 25vw" priority={priority} className="object-cover" />
         </Link>
 
         {product.type === "MYSTERY_BOX" ? (
-          <span className="absolute start-2.5 top-2.5 flex items-center gap-1 rounded-lg bg-saveo-ink px-2 py-1 text-[10px] font-bold text-white">
-            <Gift className="h-3 w-3 text-saveo-primary" /> MYSTERY
+          <span className="savo-pc-badge savo-pc-badge--teal">
+            <Gift className="h-3 w-3" /> MYSTERY
           </span>
         ) : (
-          discountPct > 0 && (
-            <span className="discount-badge">
-              <span className="figma-badge-dash">-</span>
-              {discountPct}%
-            </span>
-          )
+          discountPct > 0 && <span className="savo-pc-discount">-{discountPct}%</span>
+        )}
+
+        {typeof product.discoveryScore === "number" && product.discoveryScore >= 70 && (
+          <span className="savo-pc-badge savo-pc-badge--gold savo-pc-badge--corner">💎 {product.discoveryScore}</span>
         )}
 
         <button
           onClick={handleToggleFavorite}
           disabled={favoriteBusy}
-          className={`heart-button ${favorited ? "liked" : ""}`}
+          className={`savo-pc-heart ${favorited ? "is-liked" : ""}`}
           aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
         >
-          <Heart strokeWidth={1.8} />
+          <Heart strokeWidth={1.8} fill={favorited ? "currentColor" : "none"} />
         </button>
 
-        {/* Bottom-left status badges — real signals only (typeof-checked,
-            no invented "isNew"/"isBestSeller" flags that don't exist on
-            ProductCardData). discoveryScore doubles as the "featured" signal
-            already used by the previous card version. */}
-        {typeof product.discoveryScore === "number" && product.discoveryScore >= 70 && (
-          <div className="absolute bottom-2.5 start-2.5 flex gap-1">
-            <span className="figma-badge-new">💎 {product.discoveryScore}</span>
-          </div>
-        )}
-
         {outOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/70">
-            <span className="rounded-full bg-saveo-ink px-3 py-1 text-xs font-bold text-white">{common("outOfStock")}</span>
+          <div className="savo-pc-oos">
+            <span>{common("outOfStock")}</span>
           </div>
         )}
       </div>
 
-      <div className="product-body flex flex-1 flex-col">
-        <div className="product-meta">
-          <span>{product.brandName ?? "SAVO"}</span>
-          {product.dealEndsAt ? (
+      <div className="savo-pc-body flex flex-1 flex-col">
+        <div className="savo-pc-brand">{product.brandName ?? "SAVO"}</div>
+        <Link href={`/products/${product.slug}`} className="savo-pc-title">{displayName}</Link>
+
+        {product.dealEndsAt && (
+          <div className="savo-pc-countdown">
             <CountdownTimer dealEndsAt={product.dealEndsAt} compact />
-          ) : typeof product.avgRating === "number" && product.avgRating > 0 ? (
-            <span><Star fill="currentColor" /> {product.avgRating.toFixed(1)}</span>
-          ) : (
-            <span />
-          )}
-        </div>
+          </div>
+        )}
 
-        <Link href={`/products/${product.slug}`} className="product-title">{displayName}</Link>
-
-        {(typeof product.avgRating === "number" && product.avgRating > 0) ||
-        (typeof product.orderCount === "number" && product.orderCount > 0) ? (
-          <div className="mt-0.5 flex items-center gap-1.5">
-            {typeof product.avgRating === "number" && product.avgRating > 0 && (
-              <div className="flex gap-0.5">
+        {(hasRating || hasOrders) && (
+          <div className="savo-pc-rating">
+            {hasRating && (
+              <span className="savo-pc-stars">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Star
-                    key={i}
-                    className="h-2.5 w-2.5"
-                    fill={i <= Math.floor(product.avgRating!) ? "#F59E0B" : "transparent"}
-                    color={i <= Math.floor(product.avgRating!) ? "#F59E0B" : "#E8E8EA"}
-                    strokeWidth={1.5}
-                  />
+                  <Star key={i} fill={i <= Math.round(product.avgRating!) ? "currentColor" : "none"} strokeWidth={1.5} />
                 ))}
-              </div>
+              </span>
             )}
-            {typeof product.orderCount === "number" && product.orderCount > 0 && (
-              <span className="text-[10px] text-saveo-muted">({String(product.orderCount)})</span>
+            {hasRating && <span className="savo-pc-rating-value">{product.avgRating!.toFixed(1)}</span>}
+            {hasOrders && <span className="savo-pc-rating-count">({String(product.orderCount)})</span>}
+          </div>
+        )}
+
+        {lowStock && <div className="savo-pc-signal savo-pc-signal--fire">Only {product.stockQty} left</div>}
+        {!lowStock && hasOrders && <div className="savo-pc-signal">{String(product.orderCount)} orders</div>}
+
+        <div className="savo-pc-footer">
+          <div className="savo-pc-price">
+            <strong>{formatKWD(saveoPrice)}</strong>
+            {discountPct > 0 && <del>{formatKWD(originalPrice)}</del>}
+          </div>
+          <button
+            onClick={handleAddToCart}
+            disabled={outOfStock}
+            className={`savo-pc-add ${added ? "is-added" : ""}`}
+          >
+            {added ? (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5" /> Added
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="h-3.5 w-3.5" />
+                {outOfStock ? common("outOfStock") : p("addToCart")}
+              </>
             )}
-          </div>
-        ) : null}
-
-        <div className="price-row mt-1 flex items-baseline gap-2">
-          <strong>{formatKWD(saveoPrice)}</strong>
-          {discountPct > 0 && <span className="text-xs text-saveo-muted line-through">{formatKWD(originalPrice)}</span>}
+          </button>
         </div>
-        <div className="mt-0.5">
-          <div className={`stock-copy ${lowStock ? "is-low" : ""}`}>
-            <span>{lowStock ? `Only ${product.stockQty} left!` : `${product.stockQty} in stock`}</span>
-            {typeof product.orderCount === "number" && product.orderCount > 0 && <span>{String(product.orderCount)} orders</span>}
-          </div>
-          <div className="stock-bar">
-            <i className={lowStock ? "is-low" : ""} style={{ width: `${stockPct}%` }} />
-          </div>
-        </div>
-
-        <button
-          onClick={handleAddToCart}
-          disabled={outOfStock}
-          className={`add-button disabled:cursor-not-allowed disabled:bg-saveo-border disabled:text-saveo-muted ${added ? "added" : ""}`}
-        >
-          {added ? (
-            <>
-              <CheckCircle2 className="h-3.5 w-3.5" /> Added!
-            </>
-          ) : (
-            <>
-              <ShoppingCart className="h-3.5 w-3.5" />
-              {outOfStock ? common("outOfStock") : p("addToCart")}
-            </>
-          )}
-        </button>
       </div>
     </article>
   );

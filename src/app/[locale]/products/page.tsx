@@ -1,58 +1,56 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { ProductGrid } from "@/components/product/product-grid";
-import { CategoryFilterBar } from "@/components/product/category-filter-bar";
+import { ProductFilters } from "@/components/product/product-filters";
 import { serializeProducts } from "@/lib/utils";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { MembershipService } from "@/lib/services/membership-service";
 import { SponsoredSlotService } from "@/lib/services/sponsored-slot-service";
 import { SponsoredSearchAdsRail } from "@/components/product/sponsored-search-ads-rail";
+import { DiscoveryPoint } from "@/components/brand/discovery-point";
+import { parseProductFilters, buildProductWhere, buildProductOrderBy, type ProductFilterParams } from "@/lib/product-filters";
 
 export const revalidate = 30;
 
+/** V22's "Load more" grows the visible count in place rather than replacing the page (page N shows PAGE_SIZE*N results). Each click is still a real, bounded `take` query — never the full catalog. */
+const PAGE_SIZE = 16;
+
 interface Props {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ q?: string; category?: string; sort?: string; badge?: string; membersOnly?: string; type?: string }>;
+  searchParams: Promise<ProductFilterParams>;
 }
 
 export default async function ProductsPage({ params, searchParams }: Props) {
   const { locale } = await params;
-  const { q, category, sort, badge, membersOnly, type } = await searchParams;
+  const isArabic = locale === "ar";
+  const rawParams = await searchParams;
+  const filters = parseProductFilters(rawParams);
   const [t, common, session] = await Promise.all([
     getTranslations("productsPage"),
     getTranslations("common"),
     auth(),
   ]);
-  const membersOnlyFilter = await MembershipService.getVisibilityFilter(session?.user?.id);
+  const membersOnlyVisibility = await MembershipService.getVisibilityFilter(session?.user?.id);
 
-  const [categories, products] = await Promise.all([
+  const where = buildProductWhere(filters, membersOnlyVisibility);
+  const orderBy = buildProductOrderBy(filters.sort);
+  const take = filters.page * PAGE_SIZE;
+
+  const [categories, brandRows, totalCount, visibleProducts] = await Promise.all([
     prisma.category.findMany({ where: { isActive: true, parentId: null }, orderBy: { sortOrder: "asc" } }),
-    prisma.product.findMany({
-      where: {
-        status: "ACTIVE", approvalStatus: "APPROVED",
-        ...membersOnlyFilter,
-        ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
-        ...(category ? { category: { slug: category } } : {}),
-        ...(badge ? { badges: { some: { type: badge as any } } } : {}),
-        ...(membersOnly === "true" ? { isMembersOnly: true } : {}),
-        ...(type ? { type: type as any } : {}),
-      },
-      orderBy:
-        sort === "price_asc"
-          ? { saveoPrice: "asc" }
-          : sort === "price_desc"
-          ? { saveoPrice: "desc" }
-          : sort === "discount"
-          ? { discountPct: "desc" }
-          : { createdAt: "desc" },
-      include: { images: { take: 1, orderBy: { sortOrder: "asc" } } },
-    }),
+    prisma.product.findMany({ where: { status: "ACTIVE", approvalStatus: "APPROVED" }, select: { brandName: true }, distinct: ["brandName"] }),
+    // Same `where` as the grid query below — count and progress always match what's actually shown.
+    prisma.product.count({ where }),
+    prisma.product.findMany({ where, orderBy, take, include: { images: { take: 1, orderBy: { sortOrder: "asc" } } } }),
   ]);
 
-  const sponsoredSearchAds = q
+  const brands = brandRows.map((r) => r.brandName).filter((b): b is string => !!b).sort();
+  const hasMore = visibleProducts.length < totalCount;
+
+  const sponsoredSearchAds = filters.q
     ? (await SponsoredSlotService.getLiveSlots("SEARCH_TOP"))
-        .filter((slot) => slot.product.name.toLowerCase().includes(q.toLowerCase()))
+        .filter((slot) => slot.product.name.toLowerCase().includes(filters.q!.toLowerCase()))
         .map((slot) => ({
           slotId: slot.id,
           productId: slot.product.id,
@@ -65,21 +63,70 @@ export default async function ProductsPage({ params, searchParams }: Props) {
     : [];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold">{q ? t("resultsFor", { query: q }) : t("title")}</h1>
-      <p className="mb-6 text-sm text-saveo-emerald-700/50">
-        {products.length} {common("results")}
-      </p>
+    <div dir={isArabic ? "rtl" : "ltr"} className="savo-products-page">
+      <div className="savo-products-intro">
+        <div className="savo-products-eyebrow">{isArabic ? "اكتشف · تسوق · احصل عليه" : "Discover · Shop · Get it"}</div>
+        <div className="savo-products-heading-row">
+          <h1>{filters.q ? t("resultsFor", { query: filters.q }) : isArabic ? "المنتجات" : "All Products"}</h1>
+          <span className="savo-products-count">
+            {totalCount === 0 ? (isArabic ? "٠ نتيجة" : "0 results") : `${totalCount} ${common("results")}`}
+          </span>
+        </div>
+      </div>
 
-      {q && <SponsoredSearchAdsRail products={sponsoredSearchAds} locale={locale} />}
+      {filters.q && <div className="savo-products-shell"><SponsoredSearchAdsRail products={sponsoredSearchAds} locale={locale} /></div>}
 
       <Suspense fallback={null}>
-        <CategoryFilterBar categories={categories} activeCategory={category} activeSort={sort} />
+        <ProductFilters
+          categories={categories}
+          brands={brands}
+          activeCategory={filters.category}
+          activeSort={filters.sort}
+          selectedBrands={filters.brands}
+          selectedDeals={filters.deals}
+          minPrice={filters.minPrice}
+          maxPrice={filters.maxPrice}
+          selectedAvailability={filters.availability}
+          isArabic={isArabic}
+        >
+          {totalCount === 0 ? (
+            <div className="savo-products-empty">
+              <div className="savo-products-empty-icon">
+                <DiscoveryPoint color="var(--savo-shell-muted)" width={28} height={28} />
+              </div>
+              <div className="savo-products-empty-title">{isArabic ? "لا توجد اكتشافات" : "No discoveries found"}</div>
+              <div className="savo-products-empty-copy">
+                {isArabic
+                  ? "لا توجد منتجات تطابق فلاترك الحالية. حاول مسح بعض الفلاتر."
+                  : "No products match your current filters. Try clearing some filters to discover more."}
+              </div>
+              <a href="?" className="savo-products-empty-cta">{isArabic ? "مسح الفلاتر" : "Clear all filters"}</a>
+            </div>
+          ) : (
+            <>
+              <ProductGrid products={serializeProducts(visibleProducts) as any} />
+              {hasMore && (
+                <div className="savo-products-loadmore">
+                  <div className="savo-products-loadmore-count">
+                    {isArabic
+                      ? `عرض ${visibleProducts.length} من ${totalCount} منتج`
+                      : `Showing ${visibleProducts.length} of ${totalCount} products`}
+                  </div>
+                  <div className="savo-products-loadmore-bar">
+                    <b style={{ width: `${(visibleProducts.length / totalCount) * 100}%` }} />
+                  </div>
+                  <a
+                    href={`?${new URLSearchParams({ ...rawParams, page: String(filters.page + 1) } as Record<string, string>).toString()}`}
+                    className="savo-products-loadmore-btn"
+                  >
+                    {isArabic ? "تحميل المزيد" : "Load more"}
+                  </a>
+                </div>
+              )}
+            </>
+          )}
+        </ProductFilters>
       </Suspense>
-
-      <div className="mt-6">
-        <ProductGrid products={serializeProducts(products) as any} />
-      </div>
     </div>
   );
 }
