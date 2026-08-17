@@ -50,7 +50,7 @@ export function ProductRail({
         {products.map((p) => (
           <div
             key={p.id}
-            className="w-40 shrink-0 sm:w-48"
+            className="savo-pdp-rail-item"
             onClickCapture={() => source && RecommendationAnalytics.clicked(p.id, source)}
           >
             <ProductCard product={p} />

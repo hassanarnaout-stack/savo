@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getLocale } from "next-intl/server";
 import { getNewArrivals, getTrending } from "@/lib/discovery-engine";
 import { serializeProducts } from "@/lib/utils";
-import { ProductRail } from "@/components/product/product-grid";
+import { DiscoverRailCard } from "@/components/product/discover-rail-card";
 import { Link } from "@/i18n/routing";
 import { WORLD_THEMES } from "@/lib/world-themes";
 import { Sparkles, Gift, TrendingUp, Crown, Zap, Layers, Package } from "lucide-react";
@@ -104,8 +104,28 @@ export default async function DiscoverPage() {
         </div>
       </div>
 
-      {trending.length > 0 && <ProductRail title={isArabic ? "🔥 الأكثر رواجاً" : "🔥 Trending Now"} products={serializeProducts(trending) as any} />}
-      {newArrivals.length > 0 && <ProductRail title={isArabic ? "🆕 وصل حديثاً" : "🆕 New Arrivals"} products={serializeProducts(newArrivals) as any} />}
+      {trending.length > 0 && (
+        <div className="savo-discover-rail">
+          <div className="savo-discover-rail-head">
+            <div className="savo-products-eyebrow">{isArabic ? "الأكثر شعبية" : "Right now"}</div>
+            <h2 className="savo-pdp-rail-title">{isArabic ? "الأكثر رواجاً" : "Trending"}</h2>
+          </div>
+          <div className="savo-discover-rail-row">
+            {serializeProducts(trending).map((product: any) => <DiscoverRailCard key={product.id} product={product} />)}
+          </div>
+        </div>
+      )}
+      {newArrivals.length > 0 && (
+        <div className="savo-discover-rail savo-pdp-section--surface">
+          <div className="savo-discover-rail-head">
+            <div className="savo-products-eyebrow">{isArabic ? "وصل حديثاً" : "Just arrived"}</div>
+            <h2 className="savo-pdp-rail-title">{isArabic ? "إضافات جديدة" : "New Arrivals"}</h2>
+          </div>
+          <div className="savo-discover-rail-row">
+            {serializeProducts(newArrivals).map((product: any) => <DiscoverRailCard key={product.id} product={product} />)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

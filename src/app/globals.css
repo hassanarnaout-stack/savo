@@ -189,7 +189,7 @@
 .savo-mobile-drawer-scrim { display: none; }
 .savo-mobile-bottom-nav { display: none; }
 
-.savo-site-footer { margin-top: 5rem; padding: 56px 60px; border-top: 1px solid rgba(255,255,255,.08); color: white; background: var(--savo-dark-navy); font-family: var(--font-manrope), sans-serif; }
+.savo-site-footer { padding: 56px 60px; border-top: 1px solid rgba(255,255,255,.08); color: white; background: var(--savo-dark-navy); font-family: var(--font-manrope), sans-serif; }
 .savo-footer-inner { max-width: 1280px; margin-inline: auto; }
 .savo-footer-grid { margin-bottom: 40px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; }
 .savo-footer-brand { max-width: 270px; }
@@ -234,7 +234,7 @@
   .savo-mobile-drawer nav a > svg { width: 16px; height: 16px; flex: none; }
   .savo-mobile-drawer nav a > span { min-width: 16px; text-align: center; }
   .savo-mobile-drawer-divider { margin: 12px 0; border-top: 1px solid rgba(255,255,255,.08); }
-  .savo-site-footer { margin-top: 3rem; padding: 36px 20px; }
+  .savo-site-footer { padding: 36px 20px; }
   .savo-footer-grid { margin-bottom: 40px; display: block; }
   .savo-footer-column { display: none; }
   .savo-footer-bottom { align-items: flex-start; flex-direction: column; gap: 12px; }
@@ -1213,11 +1213,15 @@
 .savo-discover-worlds{padding:36px 52px;border-bottom:1px solid var(--savo-shell-border)}
 .savo-discover-worlds-title{margin:6px 0 20px;font-family:var(--font-display),sans-serif;font-weight:800;font-size:22px;color:var(--savo-shell-text);letter-spacing:-.02em}
 .savo-discover-worlds-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.savo-discover-world{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:160px;padding:20px 22px;border-radius:18px;overflow:hidden;border:1px solid var(--savo-shell-border);transition:all .24s}
+.savo-discover-world{position:relative;display:block;min-height:160px;border-radius:18px;overflow:hidden;border:1px solid var(--savo-shell-border);transition:all .24s}
+.savo-discover-world-img{object-fit:cover;opacity:.35;transition:transform .5s}
+.savo-discover-world-scrim{position:absolute;inset:0;background:linear-gradient(135deg,color-mix(in srgb,var(--savo-shell-ink) 93%,transparent) 0%,color-mix(in srgb,var(--world-accent) 10%,transparent) 100%)}
+.savo-discover-world-copy{position:absolute;inset:0;padding:20px 22px;display:flex;flex-direction:column;justify-content:flex-end}
+.savo-discover-world-dot{width:6px;height:6px;border-radius:50%;background:var(--world-accent);margin-bottom:8px}
 .savo-discover-world-emoji{font-size:22px;margin-bottom:8px}
-.savo-discover-world-name{font-family:var(--font-display),sans-serif;font-weight:800;font-size:15px;color:var(--savo-shell-text);letter-spacing:-.01em;margin-bottom:4px}
+.savo-discover-world-name{font-family:var(--font-display),sans-serif;font-weight:800;font-size:15px;color:var(--savo-shell-text);letter-spacing:-.01em;line-height:1.2;margin-bottom:4px}
 .savo-discover-world-desc{font-size:11px;color:rgba(255,255,255,.7)}
-@media(hover:hover) and (pointer:fine){.savo-discover-world:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--savo-shell-discovery) 40%,transparent)}}
+@media(hover:hover) and (pointer:fine){.savo-discover-world:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--world-accent) 40%,transparent)}.savo-discover-world:hover .savo-discover-world-img{transform:scale(1.06)}}
 .savo-discover-quick{padding:32px 52px;border-bottom:1px solid var(--savo-shell-border)}
 .savo-discover-quick-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .savo-discover-quick-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:99px;border:1px solid color-mix(in srgb,white 14%,transparent);color:var(--savo-shell-text);font-family:var(--font-manrope),sans-serif;font-size:12.5px;font-weight:600}
@@ -1244,3 +1248,42 @@
 .savo-product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 @media(min-width:640px){.savo-product-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}}
 @media(min-width:1280px){.savo-product-grid{gap:16px}}
+
+/* ==========================================================================
+   Discover-only rail card — ported 1:1 from V22 CPCard()
+   (CustomerPages.tsx). Not the shared canonical .savo-pc. This is the
+   canonical customer Add-to-Cart CTA visual treatment going forward —
+   compact icon-only button, teal fill, 26x26, next to the price row.
+   Not propagated to other pages in this pass.
+   ========================================================================== */
+.savo-cp-card{display:block;flex-shrink:0;width:200px;border-radius:20px;overflow:hidden;cursor:pointer;border:1px solid var(--savo-shell-border);background:var(--savo-shell-card);transition:all .26s cubic-bezier(.34,1.56,.64,1)}
+@media(hover:hover) and (pointer:fine){.savo-cp-card:hover{border-color:color-mix(in srgb,var(--savo-shell-discovery) 28%,transparent);transform:translateY(-4px);box-shadow:0 18px 44px rgba(0,0,0,.45)}}
+.savo-cp-media{position:relative;height:210px;background:var(--savo-shell-surface);overflow:hidden}
+.savo-cp-media img{object-fit:cover;transition:transform .5s ease}
+@media(hover:hover) and (pointer:fine){.savo-cp-card:hover .savo-cp-media img{transform:scale(1.06)}}
+.savo-cp-gradient{position:absolute;inset-inline:0;bottom:0;height:40%;background:linear-gradient(to top,var(--savo-shell-card) 0%,transparent 100%)}
+.savo-cp-discount{position:absolute;top:10px;inset-inline-end:10px;background:var(--savo-shell-fire);color:#fff;border-radius:7px;padding:3px 8px;font-size:11px;font-weight:800;font-family:var(--font-display),sans-serif}
+.savo-cp-heart{position:absolute;bottom:38px;inset-inline-end:10px;width:26px;height:26px;border-radius:50%;background:rgba(12,15,22,.6);border:1px solid color-mix(in srgb,white 14%,transparent);color:var(--savo-shell-muted);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);cursor:pointer}
+.savo-cp-heart.is-liked{color:var(--savo-shell-fire)}
+.savo-cp-body{padding:10px 13px 14px}
+.savo-cp-brand{font-size:9.5px;color:var(--savo-shell-discovery);font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px}
+.savo-cp-name{font-size:12.5px;color:var(--savo-shell-text);font-weight:600;line-height:1.35;min-height:34px;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.savo-cp-signal{font-size:11px;color:var(--savo-shell-fire);font-weight:700;margin-top:4px}
+.savo-cp-footer{display:flex;align-items:center;justify-content:space-between;margin-top:9px;gap:8px}
+.savo-cp-price{display:flex;align-items:baseline;gap:5px;min-width:0;overflow:hidden}
+.savo-cp-price-current{font-family:var(--font-display),sans-serif;font-weight:800;font-size:14px;color:var(--savo-shell-text);white-space:nowrap}
+.savo-cp-price-original{font-size:10.5px;color:var(--savo-shell-muted);text-decoration:line-through;white-space:nowrap}
+.savo-cp-add{flex:0 0 auto;background:var(--savo-shell-discovery);color:var(--savo-shell-ink);border:none;border-radius:8px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.savo-cp-add:disabled{opacity:.5;cursor:default}
+
+/* Discover-only rail wrapper — ported 1:1 from V22 ProductRail(). */
+.savo-discover-rail{padding:40px 0 40px 52px;border-bottom:1px solid var(--savo-shell-border)}
+[dir="rtl"] .savo-discover-rail{padding:40px 52px 40px 0}
+.savo-discover-rail-head{padding-inline-end:52px;margin-bottom:22px}
+.savo-discover-rail-row{display:flex;gap:14px;overflow-x:auto;padding-inline-end:52px;scrollbar-width:none}
+.savo-discover-rail-row::-webkit-scrollbar{display:none}
+@media(max-width:900px){
+  .savo-discover-rail{padding:32px 0 32px 18px}
+  [dir="rtl"] .savo-discover-rail{padding:32px 18px 32px 0}
+  .savo-discover-rail-head,.savo-discover-rail-row{padding-inline-end:18px}
+}
