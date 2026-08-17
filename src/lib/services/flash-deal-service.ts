@@ -137,13 +137,38 @@ export class FlashDealService {
   }
 
   /** Called from checkout when an order includes a product with a live flash deal. Increments soldCount + buyerCount, capped at stockLimit — must be called within the same transaction as the rest of checkout. */
+  /** Called from checkout when an order includes a product with a live
+   * flash deal — see src/app/api/checkout/route.ts. Atomic conditional
+   * update: `stockLimit` is read once (an admin-set config value, not
+   * concurrently mutated by checkouts), but the actual guard —
+   * `soldCount <= stockLimit - quantity` — is evaluated by Postgres
+   * itself as part of the UPDATE's WHERE match against the row's live
+   * state, inside this same transaction. Two concurrent checkouts
+   * racing for the last units can never both pass: the second one's
+   * UPDATE sees the first's already-incremented soldCount and matches
+   * zero rows. This replaces the previous read-then-check-in-JS-then-
+   * write version, which had a real race window. Returns false (claims
+   * nothing) if there isn't room for the full quantity — the caller
+   * must roll back the whole checkout transaction in that case (a deal
+   * offer never partially claims). */
   static async recordSaleIfRoom(tx: any, dealId: string, quantity: number): Promise<boolean> {
-    const deal = await tx.flashDeal.findUniqueOrThrow({ where: { id: dealId } });
-    if (deal.soldCount + quantity > deal.stockLimit) return false;
-    await tx.flashDeal.update({
-      where: { id: dealId },
+    const deal = await tx.flashDeal.findUnique({ where: { id: dealId }, select: { stockLimit: true } });
+    if (!deal) return false;
+    const result = await tx.flashDeal.updateMany({
+      where: { id: dealId, soldCount: { lte: deal.stockLimit - quantity } },
       data: { soldCount: { increment: quantity }, buyerCount: { increment: 1 } },
     });
-    return true;
+    return result.count > 0;
+  }
+
+  /** Symmetric release for a verified-safe cancellation transition —
+   * see src/app/api/admin/orders/[id]/status/route.ts. Guarded so a
+   * double-release (e.g. retried cancellation) can never push
+   * soldCount negative. */
+  static async releaseSale(tx: any, dealId: string, quantity: number): Promise<void> {
+    await tx.flashDeal.updateMany({
+      where: { id: dealId, soldCount: { gte: quantity } },
+      data: { soldCount: { decrement: quantity } },
+    });
   }
 }

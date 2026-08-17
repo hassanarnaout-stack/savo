@@ -18,6 +18,8 @@ import { BenefitEngine } from "@/lib/services/benefit-engine";
 import { PaymentService } from "@/lib/services/payment-service";
 import { GiftCardService } from "@/lib/services/gift-card-service";
 import { AffiliateService } from "@/lib/services/affiliate-service";
+import { FlashDealService } from "@/lib/services/flash-deal-service";
+import { DealOfTheHourService } from "@/lib/services/deal-of-the-hour-service";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
@@ -67,6 +69,21 @@ export async function POST(req: NextRequest) {
     where: { id: { in: body.items.map((i) => i.productId) } },
     include: { supplier: true },
   });
+
+  // Deal attribution is resolved SERVER-SIDE only, from the verified
+  // product ids above — never from any client-supplied deal id. Real
+  // atomicity/oversell protection happens inside the checkout
+  // transaction below (see recordSaleIfRoom/claimUnits); this lookup
+  // just identifies WHICH deal (if any) currently applies to each
+  // product, using the exact same "active" definitions already used
+  // elsewhere (getAllLiveDeals / getDealOfTheHour).
+  const productIds = products.map((p) => p.id);
+  const now = new Date();
+  const [activeFlashDeals, activeHourDeal] = await Promise.all([
+    prisma.flashDeal.findMany({ where: { productId: { in: productIds }, status: "LIVE", startAt: { lte: now }, endAt: { gt: now } } }),
+    prisma.dealOfTheHour.findFirst({ where: { isActive: true, endTime: { gt: now }, productId: { in: productIds } } }),
+  ]);
+  const flashDealByProductId = new Map(activeFlashDeals.map((d) => [d.productId, d]));
 
   // Validate against AVAILABLE stock (stockQty - reservedStock), not raw
   // stockQty — this is what prevents overselling when multiple customers
@@ -232,6 +249,22 @@ export async function POST(req: NextRequest) {
       // src/lib/mystery-box.ts openMysteryBoxReveal).
       for (const orderItem of supplierOrder.items) {
         const product = products.find((p) => p.id === orderItem.productId)!;
+
+        // Deal claiming happens inside this SAME transaction as order
+        // creation — never after it. A failed claim throws, which rolls
+        // back the entire order (never a partial order with a deal that
+        // silently didn't apply). Quantity is claimed in full, not once
+        // per order — a quantity-3 purchase claims 3 units.
+        const flashDeal = flashDealByProductId.get(orderItem.productId);
+        if (flashDeal) {
+          const claimed = await FlashDealService.recordSaleIfRoom(tx, flashDeal.id, orderItem.quantity);
+          if (!claimed) throw new Error(`FLASH_DEAL_SOLD_OUT:${product.name}`);
+        }
+        if (activeHourDeal && activeHourDeal.productId === orderItem.productId) {
+          const claimed = await DealOfTheHourService.claimUnits(tx, activeHourDeal.id, orderItem.quantity);
+          if (!claimed) throw new Error(`SAVO_HOUR_SOLD_OUT:${product.name}`);
+        }
+
         if (product.type === "MYSTERY_BOX") {
           await createPendingReveal(tx, {
             orderItemId: orderItem.id,
@@ -281,6 +314,18 @@ export async function POST(req: NextRequest) {
     if (err instanceof Error && err.message === "INSUFFICIENT_STOCK") {
       return NextResponse.json(
         { error: "One or more items sold out while you were checking out — please review your cart and try again." },
+        { status: 409 }
+      );
+    }
+    if (err instanceof Error && err.message.startsWith("FLASH_DEAL_SOLD_OUT:")) {
+      return NextResponse.json(
+        { error: `The flash deal for ${err.message.split(":")[1]} just sold out — please review your cart and try again.` },
+        { status: 409 }
+      );
+    }
+    if (err instanceof Error && err.message.startsWith("SAVO_HOUR_SOLD_OUT:")) {
+      return NextResponse.json(
+        { error: `The SAVO Hour offer for ${err.message.split(":")[1]} just sold out — please review your cart and try again.` },
         { status: 409 }
       );
     }
