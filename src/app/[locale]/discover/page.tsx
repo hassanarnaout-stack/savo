@@ -52,8 +52,8 @@ export default async function DiscoverPage() {
   const isArabic = locale === "ar";
 
   const [newArrivals, trending, worldCategories] = await Promise.all([
-    getNewArrivals(8),
-    getTrending(8),
+    getNewArrivals(6),
+    getTrending(6),
     prisma.category.findMany({ where: { slug: { in: Object.keys(WORLD_THEMES) } }, select: { name: true, nameAr: true, slug: true, imageUrl: true, products: { take: 1, where: { images: { some: {} } }, select: { images: { take: 1, orderBy: { sortOrder: "asc" }, select: { url: true } } } } } }),
   ]);
 
@@ -112,6 +112,7 @@ export default async function DiscoverPage() {
           </div>
           <div className="savo-discover-rail-row">
             {serializeProducts(trending).map((product: any) => <DiscoverRailCard key={product.id} product={product} />)}
+            <div className="savo-discover-rail-spacer" aria-hidden="true" />
           </div>
         </div>
       )}
@@ -123,6 +124,7 @@ export default async function DiscoverPage() {
           </div>
           <div className="savo-discover-rail-row">
             {serializeProducts(newArrivals).map((product: any) => <DiscoverRailCard key={product.id} product={product} />)}
+            <div className="savo-discover-rail-spacer" aria-hidden="true" />
           </div>
         </div>
       )}

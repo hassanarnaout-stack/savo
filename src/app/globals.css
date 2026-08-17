@@ -1280,10 +1280,12 @@
 .savo-discover-rail{padding:40px 0 40px 52px;border-bottom:1px solid var(--savo-shell-border)}
 [dir="rtl"] .savo-discover-rail{padding:40px 52px 40px 0}
 .savo-discover-rail-head{padding-inline-end:52px;margin-bottom:22px}
-.savo-discover-rail-row{display:flex;gap:14px;overflow-x:auto;padding-inline-end:52px;scrollbar-width:none}
+.savo-discover-rail-row{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none}
 .savo-discover-rail-row::-webkit-scrollbar{display:none}
+.savo-discover-rail-spacer{flex:0 0 auto;width:52px}
 @media(max-width:900px){
   .savo-discover-rail{padding:32px 0 32px 18px}
   [dir="rtl"] .savo-discover-rail{padding:32px 18px 32px 0}
-  .savo-discover-rail-head,.savo-discover-rail-row{padding-inline-end:18px}
+  .savo-discover-rail-head{padding-inline-end:18px}
+  .savo-discover-rail-spacer{width:18px}
 }
