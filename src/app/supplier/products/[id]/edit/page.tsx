@@ -2,6 +2,8 @@ import { redirect, notFound } from "next/navigation";
 import { getSupplierAccountGate } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SupplierProductForm } from "@/components/supplier/product-form";
+import { ProductSpecificationControls } from "@/components/admin/product-specification-controls";
+import { ProductMediaManager } from "@/components/admin/product-media-manager";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -29,9 +31,11 @@ export default async function EditSupplierProductPage({ params }: Props) {
 
   const { id } = await params;
 
-  const [product, categories] = await Promise.all([
+  const [product, categories, attributes, media] = await Promise.all([
     prisma.product.findUnique({ where: { id }, include: { images: { take: 1 } } }),
     prisma.category.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+    prisma.productAttribute.findMany({ where: { productId: id } }),
+    prisma.productMedia.findMany({ where: { productId: id }, orderBy: { sortOrder: "asc" } }),
   ]);
 
   // SECURITY: 404 (not 403) if the product doesn't exist OR belongs to a
@@ -66,6 +70,8 @@ export default async function EditSupplierProductPage({ params }: Props) {
           originStory: product.originStory ?? "",
         }}
       />
+      <ProductMediaManager productId={product.id} apiBase="/api/supplier/products" initialMedia={media} />
+      <ProductSpecificationControls productId={product.id} apiBase="/api/supplier/products" initialAttributes={attributes} />
     </div>
   );
 }

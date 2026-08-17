@@ -161,9 +161,11 @@ export class CrossSellService {
       }));
     if (!anchor) return [];
 
-    // Curated relations first (admin/supplier-authored, highest quality signal)
+    // Curated relations first (admin/supplier-authored, highest quality signal).
+    // Excludes Mystery Box targets — Related Products is never the right
+    // surface for a Mystery Box regardless of how it was curated.
     const curated = await prisma.productRelation.findMany({
-      where: { sourceId: productId, type: RelationType.RELATED },
+      where: { sourceId: productId, type: RelationType.RELATED, target: { type: { not: "MYSTERY_BOX" } } },
       orderBy: { sortOrder: "asc" },
       take,
       include: { target: { select: productCardSelect } },
@@ -174,7 +176,7 @@ export class CrossSellService {
       // Same brand is a strong signal when available (e.g. other Lindt products)
       const sameBrand = anchor.brand
         ? await prisma.product.findMany({
-            where: { brand: anchor.brand, id: { notIn: [productId, ...picks.map((p) => p.id)] }, status: "ACTIVE", approvalStatus: "APPROVED" },
+            where: { brand: anchor.brand, type: { not: "MYSTERY_BOX" }, id: { notIn: [productId, ...picks.map((p) => p.id)] }, status: "ACTIVE", approvalStatus: "APPROVED" },
             orderBy: { orderCount: "desc" },
             take: take - picks.length,
             select: productCardSelect,
@@ -185,7 +187,7 @@ export class CrossSellService {
 
     if (picks.length < take) {
       const sameCategory = await prisma.product.findMany({
-        where: { categoryId: anchor.categoryId, id: { notIn: [productId, ...picks.map((p) => p.id)] }, status: "ACTIVE", approvalStatus: "APPROVED" },
+        where: { categoryId: anchor.categoryId, type: { not: "MYSTERY_BOX" }, id: { notIn: [productId, ...picks.map((p) => p.id)] }, status: "ACTIVE", approvalStatus: "APPROVED" },
         orderBy: { orderCount: "desc" },
         take: take - picks.length,
         select: productCardSelect,
@@ -195,7 +197,7 @@ export class CrossSellService {
 
     if (picks.length < take) {
       const sameSupplier = await prisma.product.findMany({
-        where: { supplierId: anchor.supplierId, id: { notIn: [productId, ...picks.map((p) => p.id)] }, status: "ACTIVE", approvalStatus: "APPROVED" },
+        where: { supplierId: anchor.supplierId, type: { not: "MYSTERY_BOX" }, id: { notIn: [productId, ...picks.map((p) => p.id)] }, status: "ACTIVE", approvalStatus: "APPROVED" },
         orderBy: { orderCount: "desc" },
         take: take - picks.length,
         select: productCardSelect,

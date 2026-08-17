@@ -22,7 +22,6 @@ import { FlavorJourney } from "@/components/product/flavor-journey";
 import { BundleOffer } from "@/components/product/bundle-offer";
 import { SubscribeAndSaveWidget } from "@/components/product/subscribe-and-save-widget";
 import { MembershipService } from "@/lib/services/membership-service";
-import { ShieldCheck } from "lucide-react";
 import { ViewTracker } from "@/components/product/view-tracker";
 import { auth } from "@/lib/auth";
 import { MysteryBoxAnalytics } from "@/lib/mystery-box-analytics";
@@ -31,8 +30,9 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { OperationalProductInfoTabs } from "@/components/product/operational-product-info-tabs";
 import { calcDiscountPct, formatKWD } from "@/lib/utils";
+import { buildProductDetailsRows } from "@/lib/services/product-details-service";
 import { Suspense } from "react";
-import { PdpReviewsStream, PdpComparisonStream, PdpFbtStream, PdpCrossSellStream, PdpUpsellStream, PdpRelatedStream, type PdpKnownAnchor } from "@/components/product/pdp-streams";
+import { PdpComparisonStream, PdpFbtStream, PdpCrossSellStream, PdpUpsellStream, PdpRelatedStream, type PdpKnownAnchor } from "@/components/product/pdp-streams";
 import { PdpSectionSkeleton } from "@/components/product/pdp-section-skeleton";
 
 export const dynamic = "force-dynamic";
@@ -64,14 +64,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * PDP — V22 visual migration on top of the existing Suspense streaming
- * architecture. Source: the latest V22 export, src/ProductDetail.tsx.
+ * PDP — V22 visual migration + Product Information system + Media
+ * Infrastructure V1. Source: latest V22 export, src/ProductDetail.tsx.
  *
- * QA fix: the favorite button previously had no real toggle at all
- * (no onClick). `isFavorited` is now a real per-session lookup
- * against the Favorite table (same table product-card.tsx's toggle
- * reads/writes), passed into AddToCartPanel so the heart starts in
- * the correct state instead of always "not favorited".
+ * Verified Supplier removed from customer UI (backend untouched).
+ * "WHY THIS FIND?" — product-specific discovery signals, real data
+ * only, capped at 4, priority-ordered.
+ *
+ * Product Information: locale-only description (never EN+AR together),
+ * safe-whitelisted Product Details table (buildProductDetailsRows).
+ *
+ * Media ordering fix: product.media is explicitly re-sorted so the
+ * real MAIN_IMAGE always appears first in the gallery, regardless of
+ * upload order — Prisma's orderBy can only sort `type` alphabetically
+ * ("GALLERY_IMAGE" < "MAIN_IMAGE"), which would otherwise show an
+ * older gallery photo instead of a newer main image.
+ *
+ * Also fixes a real next-intl + Suspense-streaming bug across the
+ * shared ProductCard/ProductGrid/ProductRail/FrequentlyBoughtTogether/
+ * PdpRailCard: they receive locale/translated strings as props from
+ * their Server Component callers instead of calling useTranslations()/
+ * useLocale() themselves.
  */
 export default async function ProductDetailPage({ params, searchParams }: Props) {
   const FEATURE_FLAGS = await getLaunchFlags();
@@ -82,7 +95,7 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
     where: { slug },
     include: {
       images: { orderBy: { sortOrder: "asc" } },
-      media: { orderBy: [{ type: "asc" }, { sortOrder: "asc" }] },
+      media: { orderBy: { sortOrder: "asc" } },
       category: true,
       attributes: true,
       ingredients: { orderBy: { sortOrder: "asc" } },
@@ -95,7 +108,15 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
 
   if (!product || product.status === "ARCHIVED") notFound();
 
-  const [bundles, p, locale, flashDeal, sponsoredCampaign, session, sponsoredSlotLookup, ratingAgg] = await Promise.all([
+  // The Main Image must always be the first gallery item regardless of
+  // when it was uploaded — see file header comment.
+  product.media.sort((a, b) => {
+    if (a.type === "MAIN_IMAGE" && b.type !== "MAIN_IMAGE") return -1;
+    if (b.type === "MAIN_IMAGE" && a.type !== "MAIN_IMAGE") return 1;
+    return a.sortOrder - b.sortOrder;
+  });
+
+  const [bundles, p, locale, flashDeal, sponsoredCampaign, session, sponsoredSlotLookup] = await Promise.all([
     BundleService.getBundlesForProduct(product.id),
     getTranslations("product"),
     getLocale(),
@@ -103,7 +124,6 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
     prisma.brandCampaign.findFirst({ where: { type: "SPONSORED_PRODUCT", productId: product.id, isActive: true, startDate: { lte: new Date() }, endDate: { gt: new Date() } } }),
     auth(),
     sponsoredSlotId ? prisma.sponsoredSlot.findUnique({ where: { id: sponsoredSlotId }, select: { id: true, brandId: true } }) : Promise.resolve(null),
-    prisma.review.aggregate({ where: { productId: product.id, status: "APPROVED" }, _avg: { rating: true }, _count: true }),
   ]);
 
   const isFavorited = session?.user?.id
@@ -141,8 +161,67 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
   const savedAmount = originalPrice - saveoPrice;
   const outOfStock = product.stockQty <= 0;
   const lowStock = !outOfStock && product.stockQty <= product.lowStockAlert;
-  const avgRating = ratingAgg._avg.rating;
-  const reviewCount = ratingAgg._count;
+
+  const productDetailsRows = buildProductDetailsRows({ brand: product.brand, weightGrams: product.weightGrams }, product.attributes, isArabic);
+
+  const badgeTypes = new Set(product.badges.map((b) => b.type));
+  const whyReasons: { key: string; label: string; value: string }[] = [];
+
+  if (flashDeal) {
+    whyReasons.push({
+      key: "flash",
+      label: isArabic ? "فرصة فلاش" : "Flash Opportunity",
+      value: isArabic ? "العرض الحالي ينتهي قريبًا" : "Current deal ends soon",
+    });
+  }
+  if (originalPrice > saveoPrice && discountPct > 0) {
+    whyReasons.push({
+      key: "savings",
+      label: isArabic ? "توفير ذكي" : "Smart Saving",
+      value: isArabic ? `وفّرت ${formatKWD(savedAmount)} · ${discountPct}% أقل من السعر الأصلي` : `Save ${formatKWD(savedAmount)} · ${discountPct}% below original price`,
+    });
+  }
+  if (lowStock) {
+    whyReasons.push({
+      key: "limited",
+      label: isArabic ? "اكتشاف محدود" : "Limited Find",
+      value: isArabic ? `${product.stockQty} قطع فقط متبقية` : `Only ${product.stockQty} left`,
+    });
+  }
+  if (whyReasons.length < 4) {
+    if (product.type === "RESCUE" && product.expiryDate) {
+      whyReasons.push({
+        key: "rescue",
+        label: isArabic ? "عرض إنقاذ" : "Rescue Deal",
+        value: isArabic ? "قيمة استثنائية، اكتُشفت بمسؤولية" : "Exceptional value, responsibly discovered",
+      });
+    } else if (badgeTypes.has("EXCLUSIVE")) {
+      whyReasons.push({
+        key: "exclusive",
+        label: isArabic ? "حصري على سافو" : "SAVO Exclusive",
+        value: isArabic ? "متوفر حصريًا على سافو" : "Available exclusively on SAVO",
+      });
+    } else if (badgeTypes.has("LIMITED")) {
+      whyReasons.push({
+        key: "limited-edition",
+        label: isArabic ? "إصدار محدود" : "Limited Edition",
+        value: isArabic ? "إصدار محدود الكمية" : "A limited-quantity release",
+      });
+    } else if (product.isMembersOnly) {
+      whyReasons.push({
+        key: "plus",
+        label: isArabic ? "سافو بلس" : "SAVO Plus",
+        value: isArabic ? "حصري لأعضاء سافو بلس" : "Exclusive to SAVO Plus members",
+      });
+    } else if (badgeTypes.has("NEW_ARRIVAL")) {
+      whyReasons.push({
+        key: "new",
+        label: isArabic ? "اكتشاف جديد" : "Just Discovered",
+        value: isArabic ? "وصل حديثًا إلى سافو" : "Just landed on SAVO",
+      });
+    }
+  }
+  const whyReasonsFinal = whyReasons.slice(0, 4);
 
   const knownAnchor: PdpKnownAnchor = {
     id: product.id, name: product.name, nameAr: product.nameAr, slug: product.slug,
@@ -180,19 +259,10 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
             <span className="savo-pdp-category">{categoryName}</span>
             <span className="savo-pdp-dot" />
             <span className="savo-pdp-brand">{product.brand ?? "SAVO"}</span>
-            <span className="savo-pdp-verified"><ShieldCheck size={12} /> {isArabic ? "مورد موثق" : "Verified Supplier"}</span>
           </div>
 
           <h1 className="savo-pdp-title">{displayName}</h1>
           {!isArabic && product.nameAr && <div className="savo-pdp-title-ar" dir="rtl">{product.nameAr}</div>}
-
-          {reviewCount > 0 && avgRating != null && (
-            <div className="savo-pdp-rating">
-              <span className="savo-pdp-stars">{"★".repeat(Math.round(avgRating))}{"☆".repeat(5 - Math.round(avgRating))}</span>
-              <span className="savo-pdp-rating-value">{avgRating.toFixed(1)}</span>
-              <span className="savo-pdp-rating-count">({reviewCount.toLocaleString()})</span>
-            </div>
-          )}
 
           {flashDeal ? (
             <div className="savo-pdp-flash">
@@ -279,25 +349,6 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
             />
           </div>
 
-          {product.attributes.length > 0 && (
-            <dl className="savo-pdp-quick-attrs">
-              {product.attributes.slice(0, 4).map((attr) => (
-                <div key={attr.id}>
-                  <dt>{isArabic && attr.keyAr ? attr.keyAr : attr.key}</dt>
-                  <dd>{isArabic && attr.valueAr ? attr.valueAr : attr.value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-
-          <div className="savo-pdp-supplier">
-            <ShieldCheck size={22} />
-            <div>
-              <p><strong>{p("verifiedSupplier")}</strong><span>{isArabic ? "موثّق من سافو" : "Verified by SAVO"}</span></p>
-              <small>{isArabic ? "الموافقة على المورد وملكية المنتج تبقى تحت إشراف منصة سافو التشغيلية." : "Supplier approval and product ownership remain controlled by the operational SAVO platform."}</small>
-            </div>
-          </div>
-
           {product.isSubscribable && (
             <div className="savo-pdp-subscribe">
               <SubscribeAndSaveWidget productId={product.id} saveoPrice={saveoPrice} locale={locale} />
@@ -332,10 +383,25 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
       </section>
 
       <OperationalProductInfoTabs
-        description={product.description}
-        descriptionAr={product.descriptionAr}
-        facts={product.attributes.map((attr) => ({ label: isArabic && attr.keyAr ? attr.keyAr : attr.key, value: isArabic && attr.valueAr ? attr.valueAr : attr.value }))}
+        description={displayDescription}
+        hasDetails={productDetailsRows.length > 0}
+        detailsSlot={productDetailsRows}
       />
+
+      {whyReasonsFinal.length > 0 && (
+        <section className="savo-pdp-why">
+          <div className="savo-products-eyebrow">{isArabic ? "لماذا هذا الاكتشاف؟" : "WHY THIS FIND?"}</div>
+          <h2 className="savo-pdp-section-title">{isArabic ? "لماذا يستحق الاكتشاف؟" : "Why it's worth discovering."}</h2>
+          <div className="savo-pdp-why-grid">
+            {whyReasonsFinal.map((reason) => (
+              <div key={reason.key} className="savo-pdp-why-card">
+                <span className="savo-pdp-why-label">{reason.label}</span>
+                <p className="savo-pdp-why-value">{reason.value}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {(() => {
         const lifestyleImage = product.media.find((m) => m.type === "LIFESTYLE_IMAGE");
@@ -372,10 +438,6 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
       {product.experienceApproved && product.nutritionFact && <NutritionExperience fact={product.nutritionFact} locale={locale} />}
       {product.experienceApproved && product.storySteps.length > 0 && <StoryModeTimeline steps={product.storySteps} locale={locale} />}
 
-      <Suspense fallback={<PdpSectionSkeleton variant="block" />}>
-        <PdpReviewsStream productId={product.id} isSignedIn={!!session?.user} />
-      </Suspense>
-
       {product.experienceApproved && product.flavorProfile && <FlavorJourney profile={product.flavorProfile} locale={locale} />}
 
       <Suspense fallback={<PdpSectionSkeleton variant="block" />}>
@@ -384,18 +446,18 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
 
       {FEATURE_FLAGS.SMART_CROSS_SELLING_ENABLED && (
         <Suspense fallback={<PdpSectionSkeleton variant="block" />}>
-          <PdpFbtStream productId={product.id} knownAnchor={knownAnchor} userId={session?.user?.id} />
+          <PdpFbtStream productId={product.id} knownAnchor={knownAnchor} userId={session?.user?.id} locale={locale} />
         </Suspense>
       )}
 
       <Suspense fallback={<PdpSectionSkeleton variant="rail" />}>
-        <PdpCrossSellStream productId={product.id} categoryId={product.categoryId} userId={session?.user?.id} title={p("crossSellTitle")} />
+        <PdpCrossSellStream productId={product.id} categoryId={product.categoryId} userId={session?.user?.id} title={p("crossSellTitle")} locale={locale} />
       </Suspense>
       <Suspense fallback={<PdpSectionSkeleton variant="rail" />}>
-        <PdpUpsellStream productId={product.id} categoryId={product.categoryId} userId={session?.user?.id} title={p("upsellTitle")} />
+        <PdpUpsellStream productId={product.id} categoryId={product.categoryId} userId={session?.user?.id} title={p("upsellTitle")} locale={locale} />
       </Suspense>
       <Suspense fallback={<PdpSectionSkeleton variant="rail" />}>
-        <PdpRelatedStream productId={product.id} categoryId={product.categoryId} brand={product.brand} supplierId={product.supplierId} userId={session?.user?.id} title={p("relatedTitle")} />
+        <PdpRelatedStream productId={product.id} categoryId={product.categoryId} brand={product.brand} supplierId={product.supplierId} userId={session?.user?.id} title={p("relatedTitle")} locale={locale} />
       </Suspense>
     </div>
   );

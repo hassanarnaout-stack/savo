@@ -99,9 +99,14 @@ export default async function SupplierProductsPage({ searchParams }: Props) {
           <h1 className="text-2xl font-bold text-saveo-emerald-700">Products</h1>
           <p className="text-sm text-saveo-emerald-700/50">{totalCount} products in your catalog</p>
         </div>
-        <Link href="/supplier/products/new" className="btn-primary">
-          <Plus className="h-4 w-4" /> Add Product
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/supplier/products/import" className="btn-outline">
+            Import Products
+          </Link>
+          <Link href="/supplier/products/new" className="btn-primary">
+            <Plus className="h-4 w-4" /> Add Product
+          </Link>
+        </div>
       </div>
 
       {/* Search + category filter */}

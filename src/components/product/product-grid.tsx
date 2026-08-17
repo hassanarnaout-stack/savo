@@ -1,18 +1,29 @@
 "use client";
 
 import { Link } from "@/i18n/routing";
-import { useTranslations } from "next-intl";
 import { ProductCard, type ProductCardData } from "@/components/product/product-card";
 import { RecommendationAnalytics, type RecommendationSource } from "@/lib/recommendation-analytics";
 
-export function ProductGrid({ products }: { products: ProductCardData[] }) {
-  const common = useTranslations("common");
-
+export function ProductGrid({
+  products,
+  noResultsLabel = "No results found",
+  continueShoppingLabel = "Continue shopping",
+  locale = "en",
+  outOfStockLabel = "Out of stock",
+  addToCartLabel = "Add to cart",
+}: {
+  products: ProductCardData[];
+  noResultsLabel?: string;
+  continueShoppingLabel?: string;
+  locale?: string;
+  outOfStockLabel?: string;
+  addToCartLabel?: string;
+}) {
   if (products.length === 0) {
     return (
       <div className="savo-products-empty">
-        <div className="savo-products-empty-title">{common("noResults")}</div>
-        <Link href="/products" className="savo-products-empty-cta">{common("continueShopping")}</Link>
+        <div className="savo-products-empty-title">{noResultsLabel}</div>
+        <Link href="/products" className="savo-products-empty-cta">{continueShoppingLabel}</Link>
       </div>
     );
   }
@@ -20,7 +31,7 @@ export function ProductGrid({ products }: { products: ProductCardData[] }) {
   return (
     <div className="savo-product-grid">
       {products.map((p, index) => (
-        <ProductCard key={p.id} product={p} priority={index < 4} />
+        <ProductCard key={p.id} product={p} priority={index < 4} locale={locale} outOfStockLabel={outOfStockLabel} addToCartLabel={addToCartLabel} />
       ))}
     </div>
   );
@@ -31,12 +42,17 @@ export function ProductRail({
   subtitle,
   products,
   source,
+  locale = "en",
+  outOfStockLabel = "Out of stock",
+  addToCartLabel = "Add to cart",
 }: {
   title: string;
   subtitle?: string;
   products: ProductCardData[];
-  /** When set, fires "Recommendation Click" analytics on any product click — see src/lib/recommendation-analytics.ts. Omit for rails that aren't a recommendation surface (e.g. a plain "New Arrivals" section). */
   source?: RecommendationSource;
+  locale?: string;
+  outOfStockLabel?: string;
+  addToCartLabel?: string;
 }) {
   if (products.length === 0) return null;
 
@@ -53,7 +69,7 @@ export function ProductRail({
             className="savo-pdp-rail-item"
             onClickCapture={() => source && RecommendationAnalytics.clicked(p.id, source)}
           >
-            <ProductCard product={p} />
+            <ProductCard product={p} locale={locale} outOfStockLabel={outOfStockLabel} addToCartLabel={addToCartLabel} />
           </div>
         ))}
       </div>

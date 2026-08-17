@@ -26,9 +26,10 @@ export default async function ProductsPage({ params, searchParams }: Props) {
   const isArabic = locale === "ar";
   const rawParams = await searchParams;
   const filters = parseProductFilters(rawParams);
-  const [t, common, session] = await Promise.all([
+  const [t, common, pT, session] = await Promise.all([
     getTranslations("productsPage"),
     getTranslations("common"),
+    getTranslations("product"),
     auth(),
   ]);
   const membersOnlyVisibility = await MembershipService.getVisibilityFilter(session?.user?.id);
@@ -104,7 +105,7 @@ export default async function ProductsPage({ params, searchParams }: Props) {
             </div>
           ) : (
             <>
-              <ProductGrid products={serializeProducts(visibleProducts.map((pr) => ({ ...pr, has360Media: pr.media.length > 0 }))) as any} />
+              <ProductGrid products={serializeProducts(visibleProducts.map((pr) => ({ ...pr, has360Media: pr.media.length > 0 }))) as any} noResultsLabel={common("noResults")} continueShoppingLabel={common("continueShopping")} outOfStockLabel={common("outOfStock")} addToCartLabel={pT("addToCart")} locale={locale} />
               {hasMore && (
                 <div className="savo-products-loadmore">
                   <div className="savo-products-loadmore-count">

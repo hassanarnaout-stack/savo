@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { MembershipService } from "@/lib/services/membership-service";
 import { brandNameToSlug } from "@/lib/brand-slug";
@@ -18,7 +18,7 @@ import { serializeProducts } from "@/lib/utils";
  */
 export default async function BrandDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [locale, session] = await Promise.all([getLocale(), auth()]);
+  const [locale, session, common, pT] = await Promise.all([getLocale(), auth(), getTranslations("common"), getTranslations("product")]);
   const isArabic = locale === "ar";
   const membersOnlyFilter = await MembershipService.getVisibilityFilter(session?.user?.id);
 
@@ -61,7 +61,7 @@ export default async function BrandDetailPage({ params }: { params: Promise<{ sl
           </span>
         </div>
 
-        <ProductGrid products={serializeProducts(products.map((pr) => ({ ...pr, has360Media: pr.media.length > 0 }))) as any} />
+        <ProductGrid products={serializeProducts(products.map((pr) => ({ ...pr, has360Media: pr.media.length > 0 }))) as any} noResultsLabel={common("noResults")} continueShoppingLabel={common("continueShopping")} outOfStockLabel={common("outOfStock")} addToCartLabel={pT("addToCart")} locale={locale} />
       </div>
     </div>
   );

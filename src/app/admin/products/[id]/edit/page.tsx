@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { ProductForm } from "@/components/admin/product-form";
+import { ProductSpecificationControls } from "@/components/admin/product-specification-controls";
+import { ProductMediaManager } from "@/components/admin/product-media-manager";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -9,10 +11,12 @@ interface Props {
 export default async function EditProductPage({ params }: Props) {
   const { id } = await params;
 
-  const [product, categories, suppliers] = await Promise.all([
+  const [product, categories, suppliers, attributes, media] = await Promise.all([
     prisma.product.findUnique({ where: { id }, include: { images: { take: 1 } } }),
     prisma.category.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.supplier.findMany({ where: { status: "ACTIVE" }, orderBy: { companyName: "asc" } }),
+    prisma.productAttribute.findMany({ where: { productId: id } }),
+    prisma.productMedia.findMany({ where: { productId: id }, orderBy: { sortOrder: "asc" } }),
   ]);
 
   if (!product) notFound();
@@ -48,6 +52,8 @@ export default async function EditProductPage({ params }: Props) {
           mysteryBoxChooseCount: product.mysteryBoxChooseCount?.toString() ?? "0",
         }}
       />
+      <ProductMediaManager productId={product.id} apiBase="/api/admin/products" initialMedia={media} />
+      <ProductSpecificationControls productId={product.id} apiBase="/api/admin/products" initialAttributes={attributes} />
     </div>
   );
 }

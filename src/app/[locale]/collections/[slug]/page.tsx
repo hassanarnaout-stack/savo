@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { auth } from "@/lib/auth";
 import { MembershipService } from "@/lib/services/membership-service";
 import { ProductGrid } from "@/components/product/product-grid";
@@ -8,7 +8,7 @@ import { serializeProducts } from "@/lib/utils";
 
 export default async function CollectionDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [locale, session] = await Promise.all([getLocale(), auth()]);
+  const [locale, session, common, pT] = await Promise.all([getLocale(), auth(), getTranslations("common"), getTranslations("product")]);
   const membersOnlyFilter = await MembershipService.getVisibilityFilter(session?.user?.id);
 
   const collection = await prisma.collection.findUnique({
@@ -44,7 +44,7 @@ export default async function CollectionDetailPage({ params }: { params: Promise
         <h1 className="text-3xl font-black text-saveo-emerald-700">{name}</h1>
         {description && <p className="mx-auto mt-2 max-w-xl text-sm text-saveo-emerald-700/50">{description}</p>}
       </div>
-      <ProductGrid products={serializeProducts(products) as any} />
+      <ProductGrid products={serializeProducts(products) as any} noResultsLabel={common("noResults")} continueShoppingLabel={common("continueShopping")} outOfStockLabel={common("outOfStock")} addToCartLabel={pT("addToCart")} locale={locale} />
     </div>
   );
 }

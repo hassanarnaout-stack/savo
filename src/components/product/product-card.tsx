@@ -4,7 +4,6 @@ import { useState } from "react";
 import Image from "next/image";
 import { Heart, ShoppingCart, Gift, Star, CheckCircle2, RotateCw } from "lucide-react";
 import { Link } from "@/i18n/routing";
-import { useLocale, useTranslations } from "next-intl";
 import { CountdownTimer } from "@/components/product/countdown-timer";
 import { useCartStore } from "@/store/cart-store";
 import { formatKWD, calcDiscountPct } from "@/lib/utils";
@@ -54,11 +53,20 @@ export interface ProductCardData {
  *    out of scope for this card-only migration, and none of those
  *    surfaces should be touched to avoid unintended regressions.
  */
-export function ProductCard({ product, priority = false }: { product: ProductCardData; priority?: boolean }) {
+export function ProductCard({
+  product,
+  priority = false,
+  locale = "en",
+  outOfStockLabel = "Out of stock",
+  addToCartLabel = "Add to cart",
+}: {
+  product: ProductCardData;
+  priority?: boolean;
+  locale?: string;
+  outOfStockLabel?: string;
+  addToCartLabel?: string;
+}) {
   const addItem = useCartStore((s) => s.addItem);
-  const locale = useLocale();
-  const p = useTranslations("product");
-  const common = useTranslations("common");
   const image = product.images[0]?.url ?? "/placeholder-product.svg";
   const outOfStock = product.stockQty <= 0;
   const displayName = locale === "ar" && product.nameAr ? product.nameAr : product.name;
@@ -156,7 +164,7 @@ export function ProductCard({ product, priority = false }: { product: ProductCar
 
         {outOfStock && (
           <div className="savo-pc-oos">
-            <span>{common("outOfStock")}</span>
+            <span>{outOfStockLabel}</span>
           </div>
         )}
       </div>
@@ -205,7 +213,7 @@ export function ProductCard({ product, priority = false }: { product: ProductCar
             ) : (
               <>
                 <ShoppingCart className="h-3.5 w-3.5" />
-                {outOfStock ? common("outOfStock") : p("addToCart")}
+                {outOfStock ? outOfStockLabel : addToCartLabel}
               </>
             )}
           </button>

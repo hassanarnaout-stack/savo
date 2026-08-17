@@ -91,9 +91,14 @@ export default async function AdminProductsPage({ searchParams }: Props) {
       <Breadcrumb items={[{ label: "Dashboard", href: "/admin" }, { label: "Products" }]} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Products</h1>
-        <Link href="/admin/products/new" className="btn-primary">
-          <Plus className="h-4 w-4" /> Add Product
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/products/import" className="btn-outline">
+            Import Products
+          </Link>
+          <Link href="/admin/products/new" className="btn-primary">
+            <Plus className="h-4 w-4" /> Add Product
+          </Link>
+        </div>
       </div>
 
       <form className="mb-4 flex flex-wrap items-end gap-2">

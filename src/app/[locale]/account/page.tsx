@@ -20,13 +20,15 @@ export default async function AccountPage() {
   const session = await auth();
   if (!session?.user) redirect("/login?callbackUrl=/account");
 
-  const [orderCount, favoriteCount, t, locale, isPlusMember, nextBestProducts] = await Promise.all([
+  const [orderCount, favoriteCount, t, locale, isPlusMember, nextBestProducts, common, pT] = await Promise.all([
     prisma.order.count({ where: { userId: session.user.id } }),
     prisma.favorite.count({ where: { userId: session.user.id } }),
     getTranslations("account"),
     getLocale(),
     MembershipService.isActiveMember(session.user.id),
     CustomerBehaviorEngine.getNextBestProducts(session.user.id, 6),
+    getTranslations("common"),
+    getTranslations("product"),
   ]);
 
   const recommendedProducts = nextBestProducts.length > 0
@@ -95,6 +97,9 @@ export default async function AccountPage() {
             title={locale === "ar" ? "مُختار لك" : "Recommended for You"}
             products={serializeProducts(recommendedProducts) as any}
             source="recommended_for_you"
+            locale={locale}
+            outOfStockLabel={common("outOfStock")}
+            addToCartLabel={pT("addToCart")}
           />
         </div>
       )}
