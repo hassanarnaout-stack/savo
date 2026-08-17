@@ -56,7 +56,7 @@ export async function Header() {
       <AnnouncementTicker items={SHELL_ANNOUNCEMENTS} />
       <div className="savo-header-primary">
         <Link href="/" className="savo-header-logo" aria-label="SAVO home">
-          <SAVOLogo variant="primary-light" style={{ height: 28, width: "auto" }} />
+          <SAVOLogo variant="primary-light" animated style={{ height: 28, width: "auto" }} />
         </Link>
 
         <DesktopNavigation locale={locale} />

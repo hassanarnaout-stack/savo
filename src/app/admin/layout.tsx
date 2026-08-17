@@ -47,6 +47,7 @@ const NAV = [
   { href: "/admin/marketing/brand-campaigns", label: "Brand Campaigns", icon: "Megaphone" },
   { href: "/admin/media", label: "Media Manager", icon: "Image" },
   { href: "/admin/discover-quick-ways", label: "Discover — Quick Ways In", icon: "Compass" },
+  { href: "/admin/homepage-settings", label: "Homepage Settings", icon: "Home" },
   { href: "/admin/beta-center", label: "Beta Center", icon: "Sparkles" },
   { href: "/admin", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/admin/business-dashboard", label: "Business Dashboard", icon: "BarChart3" },

@@ -622,8 +622,6 @@
 .v21-home .savo-hero-ar{margin-top:10px;color:var(--savo-shell-discovery);font-family:var(--font-cairo),sans-serif;font-weight:700;font-size:22px;opacity:.85}
 .v21-home .savo-hero-copy>p{margin:18px 0 28px;max-width:400px;color:var(--savo-shell-muted);font-size:14.5px;line-height:1.8}
 .v21-home .savo-hero-copy>p em{color:var(--savo-shell-text);font-style:normal;font-weight:600}
-.v21-home .savo-hero-search{display:flex;align-items:center;gap:9px;height:45px;margin-bottom:14px;padding:0 14px;border:1px solid var(--savo-shell-border);border-radius:10px;background:var(--savo-shell-surface);color:var(--savo-shell-muted)}
-.v21-home .savo-hero-search input{flex:1;border:0;outline:0;color:var(--savo-shell-text);background:none;font-size:13px}
 .v21-home .savo-hero-actions{display:flex;flex-wrap:wrap;gap:12px}
 .v21-home .savo-hero-cta-primary,.v21-home .savo-hero-cta-secondary{padding:14px 26px;border-radius:13px;font-family:var(--font-display),sans-serif;font-weight:800;font-size:14px;display:inline-flex;align-items:center;gap:8px}
 .v21-home .savo-hero-cta-primary{color:var(--savo-shell-ink);background:linear-gradient(135deg,var(--savo-shell-discovery),#00B88A);box-shadow:0 8px 28px color-mix(in srgb,var(--savo-shell-discovery) 22%,transparent)}
@@ -728,15 +726,23 @@
    bounds below were checked against that geometry so the point never
    crosses the inner letter edges. Letters (S/A/V/O) are a separate
    <g> and are never targeted by this rule. */
-@keyframes savo-logo-point-motion {
-  0%   { transform: translate(0, 0); }
-  35%  { transform: translate(-2.5px, 3px); }
-  70%  { transform: translate(2.5px, -2px); }
-  100% { transform: translate(0, 0); }
+/* SAVO Discovery Spark — approved SAVO motion identity, replaces the
+   earlier one-time-on-mount pass. Letters (S/A/V/O) are a separate <g>
+   and are NEVER targeted by this rule — only the Discovery Point
+   (turquoise mark). Rest state: fully static, fully visible, exact
+   resting position. Every ~4s: a single 0.7s "spark" — small upward
+   nudge (~3px), scale 1 → ~1.16 → 1, a very subtle turquoise glow
+   during the pulse — then back to EXACTLY the resting position for
+   the remaining ~3.3s of calm. Never opacity-0, never rotated, never
+   a continuous bounce. */
+@keyframes savo-logo-spark {
+  0%   { transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 transparent); }
+  8%   { transform: translateY(-3px) scale(1.16); filter: drop-shadow(0 0 4px color-mix(in srgb, var(--savo-shell-discovery, #00D4A1) 55%, transparent)); }
+  17.5%{ transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 transparent); }
+  100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 transparent); }
 }
 .savo-logo-point {
-  animation: savo-logo-point-motion 1s ease-in-out 1;
-  animation-fill-mode: both;
+  animation: savo-logo-spark 4s ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: center;
 }

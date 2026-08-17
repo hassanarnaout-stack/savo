@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ArrowRight, BookOpen, CheckCircle, Gift, Headphones, Search, Shield, TrendingUp, Truck, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle, Gift, Headphones, Shield, TrendingUp, Truck, Zap } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import type { HomeProduct, HomepageViewModel } from "@/lib/homepage-view-model";
 import { FlashDealsClient, ProductCommerceSections } from "./v21-home-client";
@@ -143,10 +143,6 @@ function Hero({ data, locale }: { data: HomepageViewModel; locale: string }) {
           <p>
             Open SAVO every day and ask: <em>&quot;What&apos;s here today?&quot;</em>
           </p>
-          <form action={'/' + locale + '/products'} className="savo-hero-search">
-            <Search size={16} />
-            <input name="q" placeholder={locale === "ar" ? "ابحث عن المنتجات..." : "Search deals..."} />
-          </form>
           <div className="savo-hero-actions">
             <Link href="/products?type=DEAL" className="savo-hero-cta-primary">
               <Zap size={17} /> Start Discovering

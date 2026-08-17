@@ -1035,6 +1035,14 @@ model BundleItem {
 // can be flipped without a redeploy. A single-row settings table.
 // ---------------------------------------------------------------------------
 
+model HomepageSettings {
+  id               String   @id @default("singleton") // enforced single row by convention — see HomepageSettingsService
+  heroProductCount Int      @default(5) // how many real products rotate in the Hero Discovery Display
+  updatedAt        DateTime @updatedAt
+
+  @@map("homepage_settings")
+}
+
 model BetaSettings {
   id         String    @id @default("singleton") // enforced single row by convention — see BetaService
   enabled    Boolean   @default(false)

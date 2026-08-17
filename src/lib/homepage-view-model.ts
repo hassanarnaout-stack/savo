@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { MembershipService } from "@/lib/services/membership-service";
 import { getDealOfTheHour } from "@/lib/discovery-engine";
 import { isLaunchFeatureEnabled } from "@/lib/launch-flags";
+import { HomepageSettingsService } from "@/lib/services/homepage-settings-service";
 
 export type HomeProduct = {
   id: string; slug: string; name: string; nameAr: string | null; brand: string | null;
@@ -76,7 +77,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
   const visibility = await MembershipService.getVisibilityFilter(session?.user?.id);
   const now = new Date();
   const publicWhere = { status: "ACTIVE" as const, approvalStatus: "APPROVED" as const, ...visibility };
-  const [products, flashRows, editorRows, categories, verifiedSupplierCount, dealOfHourEnabled] = await Promise.all([
+  const [products, flashRows, editorRows, categories, verifiedSupplierCount, dealOfHourEnabled, homepageSettings] = await Promise.all([
     prisma.product.findMany({ where: publicWhere, include: productInclude }),
     prisma.flashDeal.findMany({
       where: { status: "LIVE", isActive: true, startAt: { lte: now }, endAt: { gt: now }, product: publicWhere },
@@ -95,6 +96,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
     }),
     prisma.supplier.count({ where: { status: "ACTIVE", verificationStatus: "VERIFIED" } }),
     isLaunchFeatureEnabled("ADVANCED_DEAL_OF_HOUR_ENABLED"),
+    HomepageSettingsService.get(),
   ]);
   // SAVO Hour — only queried when the launch flag is on; getDealOfTheHour()
   // already filters to the single active, non-expired slot.
@@ -136,7 +138,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
   const justLanded = [...all].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 4);
   const bestValue = [...all].filter((p) => p.originalPrice > p.price).sort((a, b) => (b.originalPrice - b.price) - (a.originalPrice - a.price)).slice(0, 4);
   const endingSoon = deals.filter((deal) => Date.parse(deal.endsAt) - now.getTime() <= 6 * 60 * 60 * 1000).slice(0, 4);
-  const heroProducts = [...trending, ...deals, ...justLanded].filter((p, i, list) => list.findIndex((q) => q.id === p.id) === i).slice(0, 3);
+  const heroProducts = [...trending, ...deals, ...justLanded].filter((p, i, list) => list.findIndex((q) => q.id === p.id) === i).slice(0, homepageSettings.heroProductCount);
   const brandMap = new Map<string, { slug: string; name: string; count: number }>();
   for (const product of all) {
     if (!product.brand) continue;

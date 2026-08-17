@@ -30,18 +30,18 @@ import React from "react";
  * per the brief, existing occurrences are not replaced yet in this
  * phase to avoid regressing pages that render it today.
  *
- * Discovery Point motion (approved SAVO motion identity): the point
- * is a separate <path> from the four letterforms specifically so it
- * can move independently — S/A/V/O never animate, only the point
- * does. Pure CSS keyframe animation (see .savo-logo-point in
- * globals.css): a single 1s translate-only pass through the A's
- * internal negative space, back to its exact resting position, once
- * per mount. No JS/client component needed — this keeps SAVOLogo a
- * server component everywhere it's already used (header, footer).
- * Respects prefers-reduced-motion (falls back to the static resting
- * point). Opt-in via `animated` — defaults to false, so every
- * existing call site (header, footer) stays on the static resting
- * logo until a call site explicitly asks for motion.
+ * Discovery Point motion (SAVO Discovery Spark — approved SAVO motion
+ * identity): the point is a separate <path> from the four letterforms
+ * specifically so it can move independently — S/A/V/O never animate,
+ * only the point does. Pure CSS keyframe animation (see
+ * .savo-logo-point in globals.css): an intermittent ~4s cycle — one
+ * ~0.7s "spark" (small upward nudge + scale + subtle glow), then back
+ * to the exact resting position for the rest of the cycle. No JS/
+ * client component needed — this keeps SAVOLogo a server component
+ * everywhere it's already used (header, footer). Respects
+ * prefers-reduced-motion (falls back to the static resting point).
+ * Opt-in via `animated` — defaults to false; currently enabled at the
+ * header call site only.
  */
 export type SAVOLogoVariant = "primary-dark" | "primary-light" | "mono-white" | "mono-black";
 
