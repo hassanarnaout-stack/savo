@@ -5,9 +5,10 @@ import { serializeProducts } from "@/lib/utils";
 import { DiscoverRailCard } from "@/components/product/discover-rail-card";
 import { Link } from "@/i18n/routing";
 import { WORLD_THEMES } from "@/lib/world-themes";
-import { Sparkles, Gift, TrendingUp, Crown, Zap, Layers, Package } from "lucide-react";
 import { getLaunchFlags } from "@/lib/launch-flags";
 import Image from "next/image";
+import { getQuickWayDestination } from "@/lib/quick-way-destinations";
+import * as Icons from "lucide-react";
 
 /**
  * Site-wide performance pass: this page reads zero session/user-specific
@@ -18,20 +19,26 @@ import Image from "next/image";
  */
 export const revalidate = 30;
 
-function getMethodLinks(FEATURE_FLAGS: Awaited<ReturnType<typeof getLaunchFlags>>) {
-  const links = [{ href: "/products?sort=newest", icon: Sparkles, labelEn: "New Arrivals", labelAr: "وصل حديثاً" }];
-  if (FEATURE_FLAGS.MYSTERY_BOX_ENABLED) links.push({ href: "/mystery-boxes", icon: Gift, labelEn: "Mystery Boxes", labelAr: "صناديق المفاجآت" });
-  if (FEATURE_FLAGS.GAMIFICATION_ENABLED) {
-    links.push({ href: "/treasure-map", icon: Package, labelEn: "Treasure Hunt", labelAr: "رحلة الكنز" });
-    links.push({ href: "/golden-ticket", icon: Crown, labelEn: "Golden Ticket", labelAr: "التذكرة الذهبية" });
-  }
-  links.push({ href: "/brands", icon: Sparkles, labelEn: "Browse by Brand", labelAr: "تصفح حسب الماركة" });
-  links.push({ href: "/collections", icon: Layers, labelEn: "Curated Collections", labelAr: "تجميعات منتقاة" });
-  links.push({ href: "/products?membersOnly=true", icon: Crown, labelEn: "SAVO Plus Exclusive", labelAr: "Savo Plus حصرياً" });
-  links.push({ href: "/products?badge=EDITORS_PICK", icon: Sparkles, labelEn: "Editor's Picks", labelAr: "اختيار المحرر" });
-  links.push({ href: "/products?badge=LIMITED", icon: Zap, labelEn: "Limited Edition", labelAr: "إصدار محدود" });
-  links.push({ href: "/products?type=DEAL", icon: TrendingUp, labelEn: "Flash Sale", labelAr: "عروض فلاش" });
-  return links;
+/** Quick Ways In — admin-managed (see /admin/discover-quick-ways).
+ * Icon names are free text in the DB but only rendered if they match a
+ * real Lucide export ("approved predefined set" — bounded by what
+ * actually exists in the icon library, not arbitrary strings). */
+async function getQuickWayItems(FEATURE_FLAGS: Awaited<ReturnType<typeof getLaunchFlags>>) {
+  const shortcuts = await prisma.quickWayShortcut.findMany({
+    where: { isActive: true },
+    orderBy: { sortOrder: "asc" },
+  });
+
+  return shortcuts
+    .map((s) => {
+      const destination = getQuickWayDestination(s.destinationKey);
+      if (!destination) return null; // stale/unknown key — skip rather than link to nothing
+      if (destination.requiresFlag && !FEATURE_FLAGS[destination.requiresFlag]) return null;
+      const Icon = (Icons as any)[s.icon] ?? Icons.Sparkles;
+      return { href: destination.href, Icon, labelEn: s.labelEn, labelAr: s.labelAr, id: s.id };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .slice(0, 8);
 }
 
 /**
@@ -51,10 +58,11 @@ export default async function DiscoverPage() {
   const locale = await getLocale();
   const isArabic = locale === "ar";
 
-  const [newArrivals, trending, worldCategories] = await Promise.all([
+  const [newArrivals, trending, worldCategories, quickWayItems] = await Promise.all([
     getNewArrivals(6),
     getTrending(6),
     prisma.category.findMany({ where: { slug: { in: Object.keys(WORLD_THEMES) } }, select: { name: true, nameAr: true, slug: true, imageUrl: true, products: { take: 1, where: { images: { some: {} } }, select: { images: { take: 1, orderBy: { sortOrder: "asc" }, select: { url: true } } } } } }),
+    getQuickWayItems(FEATURE_FLAGS),
   ]);
 
   return (
@@ -92,17 +100,19 @@ export default async function DiscoverPage() {
         </div>
       )}
 
-      <div className="savo-discover-quick">
-        <div className="savo-products-eyebrow">{isArabic ? "طرق سريعة للدخول" : "Quick ways in"}</div>
-        <div className="savo-discover-quick-row">
-          {getMethodLinks(FEATURE_FLAGS).map((m) => (
-            <Link key={m.href} href={m.href} className="savo-discover-quick-pill">
-              <m.icon size={13} />
-              {isArabic ? m.labelAr : m.labelEn}
-            </Link>
-          ))}
+      {quickWayItems.length > 0 && (
+        <div className="savo-discover-quick">
+          <div className="savo-products-eyebrow">{isArabic ? "طرق سريعة للدخول" : "Quick ways in"}</div>
+          <div className="savo-discover-quick-row">
+            {quickWayItems.map((m) => (
+              <Link key={m.id} href={m.href} className="savo-discover-quick-pill">
+                <m.Icon size={13} />
+                {isArabic ? m.labelAr : m.labelEn}
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {trending.length > 0 && (
         <div className="savo-discover-rail">

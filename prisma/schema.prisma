@@ -3574,3 +3574,23 @@ model CollectionProduct {
   @@index([collectionId])
   @@map("collection_products")
 }
+
+// --- Discover — Quick Ways In (admin-managed shortcuts) ---
+// Additive, standalone model — zero relation to existing models, zero
+// modification to anything above. destinationKey is validated against
+// a closed, code-defined list (see src/lib/quick-way-destinations.ts),
+// never a free-form URL.
+model QuickWayShortcut {
+  id             String   @id @default(cuid())
+  destinationKey String
+  labelEn        String
+  labelAr        String
+  icon           String
+  sortOrder      Int      @default(0)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@map("quick_way_shortcuts")
+}
