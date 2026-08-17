@@ -52,6 +52,27 @@ const AVAILABILITY_OPTIONS: { id: AvailabilityKey; label: string; ar: string }[]
   { id: "low_stock", label: "Low Stock", ar: "نفاد قريباً" },
 ];
 
+/**
+ * Navigation contexts vs combinable refinements.
+ * ============================================================
+ * `type` (Product.type=DEAL/RESCUE), `filter` (flash/ending_soon), and
+ * `badge` are the three "primary entry context" params the Deals
+ * dropdown links write — each represents a distinct top-level view,
+ * not a refinement of the current one. Every OTHER param (brand,
+ * price, deal checkboxes, availability, sort, q) is a combinable
+ * refinement that stays valid across a category change.
+ *
+ * Root cause of the reported bug: setParam()/clearAll() always
+ * inherited the ENTIRE current query string via
+ * `new URLSearchParams(searchParams.toString())` with no concept of
+ * "this param belongs to a different, now-abandoned context" — so
+ * clicking a category chip while on Flash Deals produced
+ * ?type=DEAL&category=mystery-boxes (0 real products ever satisfy
+ * both). Centralized fix: selecting a new category clears these three
+ * context params; Clear All clears them too.
+ */
+const CONTEXT_PARAMS = ["type", "filter", "badge"];
+
 export function ProductFilters({
   categories, brands, activeCategory, activeSort,
   selectedBrands, selectedDeals, minPrice, maxPrice, selectedAvailability,
@@ -77,6 +98,10 @@ export function ProductFilters({
     const next = new URLSearchParams(searchParams.toString());
     if (value) next.set(key, value);
     else next.delete(key);
+    // Selecting a category is a new primary navigation context — a
+    // stale Deals-context param from wherever the user came from must
+    // not silently survive into it (see CONTEXT_PARAMS above).
+    if (key === "category") CONTEXT_PARAMS.forEach((p) => next.delete(p));
     push(next);
   }
 
@@ -119,7 +144,7 @@ export function ProductFilters({
 
   function clearAll() {
     const next = new URLSearchParams(searchParams.toString());
-    ["brand", "minPrice", "maxPrice", "deal", "availability", "page"].forEach((k) => next.delete(k));
+    ["brand", "minPrice", "maxPrice", "deal", "availability", "page", ...CONTEXT_PARAMS, "category", "q"].forEach((k) => next.delete(k));
     router.push(`${pathname}?${next.toString()}`);
   }
 
