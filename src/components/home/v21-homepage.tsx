@@ -4,9 +4,9 @@ import { Link } from "@/i18n/routing";
 import type { HomeProduct, HomepageViewModel } from "@/lib/homepage-view-model";
 import { FlashDealsClient, ProductCommerceSections } from "./v21-home-client";
 import { SavoHour } from "./savo-hour";
+import { HeroDiscoveryDisplay } from "./hero-discovery-display";
 
 const kd = (value: number) => "KD " + value.toFixed(3);
-const discount = (product: HomeProduct) => Math.max(0, Math.round((1 - product.price / product.originalPrice) * 100));
 
 function ProductImage({ product, sizes }: { product: HomeProduct; sizes: string }) {
   return product.image ? <Image src={product.image} alt={product.name} fill sizes={sizes} /> : <span className="v21-image-unavailable">Source image unavailable</span>;
@@ -165,27 +165,7 @@ function Hero({ data, locale }: { data: HomepageViewModel; locale: string }) {
           </div>
         </div>
         <div className="savo-hero-products">
-          {data.heroProducts.map((product, index) => (
-            <Link
-              href={'/products/' + product.slug}
-              key={product.id}
-              className="savo-hero-product"
-              style={{ "--delay": index * 0.9 + "s" } as React.CSSProperties}
-            >
-              <span className="savo-hero-product-thumb">
-                <ProductImage product={product} sizes="64px" />
-              </span>
-              <div>
-                <small>{product.brand ?? product.category}</small>
-                <h3>{product.name}</h3>
-                <p>
-                  <strong>{kd(product.price)}</strong>
-                  <del>{kd(product.originalPrice)}</del>
-                  {discount(product) > 0 && <b>-{discount(product)}%</b>}
-                </p>
-              </div>
-            </Link>
-          ))}
+          <HeroDiscoveryDisplay products={data.heroProducts} locale={locale} />
         </div>
       </div>
     </section>

@@ -631,15 +631,38 @@
 .v21-home .savo-hero-stats{display:flex;gap:34px;margin-top:40px;padding-top:26px;border-top:1px solid var(--savo-shell-border)}
 .v21-home .savo-hero-stat-value{font-family:var(--font-display),sans-serif;font-weight:800;font-size:20px;color:var(--savo-shell-text)}
 .v21-home .savo-hero-stat-label{margin-top:2px;color:var(--savo-shell-muted);font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
-.v21-home .savo-hero-products{flex:0 0 auto;width:340px;display:flex;flex-direction:column;gap:14px}
-.v21-home .savo-hero-product{width:100%;padding:13px;display:flex;align-items:center;gap:13px;border:1px solid var(--savo-shell-border);border-radius:15px;background:var(--savo-shell-surface);color:var(--savo-shell-text);animation:v21-float 5s ease-in-out infinite;animation-delay:var(--delay)}
-.v21-home .savo-hero-product-thumb{width:58px;height:58px;position:relative;flex:none;overflow:hidden;border-radius:10px}
-.v21-home .savo-hero-product small{color:var(--savo-shell-muted);font-size:11px}
-.v21-home .savo-hero-product h3{margin:3px 0;font-size:12.5px;font-weight:700}
-.v21-home .savo-hero-product p{margin:0;display:flex;align-items:baseline;gap:7px;font-size:11px}
-.v21-home .savo-hero-product strong{color:var(--savo-shell-discovery)}
-.v21-home .savo-hero-product del{color:var(--savo-shell-muted);font-size:10px}
-.v21-home .savo-hero-product b{padding:2px 6px;border-radius:5px;color:var(--savo-shell-fire);background:color-mix(in srgb,var(--savo-shell-fire) 12%,transparent);font-size:9.5px}
+.v21-home .savo-hero-products{flex:0 0 auto;width:400px}
+
+/* Discovery Display — V22 HeroDisplay pattern: one large feature card
+   + a thumbnail row below, with automatic rotation (approved SAVO
+   behavioral enhancement). Cross-fade only — no mouse-follow/parallax,
+   no aggressive carousel movement. */
+.savo-hero-display{display:flex;flex-direction:column;gap:12px}
+.savo-hero-display-card{display:block;position:relative;height:420px;border-radius:22px;overflow:hidden;border:1px solid var(--savo-shell-border);background:var(--savo-shell-surface);cursor:pointer}
+.savo-hero-display-frame{position:absolute;inset:0}
+.savo-hero-display-frame.is-animated{animation:savo-hero-crossfade .6s ease}
+@keyframes savo-hero-crossfade{from{opacity:0;transform:scale(1.015)}to{opacity:1;transform:scale(1)}}
+.savo-hero-display-img{object-fit:cover;transition:transform .5s ease}
+@media(hover:hover) and (pointer:fine){.savo-hero-display-card:hover .savo-hero-display-img{transform:scale(1.04)}}
+.savo-hero-display-fallback{position:absolute;inset:0;background:var(--savo-shell-surface)}
+.savo-hero-display-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(12,15,22,.96) 0%,rgba(12,15,22,.25) 55%,transparent 80%);pointer-events:none}
+.savo-hero-display-badge{position:absolute;top:16px;inset-inline-start:16px;padding:5px 12px;border-radius:99px;color:#fff;background:var(--savo-shell-fire);font-family:var(--font-display),sans-serif;font-weight:800;font-size:12px;z-index:2}
+.savo-hero-display-info{position:absolute;inset-inline:0;bottom:0;padding:22px;z-index:2}
+.savo-hero-display-brand{display:block;color:var(--savo-shell-discovery);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.savo-hero-display-info h3{margin:0 0 10px;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:22px;letter-spacing:-.02em}
+.savo-hero-display-price{display:flex;align-items:baseline;gap:9px}
+.savo-hero-display-price strong{color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:900;font-size:20px}
+.savo-hero-display-price del{color:var(--savo-shell-muted);font-size:13px}
+/* Thin live-rotation progress line — subtle, no clutter. */
+.savo-hero-progress{position:absolute;top:0;inset-inline:0;height:2px;background:rgba(255,255,255,.12);z-index:2}
+.savo-hero-progress-bar{height:100%;width:0%;background:var(--savo-shell-discovery);animation:savo-hero-progress 5s linear forwards}
+.savo-hero-progress-bar.is-paused{animation-play-state:paused}
+@keyframes savo-hero-progress{from{width:0%}to{width:100%}}
+.savo-hero-thumbs{display:flex;gap:10px}
+.savo-hero-thumb{width:64px;height:64px;position:relative;flex:0 0 auto;border-radius:12px;overflow:hidden;border:2px solid transparent;background:var(--savo-shell-surface);cursor:pointer;padding:0;opacity:.55;transition:opacity .2s,border-color .2s}
+.savo-hero-thumb:hover{opacity:.85}
+.savo-hero-thumb.is-active{opacity:1;border-color:var(--savo-shell-discovery)}
+.savo-hero-thumb-fallback{position:absolute;inset:0;background:var(--savo-shell-surface)}
 
 /* SAVO Hour — real DealOfTheHour data, shared HomeCountdown engine. */
 .v21-home .savo-hour{background:#0A0800;border-top:1px solid color-mix(in srgb,var(--savo-shell-fire) 10%,transparent);border-bottom:1px solid color-mix(in srgb,var(--savo-shell-fire) 10%,transparent)}
@@ -682,6 +705,7 @@
   .v21-home .savo-hero{padding:44px 22px 48px}
   .v21-home .savo-hero-grid{flex-direction:column;gap:40px}
   .v21-home .savo-hero-products{width:100%}
+  .v21-home .savo-hero-display-card{height:300px}
   .v21-home .savo-hero-stats{display:none}
   .v21-home .savo-hour-band,.v21-home .savo-hour-stage{padding-inline:22px}
   .v21-home .savo-hour-stage{flex-direction:column;align-items:stretch}
@@ -690,6 +714,10 @@
 }
 @media(prefers-reduced-motion:reduce){
   .v21-home .savo-hero-product{animation:none}
+  .savo-hero-display-frame.is-animated{animation:none}
+  .savo-hero-display-img{transition:none!important}
+  .savo-hero-display-card:hover .savo-hero-display-img{transform:none!important}
+  .savo-hero-progress{display:none}
 }
 
 /* Discovery Point motion — approved SAVO motion identity (Final Master
