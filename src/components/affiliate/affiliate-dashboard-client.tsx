@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Copy, TrendingUp, Users, Wallet } from "lucide-react";
+import { useLocale } from "next-intl";
+import { buildAffiliateShareUrl } from "@/lib/affiliate-share";
 
 interface Dashboard {
   account: { referralCode: string; commissionRate: number; totalEarned: string; totalWithdrawn: string };
@@ -17,6 +19,7 @@ interface Dashboard {
 }
 
 export function AffiliateDashboardClient({ hasAccount }: { hasAccount: boolean }) {
+  const locale = useLocale();
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -85,7 +88,7 @@ export function AffiliateDashboardClient({ hasAccount }: { hasAccount: boolean }
   }
 
   if (!dashboard) return null;
-  const referralLink = typeof window !== "undefined" ? `${window.location.origin}/en?ref=${dashboard.account.referralCode}` : "";
+  const referralLink = typeof window !== "undefined" ? buildAffiliateShareUrl({ origin: window.location.origin, locale, referralCode: dashboard.account.referralCode }) : "";
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">

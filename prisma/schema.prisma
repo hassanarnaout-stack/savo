@@ -201,6 +201,7 @@ model Supplier {
 
   owner         User?           @relation(fields: [ownerUserId], references: [id])
   products      Product[]
+  affiliateBoostCampaigns AffiliateBoostCampaign[]
   supplierOrders SupplierOrder[]
   transactions  SupplierTransaction[]
   payouts       SupplierPayout[]
@@ -444,6 +445,7 @@ model Product {
   subscriptions       ProductSubscription[]
   batches             ProductBatch[]
   stockCounts         StockCount[]
+  affiliateBoostCampaignEntries AffiliateBoostCampaignProduct[]
 
   @@index([categoryId])
   @@index([brandName])
@@ -3433,6 +3435,7 @@ model AffiliateAccount {
   referrals         AffiliateReferral[]
   withdrawals       AffiliateWithdrawal[]
   milestones        AffiliateMilestone[]
+  missionAwards     AffiliateMissionAward[]
 
   @@map("affiliate_accounts")
 }
@@ -3460,10 +3463,21 @@ model AffiliateReferral {
   confirmedAt       DateTime?
   createdAt         DateTime                 @default(now())
 
+  // --- Discovery Partners V2 Phase 1 — additive, nullable/default-safe.
+  // Existing rows read boostCommissionAmount as 0 and boostCampaignId as
+  // null, exactly their real historical state (no boost ever applied to
+  // them) — zero rewriting of history. Base commissionAmount above is
+  // UNCHANGED semantics; boost is tracked separately for full auditability
+  // of "why did this affiliate earn X" (base vs. campaign-boosted).
+  boostCommissionAmount Decimal              @default(0) @db.Decimal(10, 3)
+  boostCampaignId       String?
+  boostCampaign          AffiliateBoostCampaign? @relation(fields: [boostCampaignId], references: [id], onDelete: SetNull)
+
   affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
   order     Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([affiliateId, status])
+  @@index([boostCampaignId])
   @@map("affiliate_referrals")
 }
 
@@ -3530,6 +3544,102 @@ model AffiliateMilestone {
 
   @@unique([affiliateId, ruleId])
   @@map("affiliate_milestones")
+}
+
+// ---------------------------------------------------------------------------
+// SAVO DISCOVERY PARTNERS V2 — PHASE 1 (additive, on top of the existing
+// Affiliate engine above; nothing above this line was modified except the
+// two nullable/default-safe fields added to AffiliateReferral).
+// ---------------------------------------------------------------------------
+
+enum AffiliateBoostFundingSource {
+  ADMIN
+  SUPPLIER
+}
+
+model AffiliateBoostCampaign {
+  id                    String                      @id @default(cuid())
+  name                  String
+  description           String?                     @db.Text
+  fundingSource         AffiliateBoostFundingSource
+  supplierId            String? // required (validated in-service) when fundingSource = SUPPLIER
+  extraCommissionRate   Float // percentage points ADDED on top of the affiliate's base commissionRate
+  startAt               DateTime
+  endAt                 DateTime
+  isActive              Boolean                     @default(true)
+  budget                Decimal?                    @db.Decimal(10, 3) // null = unlimited
+  confirmedSpend        Decimal                     @default(0) @db.Decimal(10, 3) // real cumulative CONFIRMED boost commission paid out under this campaign — the ONLY place this is written
+  createdByUserId       String
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+
+  supplier Supplier?                       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  products AffiliateBoostCampaignProduct[]
+  referrals AffiliateReferral[]
+
+  @@index([isActive, startAt, endAt])
+  @@index([supplierId])
+  @@map("affiliate_boost_campaigns")
+}
+
+// Real relation, not comma-separated product IDs — one campaign to many products.
+model AffiliateBoostCampaignProduct {
+  id         String   @id @default(cuid())
+  campaignId String
+  productId  String
+  createdAt  DateTime @default(now())
+
+  campaign AffiliateBoostCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  product  Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, productId])
+  @@index([productId])
+  @@map("affiliate_boost_campaign_products")
+}
+
+enum AffiliateMissionMetric {
+  CONFIRMED_ORDER_COUNT
+  CONFIRMED_REVENUE
+}
+
+// Temporary, campaign-oriented objective — distinct from
+// AffiliateMilestoneRule (permanent/evergreen, preserved exactly as-is
+// above, never renamed or reinterpreted). Same "independent progress,
+// award once" philosophy, deliberately no stage/tier concept.
+model AffiliateMission {
+  id                String                  @id @default(cuid())
+  nameEn            String
+  nameAr            String
+  description       String?                 @db.Text
+  metric            AffiliateMissionMetric
+  threshold         Float
+  giftCardAmount    Decimal                 @default(0) @db.Decimal(10, 3)
+  bonusCommissionRate Float? // optional one-time-applied bonus rate bump, same "never lowers" semantics as milestones
+  startAt           DateTime
+  endAt             DateTime
+  isActive          Boolean                 @default(true)
+  sortOrder         Int                     @default(0)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  awards AffiliateMissionAward[]
+
+  @@index([isActive, startAt, endAt])
+  @@map("affiliate_missions")
+}
+
+model AffiliateMissionAward {
+  id          String   @id @default(cuid())
+  affiliateId String
+  missionId   String
+  giftCardId  String?
+  awardedAt   DateTime @default(now())
+
+  affiliate AffiliateAccount @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  mission   AffiliateMission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@unique([affiliateId, missionId])
+  @@map("affiliate_mission_awards")
 }
 
 // ---------------------------------------------------------------------------

@@ -292,7 +292,11 @@ export async function POST(req: NextRequest) {
   // from just passing any affiliate's code in the request body to steal commission).
   const refCookie = (await cookies()).get("savo_ref")?.value;
   if (refCookie) {
-    await AffiliateService.attributeOrder(refCookie, order.id, subtotal).catch(() => {});
+    const orderItemsForAttribution = body.items.map((item) => {
+      const product = products.find((p) => p.id === item.productId)!;
+      return { productId: item.productId, lineSubtotal: Number(product.saveoPrice) * item.quantity };
+    });
+    await AffiliateService.attributeOrder(refCookie, order.id, subtotal, session.user!.id, orderItemsForAttribution).catch(() => {});
   }
 
   // Checkout depends on the Payment Layer, not inline payment logic — see

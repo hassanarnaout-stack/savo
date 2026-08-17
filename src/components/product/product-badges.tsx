@@ -1,4 +1,4 @@
-const BADGE_CONFIG: Record<string, { en: string; ar: string; color: string }> = {
+export const BADGE_CONFIG: Record<string, { en: string; ar: string; color: string }> = {
   TRENDING: { en: "🔥 Trending", ar: "🔥 رائج", color: "bg-saveo-gold-100 text-saveo-gold-700" },
   LIMITED: { en: "⏳ Limited", ar: "⏳ محدود", color: "bg-saveo-gold-100 text-saveo-gold-700" },
   EXCLUSIVE: { en: "💎 Exclusive", ar: "💎 حصري", color: "bg-saveo-emerald-900 text-white" },
