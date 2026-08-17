@@ -9,6 +9,7 @@ import { MembershipService } from "@/lib/services/membership-service";
 import { SponsoredSlotService } from "@/lib/services/sponsored-slot-service";
 import { SponsoredSearchAdsRail } from "@/components/product/sponsored-search-ads-rail";
 import { DiscoveryPoint } from "@/components/brand/discovery-point";
+import { FlashDealService } from "@/lib/services/flash-deal-service";
 import { parseProductFilters, buildProductWhere, buildProductOrderBy, type ProductFilterParams } from "@/lib/product-filters";
 
 export const revalidate = 30;
@@ -38,16 +39,38 @@ export default async function ProductsPage({ params, searchParams }: Props) {
   const orderBy = buildProductOrderBy(filters.sort);
   const take = filters.page * PAGE_SIZE;
 
+  /** Flash Deals / Ending Soon — real FlashDeal-backed modes. Reuses
+   * FlashDealService.getAllLiveDeals() as-is (same LIVE/sold-out/time-
+   * window rules governing the PDP countdown). Mapped into the same
+   * ProductCardData shape ProductGrid already expects. */
+  let flashProducts: any[] | null = null;
+  if (filters.flashFilter) {
+    const deals = await FlashDealService.getAllLiveDeals(100);
+    const sorted = filters.flashFilter === "ending_soon" ? [...deals].sort((a, b) => new Date(a.endAt).getTime() - new Date(b.endAt).getTime()) : deals;
+    flashProducts = sorted.map((deal) => ({
+      id: deal.product.id,
+      name: deal.product.name,
+      nameAr: deal.product.nameAr,
+      slug: deal.product.slug,
+      originalPrice: deal.product.saveoPrice,
+      saveoPrice: FlashDealService.effectivePrice(Number(deal.product.saveoPrice), deal.discountPercent),
+      stockQty: FlashDealService.getRemainingStock(deal),
+      type: "DEAL",
+      dealEndsAt: deal.endAt,
+      images: deal.product.images,
+      has360Media: false,
+    }));
+  }
+
   const [categories, brandRows, totalCount, visibleProducts] = await Promise.all([
     prisma.category.findMany({ where: { isActive: true, parentId: null }, orderBy: { sortOrder: "asc" } }),
     prisma.product.findMany({ where: { status: "ACTIVE", approvalStatus: "APPROVED" }, select: { brandName: true }, distinct: ["brandName"] }),
-    // Same `where` as the grid query below — count and progress always match what's actually shown.
-    prisma.product.count({ where }),
-    prisma.product.findMany({ where, orderBy, take, include: { images: { take: 1, orderBy: { sortOrder: "asc" } }, media: { where: { type: "IMAGE_360" }, select: { id: true }, take: 1 } } }),
+    flashProducts ? Promise.resolve(flashProducts.length) : prisma.product.count({ where }),
+    flashProducts ? Promise.resolve(flashProducts) : prisma.product.findMany({ where, orderBy, take, include: { images: { take: 1, orderBy: { sortOrder: "asc" } }, media: { where: { type: "IMAGE_360" }, select: { id: true }, take: 1 } } }),
   ]);
 
   const brands = brandRows.map((r) => r.brandName).filter((b): b is string => !!b).sort();
-  const hasMore = visibleProducts.length < totalCount;
+  const hasMore = !flashProducts && visibleProducts.length < totalCount;
 
   const sponsoredSearchAds = filters.q
     ? (await SponsoredSlotService.getLiveSlots("SEARCH_TOP"))
@@ -68,7 +91,7 @@ export default async function ProductsPage({ params, searchParams }: Props) {
       <div className="savo-products-intro">
         <div className="savo-products-eyebrow">{isArabic ? "اكتشف · تسوق · احصل عليه" : "Discover · Shop · Get it"}</div>
         <div className="savo-products-heading-row">
-          <h1>{filters.q ? t("resultsFor", { query: filters.q }) : isArabic ? "المنتجات" : "All Products"}</h1>
+          <h1>{filters.q ? t("resultsFor", { query: filters.q }) : filters.flashFilter === "flash" ? (isArabic ? "عروض فلاش" : "Flash Deals") : filters.flashFilter === "ending_soon" ? (isArabic ? "تنتهي قريبًا" : "Ending Soon") : isArabic ? "المنتجات" : "All Products"}</h1>
           <span className="savo-products-count">
             {totalCount === 0 ? (isArabic ? "٠ نتيجة" : "0 results") : `${totalCount} ${common("results")}`}
           </span>
@@ -105,7 +128,7 @@ export default async function ProductsPage({ params, searchParams }: Props) {
             </div>
           ) : (
             <>
-              <ProductGrid products={serializeProducts(visibleProducts.map((pr) => ({ ...pr, has360Media: pr.media.length > 0 }))) as any} noResultsLabel={common("noResults")} continueShoppingLabel={common("continueShopping")} outOfStockLabel={common("outOfStock")} addToCartLabel={pT("addToCart")} locale={locale} />
+              <ProductGrid products={serializeProducts(flashProducts ? visibleProducts : (visibleProducts as any[]).map((pr: any) => ({ ...pr, has360Media: pr.media.length > 0 }))) as any} noResultsLabel={common("noResults")} continueShoppingLabel={common("continueShopping")} outOfStockLabel={common("outOfStock")} addToCartLabel={pT("addToCart")} locale={locale} />
               {hasMore && (
                 <div className="savo-products-loadmore">
                   <div className="savo-products-loadmore-count">

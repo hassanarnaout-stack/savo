@@ -178,14 +178,16 @@
 .savo-desktop-nav > div > a.active, .savo-deals-nav > a.active { border-bottom-color: var(--savo-shell-discovery); color: white; }
 .savo-deals-nav { position: relative; }
 .savo-deals-nav > a svg { width: 13px; height: 13px; }
-.savo-deals-menu { min-width: 230px; padding: 8px 0; position: absolute; z-index: 500; top: 100%; inset-inline-start: 0; visibility: hidden; opacity: 0; border: 1px solid #e8e8ea; border-top: 0; border-radius: 0 0 12px 12px; color: var(--savo-shell-ink); background: white; box-shadow: 0 12px 40px rgba(0,0,0,.18); transition: opacity .15s ease, visibility .15s ease; }
-.savo-deals-nav:hover .savo-deals-menu, .savo-deals-nav:focus-within .savo-deals-menu { visibility: visible; opacity: 1; }
-.savo-deals-menu > a { padding: 10px 18px; color: var(--savo-shell-ink); display: flex; align-items: center; gap: 10px; font-size: 13px; }
-.savo-deals-menu > a:hover { background: var(--savo-surface); }
-.savo-deals-menu strong { display: block; font-weight: 600; }
-.savo-deals-menu small { color: var(--savo-muted); display: block; font: 400 11px var(--font-cairo), sans-serif; }
-.savo-deals-menu hr { margin: 8px 0; border: 0; border-top: 1px solid #e8e8ea; }
-.savo-deals-menu .savo-all-deals { color: var(--savo-shell-discovery); font-size: 12px; font-weight: 700; }
+.savo-deals-menu { min-width: 240px; padding: 8px; position: absolute; z-index: 500; top: calc(100% + 8px); inset-inline-start: 0; visibility: hidden; opacity: 0; transform: translateY(-4px); border: 1px solid var(--savo-shell-border); border-radius: 16px; color: var(--savo-shell-text); background: var(--savo-shell-card); box-shadow: 0 16px 48px rgba(0,0,0,.5); transition: opacity .15s ease, visibility .15s ease, transform .15s ease; }
+.savo-deals-nav:hover .savo-deals-menu, .savo-deals-nav:focus-within .savo-deals-menu { visibility: visible; opacity: 1; transform: translateY(0); }
+.savo-deals-menu > a { padding: 10px 12px; border-radius: 10px; color: var(--savo-shell-text); display: flex; align-items: center; gap: 11px; font-size: 13px; }
+.savo-deals-menu > a:hover { background: var(--savo-shell-surface); }
+.savo-deals-menu > a svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--savo-shell-discovery); stroke-width: 2; }
+.savo-deals-menu strong { display: block; font-weight: 600; color: var(--savo-shell-text); }
+.savo-deals-menu small { color: var(--savo-shell-muted); display: block; font: 400 11px var(--font-cairo), sans-serif; }
+.savo-deals-menu hr { margin: 6px 4px; border: 0; border-top: 1px solid var(--savo-shell-border); }
+.savo-deals-menu .savo-all-deals { margin: 2px 4px 0; padding: 9px 12px; border-radius: 10px; color: var(--savo-shell-discovery); background: color-mix(in srgb,var(--savo-shell-discovery) 8%,transparent); font-size: 12.5px; font-weight: 700; justify-content: center; }
+.savo-deals-menu .savo-all-deals:hover { background: color-mix(in srgb,var(--savo-shell-discovery) 14%,transparent); }
 .savo-mobile-drawer-scrim { display: none; }
 .savo-mobile-bottom-nav { display: none; }
 
@@ -784,7 +786,7 @@
 .savo-pc-price{display:flex;align-items:baseline;gap:6px;min-width:0}
 .savo-pc-price strong{font-family:var(--font-display),sans-serif;font-weight:800;font-size:16.5px;color:var(--savo-shell-text)}
 .savo-pc-price del{color:var(--savo-shell-muted);font-size:11.5px}
-.savo-pc-add{flex:0 0 auto;padding:7px 13px;border:0;border-radius:9px;color:var(--savo-shell-ink);background:var(--savo-shell-discovery);display:flex;align-items:center;gap:6px;font-family:var(--font-manrope),sans-serif;font-weight:700;font-size:12.5px;cursor:pointer}
+.savo-pc-add{flex:0 0 auto;width:32px;height:32px;padding:0;border:0;border-radius:9px;color:var(--savo-shell-ink);background:var(--savo-shell-discovery);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .savo-pc-add.is-added{background:color-mix(in srgb,var(--savo-shell-discovery) 80%,black)}
 .savo-pc-add:disabled{opacity:.5;cursor:not-allowed}
 @media(hover:hover) and (pointer:fine){

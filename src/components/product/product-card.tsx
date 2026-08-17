@@ -204,18 +204,10 @@ export function ProductCard({
           <button
             onClick={handleAddToCart}
             disabled={outOfStock}
+            aria-label={outOfStock ? outOfStockLabel : addToCartLabel}
             className={`savo-pc-add ${added ? "is-added" : ""}`}
           >
-            {added ? (
-              <>
-                <CheckCircle2 className="h-3.5 w-3.5" /> Added
-              </>
-            ) : (
-              <>
-                <ShoppingCart className="h-3.5 w-3.5" />
-                {outOfStock ? outOfStockLabel : addToCartLabel}
-              </>
-            )}
+            {added ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ShoppingCart className="h-3.5 w-3.5" />}
           </button>
         </div>
       </div>

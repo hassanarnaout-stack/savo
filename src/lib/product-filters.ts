@@ -18,12 +18,17 @@ import type { Prisma } from "@prisma/client";
  * | minPrice     | number — saveoPrice >=                          |
  * | maxPrice     | number — saveoPrice <=                          |
  * | deal         | comma-separated: savo | discount20 | rescue     |
+ * | filter       | flash | ending_soon — real FlashDeal-backed modes,
+ *                  handled outside buildProductWhere (see page.tsx)   |
  * | availability | in_stock | low_stock                             |
  * | sort         | newest | price_asc | price_desc | discount | popular |
  * | page         | 1-based page number (existing pattern extended)  |
  */
 export type SortKey = "newest" | "price_asc" | "price_desc" | "discount" | "popular";
 export const SORT_KEYS: SortKey[] = ["newest", "price_asc", "price_desc", "discount", "popular"];
+
+export type FlashFilterKey = "flash" | "ending_soon";
+const FLASH_FILTER_KEYS: FlashFilterKey[] = ["flash", "ending_soon"];
 
 export type DealKey = "savo" | "discount20" | "rescue";
 export type AvailabilityKey = "in_stock" | "low_stock";
@@ -50,6 +55,7 @@ export interface ProductFilterParams {
   badge?: string;
   membersOnly?: string;
   type?: string;
+  filter?: string;
 }
 
 export interface ParsedProductFilters {
@@ -65,6 +71,7 @@ export interface ParsedProductFilters {
   badge?: string;
   membersOnly: boolean;
   type?: string;
+  flashFilter?: FlashFilterKey;
 }
 
 const DEAL_KEYS: DealKey[] = ["savo", "discount20", "rescue"];
@@ -90,6 +97,7 @@ export function parseProductFilters(params: ProductFilterParams): ParsedProductF
     badge: params.badge || undefined,
     membersOnly: params.membersOnly === "true",
     type: params.type || undefined,
+    flashFilter: FLASH_FILTER_KEYS.includes(params.filter as FlashFilterKey) ? (params.filter as FlashFilterKey) : undefined,
   };
 }
 

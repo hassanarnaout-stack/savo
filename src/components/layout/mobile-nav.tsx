@@ -76,10 +76,10 @@ export function MobileNav({ categories, locale }: { categories: Category[]; loca
   };
   const primaryLinks = [
     { label: isArabic ? "اكتشف" : "Discover", href: "/discover" as const, Icon: Compass },
-    { label: isArabic ? "عروض فلاش" : "Flash Deals", href: "/products?type=DEAL" as const, Icon: Zap },
+    { label: isArabic ? "عروض فلاش" : "Flash Deals", href: "/products?filter=flash" as const, Icon: Zap },
     { label: isArabic ? "أفضل العروض" : "Best Deals", href: "/products?sort=discount" as const, Icon: Tag },
-    { label: isArabic ? "تنتهي قريبًا" : "Ending Soon", href: "/products?badge=LIMITED" as const, Icon: Clock },
-    { label: isArabic ? "كميات محدودة" : "Limited Quantity", href: "/products?badge=LIMITED" as const, Icon: Flame },
+    { label: isArabic ? "تنتهي قريبًا" : "Ending Soon", href: "/products?filter=ending_soon" as const, Icon: Clock },
+    { label: isArabic ? "كميات محدودة" : "Limited Quantity", href: "/products?availability=low_stock" as const, Icon: Flame },
     { label: isArabic ? "كل المنتجات" : "All Products", href: "/products" as const, Icon: Search },
     { label: isArabic ? "العلامات" : "Brands", href: "/brands" as const, Icon: Package },
     { label: isArabic ? "صناديق المفاجآت" : "Mystery Boxes", href: "/mystery-boxes" as const, Icon: Gift },

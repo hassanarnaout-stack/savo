@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Compass, Flame, Home, ShoppingCart, User } from "lucide-react";
+import { ChevronDown, Compass, Flame, Home, ShoppingCart, User, Zap, Tag, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, usePathname } from "@/i18n/routing";
 import { useSearchParams } from "next/navigation";
@@ -33,12 +33,12 @@ export function DesktopNavigation({ locale }: { locale: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const t = copy[locale === "ar" ? "ar" : "en"];
-  const isDealView = pathname === "/products" && Boolean(searchParams.get("type") || searchParams.get("badge") || searchParams.get("sort") === "discount");
+  const isDealView = pathname === "/products" && Boolean(searchParams.get("type") || searchParams.get("badge") || searchParams.get("sort") === "discount" || searchParams.get("filter") || searchParams.get("availability") === "low_stock");
   const dealLinks = [
-    { icon: "⚡", en: "Flash Deals", ar: "عروض فلاش", href: "/products?type=DEAL" as const },
-    { icon: "✅", en: "Best Deals", ar: "أفضل العروض", href: "/products?sort=discount" as const },
-    { icon: "⏰", en: "Ending Soon", ar: "تنتهي قريبًا", href: "/products?badge=LIMITED" as const },
-    { icon: "🔥", en: "Limited Quantity", ar: "كميات محدودة", href: "/products?badge=LIMITED" as const },
+    { Icon: Zap, en: "Flash Deals", ar: "عروض فلاش", href: "/products?filter=flash" as const },
+    { Icon: Tag, en: "Best Deals", ar: "أفضل العروض", href: "/products?sort=discount" as const },
+    { Icon: Clock, en: "Ending Soon", ar: "تنتهي قريبًا", href: "/products?filter=ending_soon" as const },
+    { Icon: Flame, en: "Limited Quantity", ar: "كميات محدودة", href: "/products?availability=low_stock" as const },
   ];
 
   return (
@@ -48,7 +48,7 @@ export function DesktopNavigation({ locale }: { locale: string }) {
         <div className="savo-deals-nav">
           <Link href="/products?type=DEAL" className={isDealView ? "active" : ""}>{t.deals}<ChevronDown aria-hidden="true" /></Link>
           <div className="savo-deals-menu">
-            {dealLinks.map((item) => <Link href={item.href} key={item.en}><span>{item.icon}</span><span><strong>{locale === "ar" ? item.ar : item.en}</strong><small lang="ar" dir="rtl">{item.ar}</small></span></Link>)}
+            {dealLinks.map((item) => <Link href={item.href} key={item.en}><item.Icon aria-hidden="true" /><span><strong>{locale === "ar" ? item.ar : item.en}</strong><small lang="ar" dir="rtl">{item.ar}</small></span></Link>)}
             <hr />
             <Link href="/products?type=DEAL" className="savo-all-deals">{locale === "ar" ? "كل العروض ←" : "All Deals →"}</Link>
           </div>
