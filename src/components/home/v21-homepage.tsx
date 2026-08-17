@@ -2,7 +2,6 @@ import Image from "next/image";
 import { ArrowRight, BookOpen, CheckCircle, Gift, Headphones, Shield, TrendingUp, Truck, Zap } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import type { HomeProduct, HomepageViewModel } from "@/lib/homepage-view-model";
-import { FlashDealsClient, ProductCommerceSections } from "./v21-home-client";
 import { SavoHour } from "./savo-hour";
 import { HeroDiscoveryDisplay } from "./hero-discovery-display";
 
@@ -21,14 +20,7 @@ export function V21Homepage({ data, locale }: { data: HomepageViewModel; locale:
     <Hero data={data} locale={locale} />
     <SavoHour deal={data.dealOfTheHour} />
     <QuickDiscovery data={data} />
-    <FlashDealsClient deals={data.flashDeals} />
-    <Trending products={data.trending} />
-    <Editors products={data.editorsPicks} />
     <Categories categories={data.categories} />
-    <Brands brands={data.brands} />
-    <Mystery boxes={data.mysteryBoxes} />
-    <ProductCommerceSections justLanded={data.justLanded} bestValue={data.bestValue} endingSoon={data.endingSoon} />
-    <Trust verifiedSupplierCount={data.verifiedSupplierCount} />
   </div>;
 }
 
