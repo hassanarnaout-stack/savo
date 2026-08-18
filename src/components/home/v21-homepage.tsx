@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ArrowRight, BookOpen, CheckCircle, Gift, Headphones, Shield, TrendingUp, Truck, Zap } from "lucide-react";
+import { ArrowRight, CheckCircle, Gift, Headphones, Shield, Truck, Zap } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import type { HomeProduct, HomepageViewModel } from "@/lib/homepage-view-model";
 import { SavoHour } from "./savo-hour";
@@ -160,17 +160,6 @@ function Hero({ data, locale }: { data: HomepageViewModel; locale: string }) {
       </div>
     </section>
   );
-}
-
-function Trending({ products }: { products: HomeProduct[] }) {
-  if (!products.length) return null;
-  return <section className="v21-trending"><div className="v21-shell"><SectionHeader eyebrow={<><TrendingUp size={13} /> Trending Now · الأكثر رواجًا</>} title="What's hot right now." href="/products?sort=popular" link="See all trending" /><div className="v21-trending-grid">{products.map((product, index) => <Link href={'/products/' + product.slug} key={product.id} className={index === 0 ? "featured" : ""}><div className="v21-image"><ProductImage product={product} sizes={index === 0 ? "(max-width: 900px) 100vw, 35vw" : "(max-width: 900px) 44vw, 280px"} /><span>{["TRENDING NOW", "#1 TODAY", "MOST SAVED", "GOING FAST"][index]}</span></div><section><small>{product.brand ?? product.category}</small><h3>{product.name}</h3><p><strong>{kd(product.price)}</strong><del>{kd(product.originalPrice)}</del></p></section></Link>)}</div></div></section>;
-}
-
-function Editors({ products }: { products: HomeProduct[] }) {
-  if (!products.length) return null;
-  const [hero, ...support] = products;
-  return <section className="v21-editors"><div className="v21-shell"><SectionHeader eyebrow={<><BookOpen size={13} /> Editor&apos;s Selection · اختيارات المحرر</>} title="Curated for you." href="/products?badge=EDITORS_PICK" link="See all picks" /><div className="v21-editors-grid"><Link className="v21-editors-hero" href={'/products/' + hero.slug}><ProductImage product={hero} sizes="(max-width: 900px) 100vw, 50vw" /><i /><span>EDITOR&apos;S CHOICE</span><div>{hero.nameAr && <small dir="rtl">{hero.nameAr}</small>}<h3>{hero.name}</h3><p><strong>{kd(hero.price)}</strong><del>{kd(hero.originalPrice)}</del></p></div></Link><div className="v21-editors-support">{support.map((product, index) => <Link href={'/products/' + product.slug} key={product.id}><span className="v21-editors-thumb"><ProductImage product={product} sizes="160px" /></span><section><b>EDITORS PICK #{index + 2}</b><small>{product.brand ?? product.category}</small><h3>{product.name}</h3>{product.nameAr && <p dir="rtl">{product.nameAr}</p>}<strong>{kd(product.price)}</strong></section></Link>)}<Link className="v21-editors-cta" href="/products?badge=EDITORS_PICK">Explore all Editor&apos;s Picks <ArrowRight size={16} /></Link></div></div></div></section>;
 }
 
 /**

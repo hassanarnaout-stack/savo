@@ -52,7 +52,7 @@ export function DiscoveryHub({ trending, bestSellers, editorsPicks, locale }: { 
       <div className="savo-hub-head">
         <div>
           <p className="savo-products-eyebrow">{isArabic ? "مركز الاكتشاف" : "Discovery Hub"}</p>
-          <h2 className="savo-hub-title">{isArabic ? "منتجات تستحق الاكتشاف." : "Products worth discovering."}</h2>
+          <h2 className="savo-hub-title">{isArabic ? "منتجات تستحق الاكتشاف" : "Products Worth Discovering"}</h2>
         </div>
         {activeTabMeta && <Link href={activeTabMeta.href} className="savo-hub-viewall">{isArabic ? "عرض الكل ←" : "View all →"}</Link>}
       </div>
