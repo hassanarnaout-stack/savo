@@ -26,7 +26,7 @@ export function V21Homepage({ data, locale }: { data: HomepageViewModel; locale:
     <Categories categories={data.categories} />
     <DiscoveryHub trending={data.hubTrending} bestSellers={data.hubBestSellers} editorsPicks={data.hubEditorsPicks} locale={locale} />
     <SAVOSpotlight360 />
-    <DiscoverBrands brands={data.brands} locale={locale} />
+    <DiscoverBrands brands={data.brands} catalogBrands={data.catalogBrands} locale={locale} />
   </div>;
 }
 

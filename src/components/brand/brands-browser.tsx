@@ -10,7 +10,7 @@ import { useState } from "react";
 import { Link } from "@/i18n/routing";
 import { Search } from "lucide-react";
 
-interface Brand { name: string; slug: string; productCount: number }
+interface Brand { name: string; slug: string; productCount: number; logoUrl?: string | null }
 
 const ACCENTS = ["teal", "gold", "fire"] as const;
 
@@ -35,7 +35,7 @@ export function BrandsBrowser({ brands, featured, isArabic }: { brands: Brand[];
           <div className="savo-brands-featured-grid">
             {featured.map((b, i) => (
               <Link key={b.slug} href={`/brands/${b.slug}`} className={`savo-brand-card savo-brand-card--${ACCENTS[i % ACCENTS.length]}`}>
-                <span className="savo-brand-card-logo">{b.name[0]}</span>
+                <span className="savo-brand-card-logo">{b.logoUrl ? <img src={b.logoUrl} alt={b.name} className="savo-brand-card-logo-img" /> : b.name[0]}</span>
                 <span className="savo-brand-card-name">{b.name}</span>
                 <span className="savo-brand-card-count">{b.productCount} {isArabic ? "منتج" : "products"}</span>
               </Link>
@@ -65,7 +65,7 @@ export function BrandsBrowser({ brands, featured, isArabic }: { brands: Brand[];
           <div className="savo-brands-grid">
             {filtered.map((b) => (
               <Link key={b.slug} href={`/brands/${b.slug}`} className="savo-brands-row">
-                <span className="savo-brands-row-avatar">{b.name[0]}</span>
+                <span className="savo-brands-row-avatar">{b.logoUrl ? <img src={b.logoUrl} alt={b.name} className="savo-brand-card-logo-img" /> : b.name[0]}</span>
                 <span className="savo-brands-row-name">{b.name}</span>
               </Link>
             ))}

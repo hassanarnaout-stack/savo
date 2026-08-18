@@ -327,7 +327,13 @@ model Product {
   // decision comment). brandName is the real manufacturer brand (Lindt,
   // KitKat, Nespresso) and is meant to be customer-facing — Brand
   // Districts are built on this field, not on supplier identity.
+  // brandName is PRESERVED during the Catalog Brand transition (Phase
+  // 2) — never removed, never rewritten. brandId is purely additive;
+  // a null brandId means "not yet linked to a Catalog Brand", not an
+  // error — every existing product keeps working unchanged.
   brandName     String?
+  brandId       String?
+  catalogBrand  Brand?   @relation(fields: [brandId], references: [id])
   description   String   @db.Text
   descriptionAr String?  @db.Text
   sku           String?  @unique
@@ -1817,6 +1823,38 @@ enum BrandAccountStatus {
   PENDING
   ACTIVE
   SUSPENDED
+}
+
+// ---------------------------------------------------------------------------
+// CATALOG BRAND — Phase 2 (SAVO Brand Catalog Foundation)
+// ---------------------------------------------------------------------------
+// Completely separate from BrandAccount (commercial/paid marketing partner —
+// see BrandAccount below). Catalog Brand is a merchandising/catalog entity
+// for products, matching the exact real Product.brandName values already in
+// production. ZERO automatic relation to BrandAccount — never matched by
+// name, never sharing a slug, never sharing a management screen.
+//
+// Product.brandName is preserved unchanged for backward compatibility during
+// the transition — Product.brandId is purely additive.
+
+model Brand {
+  id            String   @id @default(cuid())
+  name          String
+  nameAr        String?
+  slug          String   @unique
+  logoUrl       String?
+  coverImageUrl String?
+  description   String?  @db.Text
+  descriptionAr String?  @db.Text
+  isActive      Boolean  @default(true)
+  isFeatured    Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  products Product[]
+
+  @@map("brands")
 }
 
 model BrandAccount {

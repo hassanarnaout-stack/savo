@@ -30,6 +30,14 @@ export default async function BrandDetailPage({ params }: { params: Promise<{ sl
   const matchedBrand = brandRows.find((r) => r.brandName && brandNameToSlug(r.brandName) === slug)?.brandName;
   if (!matchedBrand) notFound();
 
+  // Real Catalog Brand (Phase 2) — enriches the hero with a real logo/
+  // cover/description when one exists for this name. Product matching
+  // itself stays on brandName exactly as before (works for every
+  // product whether or not it's linked to a Brand row yet).
+  const catalogBrand = await prisma.brand.findFirst({ where: { name: { equals: matchedBrand, mode: "insensitive" }, isActive: true } });
+  const displayName = isArabic && catalogBrand?.nameAr ? catalogBrand.nameAr : matchedBrand;
+  const displayDescription = isArabic ? catalogBrand?.descriptionAr : catalogBrand?.description;
+
   const products = await prisma.product.findMany({
     where: { status: "ACTIVE", approvalStatus: "APPROVED", ...membersOnlyFilter, brandName: matchedBrand },
     select: {
@@ -43,10 +51,17 @@ export default async function BrandDetailPage({ params }: { params: Promise<{ sl
   return (
     <div className="savo-brand-detail-page">
       <div className="savo-brand-detail-hero">
-        <div className="savo-brand-detail-logo">{matchedBrand[0]}</div>
+        {catalogBrand?.coverImageUrl ? (
+          <div className="savo-brand-detail-cover" style={{ backgroundImage: `url(${catalogBrand.coverImageUrl})` }} />
+        ) : catalogBrand?.logoUrl ? (
+          <div className="savo-brand-detail-logo savo-brand-detail-logo--img"><img src={catalogBrand.logoUrl} alt={displayName} /></div>
+        ) : (
+          <div className="savo-brand-detail-logo">{displayName[0]}</div>
+        )}
         <div className="savo-brand-detail-copy">
           <div className="savo-products-eyebrow">{isArabic ? "العلامة التجارية" : "Brand"}</div>
-          <h1>{matchedBrand}</h1>
+          <h1>{displayName}</h1>
+          {displayDescription && <p className="savo-brand-detail-desc">{displayDescription}</p>}
           <div className="savo-brand-detail-stat">
             <div>{products.length}</div>
             <span>{isArabic ? "منتج" : "products"}</span>

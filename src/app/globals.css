@@ -972,6 +972,11 @@
 .savo-discoverbrands-card--gold{background:linear-gradient(135deg,color-mix(in srgb,var(--savo-shell-gold) 30%,var(--savo-shell-ink)),var(--savo-shell-ink))}
 .savo-discoverbrands-card--fire{background:linear-gradient(135deg,color-mix(in srgb,var(--savo-shell-fire) 30%,var(--savo-shell-ink)),var(--savo-shell-ink))}
 .savo-discoverbrands-monogram{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display),sans-serif;font-weight:900;font-size:96px;color:rgba(255,255,255,.08)}
+/* Real cover — editorial, fills the card. Real logo (no cover) —
+   contained on a clean neutral surface, never stretched/cropped. */
+.savo-discoverbrands-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
+.savo-discoverbrands-logo-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--savo-shell-surface)}
+.savo-discoverbrands-logo-fallback img{max-width:55%;max-height:55%;object-fit:contain}
 .savo-discoverbrands-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(12,15,22,.95) 0%,rgba(12,15,22,.2) 55%,transparent 100%)}
 .savo-discoverbrands-name{position:absolute;bottom:13px;inset-inline-start:15px;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:14px}
 .savo-discoverbrands-explore{position:absolute;top:11px;inset-inline-end:11px;background:rgba(12,15,22,.65);backdrop-filter:blur(8px);border:1px solid color-mix(in srgb,white 14%,transparent);border-radius:7px;padding:4px 9px;font-size:10.5px;color:var(--savo-shell-muted)}
@@ -1270,7 +1275,8 @@
 .savo-brands-featured{padding:32px 0 0}
 .savo-brands-featured-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:36px}
 .savo-brand-card{display:block;padding:20px;border-radius:16px;border:1px solid var(--savo-shell-border);background:var(--savo-shell-surface);transition:all .2s}
-.savo-brand-card-logo{width:48px;height:48px;margin-bottom:14px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display),sans-serif;font-weight:900;font-size:14px}
+.savo-brand-card-logo{width:48px;height:48px;margin-bottom:14px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display),sans-serif;font-weight:900;font-size:14px;overflow:hidden}
+.savo-brand-card-logo-img{width:100%;height:100%;object-fit:contain;padding:4px}
 .savo-brand-card-name{display:block;margin-bottom:4px;font-family:var(--font-display),sans-serif;font-weight:700;font-size:13.5px;color:var(--savo-shell-text);letter-spacing:-.01em}
 .savo-brand-card-count{display:block;font-size:11px;font-weight:700}
 .savo-brand-card--teal .savo-brand-card-logo{background:color-mix(in srgb,var(--savo-shell-discovery) 12%,transparent);border:1px solid color-mix(in srgb,var(--savo-shell-discovery) 25%,transparent);color:var(--savo-shell-discovery)}
@@ -1326,7 +1332,10 @@
    ========================================================================== */
 .savo-brand-detail-page{background:var(--savo-shell-ink);min-height:100vh;color:var(--savo-shell-text)}
 .savo-brand-detail-hero{padding:40px 52px 32px;display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;background:var(--savo-shell-surface);border-bottom:1px solid var(--savo-shell-border)}
-.savo-brand-detail-logo{width:80px;height:80px;flex-shrink:0;border-radius:20px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--savo-shell-gold) 12%,transparent);border:1px solid color-mix(in srgb,var(--savo-shell-gold) 28%,transparent);color:var(--savo-shell-gold);font-family:var(--font-display),sans-serif;font-weight:900;font-size:22px}
+.savo-brand-detail-logo{width:80px;height:80px;flex-shrink:0;border-radius:20px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--savo-shell-gold) 12%,transparent);border:1px solid color-mix(in srgb,var(--savo-shell-gold) 28%,transparent);color:var(--savo-shell-gold);font-family:var(--font-display),sans-serif;font-weight:900;font-size:22px;overflow:hidden}
+.savo-brand-detail-logo--img img{width:100%;height:100%;object-fit:contain;padding:8px}
+.savo-brand-detail-cover{width:100%;max-width:340px;height:140px;flex-shrink:0;border-radius:20px;background-size:cover;background-position:center;border:1px solid var(--savo-shell-border)}
+.savo-brand-detail-desc{margin:8px 0 0;max-width:520px;color:var(--savo-shell-muted);font-size:13.5px;line-height:1.6}
 .savo-brand-detail-copy{flex:1;min-width:200px}
 .savo-brand-detail-copy h1{margin:0 0 14px;font-family:var(--font-display),sans-serif;font-weight:900;font-size:30px;color:var(--savo-shell-text);letter-spacing:-.025em}
 .savo-brand-detail-stat>div{font-family:var(--font-display),sans-serif;font-weight:900;font-size:20px;color:var(--savo-shell-text)}

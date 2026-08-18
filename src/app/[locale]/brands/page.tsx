@@ -21,15 +21,23 @@ export default async function BrandsPage() {
   const locale = await getLocale();
   const isArabic = locale === "ar";
 
-  const rows = await prisma.product.groupBy({
-    by: ["brandName"],
-    where: { status: "ACTIVE", approvalStatus: "APPROVED", brandName: { not: null } },
-    _count: { _all: true },
-    _sum: { orderCount: true },
-  });
+  const [rows, catalogBrands] = await Promise.all([
+    prisma.product.groupBy({
+      by: ["brandName"],
+      where: { status: "ACTIVE", approvalStatus: "APPROVED", brandName: { not: null } },
+      _count: { _all: true },
+      _sum: { orderCount: true },
+    }),
+    // Real Catalog Brand logos (Phase 2) — merged in by name below.
+    // Legacy brandName groups are still the authoritative count/list
+    // source (works for every product, linked or not); this only
+    // enriches matching entries with a real logoUrl when one exists.
+    prisma.brand.findMany({ where: { isActive: true, logoUrl: { not: null } }, select: { name: true, logoUrl: true } }),
+  ]);
+  const logoByLowerName = new Map(catalogBrands.map((b) => [b.name.toLowerCase(), b.logoUrl]));
 
   const brands = rows
-    .map((r) => ({ name: r.brandName!, productCount: r._count._all, orderVolume: r._sum.orderCount ?? 0 }))
+    .map((r) => ({ name: r.brandName!, productCount: r._count._all, orderVolume: r._sum.orderCount ?? 0, logoUrl: logoByLowerName.get(r.brandName!.toLowerCase()) ?? null }))
     .filter((b) => b.name)
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -37,8 +45,8 @@ export default async function BrandsPage() {
 
   return (
     <BrandsBrowser
-      brands={brands.map((b) => ({ name: b.name, slug: brandNameToSlug(b.name), productCount: b.productCount }))}
-      featured={featured.map((b) => ({ name: b.name, slug: brandNameToSlug(b.name), productCount: b.productCount }))}
+      brands={brands.map((b) => ({ name: b.name, slug: brandNameToSlug(b.name), productCount: b.productCount, logoUrl: b.logoUrl }))}
+      featured={featured.map((b) => ({ name: b.name, slug: brandNameToSlug(b.name), productCount: b.productCount, logoUrl: b.logoUrl }))}
       isArabic={isArabic}
     />
   );

@@ -42,6 +42,7 @@ export type HomepageViewModel = {
   heroProducts: HomeProduct[]; flashDeals: HomeDeal[]; trending: HomeProduct[];
   editorsPicks: HomeProduct[];
   hubTrending: HomeProduct[]; hubBestSellers: HomeProduct[]; hubEditorsPicks: HomeProduct[];
+  catalogBrands: { name: string; nameAr: string | null; logoUrl: string | null; coverImageUrl: string | null; description: string | null; descriptionAr: string | null }[];
   categories: { id: string; slug: string; name: string; nameAr: string | null; count: number; image: string | null }[];
   brands: { slug: string; name: string; count: number }[];
   mysteryBoxes: HomeProduct[]; justLanded: HomeProduct[]; bestValue: HomeProduct[];
@@ -78,7 +79,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
   const visibility = await MembershipService.getVisibilityFilter(session?.user?.id);
   const now = new Date();
   const publicWhere = { status: "ACTIVE" as const, approvalStatus: "APPROVED" as const, ...visibility };
-  const [products, flashRows, editorRows, bestSellerRows, categories, verifiedSupplierCount, dealOfHourEnabled, homepageSettings] = await Promise.all([
+  const [products, flashRows, editorRows, bestSellerRows, categories, verifiedSupplierCount, dealOfHourEnabled, homepageSettings, catalogBrandRows] = await Promise.all([
     prisma.product.findMany({ where: publicWhere, include: productInclude }),
     prisma.flashDeal.findMany({
       where: { status: "LIVE", isActive: true, startAt: { lte: now }, endAt: { gt: now }, product: publicWhere },
@@ -105,6 +106,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
     prisma.supplier.count({ where: { status: "ACTIVE", verificationStatus: "VERIFIED" } }),
     isLaunchFeatureEnabled("ADVANCED_DEAL_OF_HOUR_ENABLED"),
     HomepageSettingsService.get(),
+    prisma.brand.findMany({ where: { isActive: true }, select: { name: true, logoUrl: true, coverImageUrl: true, description: true, descriptionAr: true, nameAr: true } }),
   ]);
   // SAVO Hour — only queried when the launch flag is on; getDealOfTheHour()
   // already filters to the single active, non-expired slot.
@@ -163,6 +165,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
   return {
     heroProducts, flashDeals: deals.slice(0, 4), trending, editorsPicks,
     hubTrending, hubBestSellers, hubEditorsPicks,
+    catalogBrands: catalogBrandRows,
     categories: categories.filter((category) => category._count.products > 0).slice(0, 6).map((category) => ({
       id: category.id, slug: category.slug, name: category.name, nameAr: category.nameAr,
       count: category._count.products, image: category.imageUrl ?? category.products[0]?.images[0]?.url ?? null,

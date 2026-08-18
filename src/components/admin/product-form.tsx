@@ -15,11 +15,17 @@ interface Supplier {
   companyName: string;
 }
 
+interface CatalogBrand {
+  id: string;
+  name: string;
+}
+
 export interface ProductFormValues {
   id?: string;
   name: string;
   slug: string;
   brandName?: string;
+  brandId?: string | null;
   isSubscribable?: boolean;
   description: string;
   categoryId: string;
@@ -60,10 +66,12 @@ const EMPTY: ProductFormValues = {
 export function ProductForm({
   categories,
   suppliers,
+  catalogBrands,
   initial,
 }: {
   categories: Category[];
   suppliers: Supplier[];
+  catalogBrands: CatalogBrand[];
   initial?: ProductFormValues;
 }) {
   const router = useRouter();
@@ -105,6 +113,22 @@ export function ProductForm({
         </Field>
         <Field label="Slug (URL)">
           <input required value={form.slug} onChange={(e) => set("slug", e.target.value)} className="input" />
+        </Field>
+        <Field label="Catalog Brand (select an approved brand — auto-fills the field below)">
+          <select
+            value={form.brandId ?? ""}
+            onChange={(e) => {
+              const selected = catalogBrands.find((b) => b.id === e.target.value);
+              set("brandId", e.target.value || null);
+              if (selected) set("brandName", selected.name);
+            }}
+            className="input"
+          >
+            <option value="">— Not linked to a Catalog Brand —</option>
+            {catalogBrands.map((b) => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
         </Field>
         <Field label="Brand Name (optional — e.g. Lindt, KitKat. Powers the customer-facing Brand District pages; never the supplier's name.)">
           <input value={form.brandName ?? ""} onChange={(e) => set("brandName", e.target.value)} className="input" />

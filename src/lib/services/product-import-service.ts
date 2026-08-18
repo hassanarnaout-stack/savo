@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { calcDiscountPct, slugify } from "@/lib/utils";
 import { validateBarcode } from "@/lib/barcode";
+import { BrandService } from "@/lib/services/brand-service";
 import { validateMediaUrl } from "@/lib/media-url-validation";
 import * as XLSX from "xlsx";
 
@@ -115,6 +116,12 @@ export async function validateImportRows(rows: Record<string, string>[], mapping
   const barcodesInFile = new Set<string>();
   const results: RowResult[] = [];
 
+  // Batched once, not per-row — same anti-N+1 pattern as the SKU/
+  // barcode lookups below. Only ACTIVE brands are eligible matches;
+  // an inactive/unapproved Brand behaves the same as an unknown one.
+  const activeBrands = await prisma.brand.findMany({ where: { isActive: true }, select: { id: true, name: true } });
+  const brandByLowerName = new Map(activeBrands.map((b) => [b.name.toLowerCase(), b]));
+
   const mappedRows = rows.map((row) => {
     const mapped: Record<string, string> = {};
     for (const [header, field] of Object.entries(mapping)) {
@@ -177,6 +184,24 @@ export async function validateImportRows(rows: Record<string, string>[], mapping
       categoryId = await resolveCategoryId(r.category);
       if (!categoryId) {
         messages.push(`Category "${r.category}" does not match any existing category`);
+        status = "ERROR";
+      }
+    }
+
+    // Brand is optional — but if a value IS provided, it must match a
+    // real, active Catalog Brand. Unknown brands are never silently
+    // created here (that stays an explicit Admin action) — a clear
+    // row-level error instead, matching the category-resolution
+    // pattern above exactly.
+    let resolvedBrandId: string | null = null;
+    let resolvedBrandName: string | null = null;
+    if (r.brand?.trim()) {
+      const match = brandByLowerName.get(r.brand.trim().toLowerCase());
+      if (match) {
+        resolvedBrandId = match.id;
+        resolvedBrandName = match.name;
+      } else {
+        messages.push(`Unknown brand: "${r.brand}" — ask an admin to create/approve this Catalog Brand first`);
         status = "ERROR";
       }
     }
@@ -248,7 +273,8 @@ export async function validateImportRows(rows: Record<string, string>[], mapping
               nameAr: r.nameAr || null,
               description: r.description,
               descriptionAr: r.descriptionAr || null,
-              brand: r.brand || null,
+              brand: resolvedBrandName,
+              brandId: resolvedBrandId,
               categoryId,
               originalPrice,
               saveoPrice,
@@ -311,7 +337,8 @@ export async function executeImport(readyRows: { rowNumber: number; data: NonNul
                 descriptionAr: data.descriptionAr,
                 sku: data.sku,
                 barcode: data.barcode,
-                brandName: data.brand, // Product Import Bug Fix — the storefront reads Product.brandName exclusively (/brands, /brands/[slug], the brand filter, homepage brand discovery); this write target used to be the wrong field (Product.brand, a separate unrelated column) so imported products were invisible to every brand-facing surface. The internal field name/user-facing "Brand" column header are unchanged — only this persistence target moved.
+                brandName: data.brand, // Product Import Bug Fix (Phase 1) — writes the canonical brandName field.
+                brandId: data.brandId ?? null, // Phase 2 — links to the real, resolved Catalog Brand when the "Brand" column matched one.
                 categoryId: data.categoryId,
                 supplierId,
                 type: data.type,
