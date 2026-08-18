@@ -1,46 +1,38 @@
-import { getMysteryBoxesByTier } from "@/lib/discovery-engine";
 import { getLocale } from "next-intl/server";
-import { Link } from "@/i18n/routing";
-import { MysteryBoxTiers } from "@/components/home/mystery-box-tiers";
-import { Sparkles, Gift, ShieldCheck, TrendingUp } from "lucide-react";
+import { auth } from "@/lib/auth";
 import { getLaunchFlags } from "@/lib/launch-flags";
+import { getMysteryBoxTierConfigs, isGoldBoxEligible } from "@/lib/mystery-box-tiers";
+import { MysteryBoxExperience } from "@/components/mystery-box/mystery-box-experience";
+import { Gift } from "lucide-react";
 
 /**
- * Site-wide performance pass: zero session/user-specific reads on this
- * page (verified) — force-dynamic was unnecessary. Same ISR pattern as
- * /products, /category/[slug], /discover.
+ * SAVO Mystery Box — 2026 approved Figma experience (Collection →
+ * Build → Locked). The old digital-reveal-era presentation (hero copy,
+ * How It Works cards, tier grid, old FAQ mentioning "open your box")
+ * is retired per the final business decision — this is now the ONLY
+ * customer Mystery Box flow. Real data only: getMysteryBoxTierConfigs()
+ * reads real Product/MysteryBoxContent rows; zero Figma mock products.
  */
-export const revalidate = 30;
+export const dynamic = "force-dynamic"; // reads the real signed-in session for SAVO Plus eligibility
 
 const FAQ_EN = [
-  { q: "How do you decide what's in the box?", a: "Each box draws from a curated pool of products picked by the supplier, with your minimum guaranteed value always honored." },
+  { q: "How do you decide what's in the box?", a: "Each box draws from a curated pool of products, with your minimum guaranteed value always honored." },
   { q: "What if I don't like what I get?", a: "Every box is worth more than you paid, guaranteed. It's about the thrill of discovery, not a specific item." },
-  { q: "When do I find out what's inside?", a: "Right after checkout — head to your order and open your box for the full reveal experience." },
+  { q: "When do I find out what's inside?", a: "Only when your box physically arrives — the mystery items are never shown online, before or after your order." },
   { q: "Are Mystery Boxes restocked?", a: "Yes, regularly with new surprises. Availability is limited per batch, so boxes can sell out." },
 ];
 const FAQ_AR = [
-  { q: "كيف تقررون محتوى الصندوق؟", a: "كل صندوق يُختار من مجموعة منتقاة يحددها المورد، مع ضمان القيمة الدنيا دايماً." },
+  { q: "كيف تقررون محتوى الصندوق؟", a: "كل صندوق يُختار من مجموعة منتقاة، مع ضمان القيمة الدنيا دايماً." },
   { q: "شو لو ما عجبني اللي طلع؟", a: "كل صندوق قيمته أكبر من سعره، مضمون. الفكرة إثارة الاكتشاف، مو منتج محدد." },
-  { q: "متى بعرف شو بداخل الصندوق؟", a: "فوراً بعد إتمام الطلب — روح لطلبك وافتح الصندوق لتجربة الكشف الكاملة." },
+  { q: "متى بعرف شو بداخل الصندوق؟", a: "فقط لما يوصلك صندوقك فعليًا — المنتجات الغامضة ما تُعرض أونلاين أبدًا، قبل أو بعد الطلب." },
   { q: "هل صناديق المفاجآت تتجدد؟", a: "أكيد، بانتظام بمفاجآت جديدة. الكمية محدودة بكل دفعة، فممكن تنفد." },
 ];
 
-/**
- * Batch 1 V22 Customer UI Migration — presentation only. Ported from
- * the latest V22 export (CustomerPages.tsx, MysteryBoxesPage()).
- * ZERO changes to the Mystery Box engine: still getMysteryBoxesByTier()
- * (real weighted tiers/pricing/guaranteed value), still gated by the
- * exact same MYSTERY_BOX_ENABLED launch flag, same real FAQ content
- * (unchanged — not V22 marketing copy), same CTA route.
- */
 export default async function MysteryBoxesPage() {
   const locale = await getLocale();
   const isArabic = locale === "ar";
   const FEATURE_FLAGS = await getLaunchFlags();
 
-  // Launch Mode gate (deterministic, checked first) — falls back to the
-  // older DB-backed operational flag only if Launch Mode has this ON.
-  // Nothing below this point is deleted — just not reached while OFF.
   if (!FEATURE_FLAGS.MYSTERY_BOX_ENABLED) {
     return (
       <div className="savo-mystery-page savo-mystery-disabled">
@@ -51,83 +43,30 @@ export default async function MysteryBoxesPage() {
     );
   }
 
-  const [tiers] = await Promise.all([getMysteryBoxesByTier()]);
+  const session = await auth();
+  const [tiers, isGoldEligible] = await Promise.all([
+    getMysteryBoxTierConfigs(),
+    isGoldBoxEligible(session?.user?.id),
+  ]);
   const faq = isArabic ? FAQ_AR : FAQ_EN;
 
   return (
-    <div className="savo-mystery-page">
-      <section className="savo-mystery-hero">
-        <Gift size={40} />
-        <h1>{isArabic ? "صناديق المفاجآت" : "Mystery Boxes"}</h1>
-        <p>
-          {isArabic
-            ? "قيمة مضمونة أكبر من السعر، ومفاجأة مختلفة في كل مرة. صندوق واحد، إثارة لا تنتهي."
-            : "Guaranteed value beyond the price, and a different surprise every time. One box, endless excitement."}
-        </p>
-      </section>
+    <div style={{ backgroundColor: "#090b10" }}>
+      <MysteryBoxExperience tiers={tiers as any} isGoldEligible={isGoldEligible} locale={locale} />
 
-      <section className="savo-mystery-shell">
-        <div className="savo-mystery-how">
-          <HowItWorksCard
-            icon={<TrendingUp size={22} />}
-            title={isArabic ? "قيمة أكبر من السعر" : "Value Beyond Price"}
-            body={isArabic ? "كل صندوق مضمون بقيمة أعلى بكثير مما تدفعه." : "Every box is guaranteed to be worth more than you pay."}
-          />
-          <HowItWorksCard
-            icon={<Sparkles size={22} />}
-            title={isArabic ? "مفاجأة حقيقية" : "A Real Surprise"}
-            body={isArabic ? "المحتوى ما يُكشف إلا بعد إتمام طلبك — إثارة اكتشاف أصيلة." : "Contents stay hidden until after checkout — genuine unboxing excitement."}
-          />
-          <HowItWorksCard
-            icon={<ShieldCheck size={22} />}
-            title={isArabic ? "موردون موثوقون" : "Trusted Suppliers"}
-            body={isArabic ? "كل المنتجات المحتملة من موردين معتمدين بسافو." : "Every possible item comes from a Savo-verified supplier."}
-          />
-        </div>
-      </section>
-
-      <section className="savo-mystery-shell">
-        <h2 className="savo-mystery-section-title">{isArabic ? "اختر مستوى مفاجأتك" : "Choose Your Tier"}</h2>
-        <MysteryBoxTiers
-          tiers={tiers as any}
-          locale={locale}
-          labels={{
-            bronze: isArabic ? "برونزي" : "Bronze",
-            silver: isArabic ? "فضي" : "Silver",
-            gold: isArabic ? "ذهبي" : "Gold",
-            guaranteedValue: isArabic ? "قيمة مضمونة" : "Guaranteed value",
-          }}
-        />
-      </section>
-
-      <section className="savo-mystery-shell savo-mystery-faq-section">
-        <h2 className="savo-mystery-section-title">{isArabic ? "الأسئلة الشائعة" : "Frequently Asked Questions"}</h2>
-        <div className="savo-mystery-faq-list">
+      <section style={{ maxWidth: 720, margin: "0 auto", padding: "0 24px 80px" }}>
+        <h2 style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 800, color: "#f0f2f7", marginBottom: 20 }}>
+          {isArabic ? "الأسئلة الشائعة" : "Frequently Asked Questions"}
+        </h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {faq.map((f, i) => (
-            <details key={i} className="savo-mystery-faq-item">
-              <summary>{f.q}</summary>
-              <p>{f.a}</p>
+            <details key={i} style={{ background: "#0f1420", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "14px 18px" }}>
+              <summary style={{ cursor: "pointer", fontSize: 14, fontWeight: 600, color: "#f0f2f7" }}>{f.q}</summary>
+              <p style={{ fontSize: 13, color: "#8b95a8", marginTop: 10, lineHeight: 1.6 }}>{f.a}</p>
             </details>
           ))}
         </div>
       </section>
-
-      <section className="savo-mystery-cta-section">
-        <Link href="/category/mystery-boxes" className="savo-mystery-cta">
-          <Gift size={16} />
-          {isArabic ? "تسوّق كل الصناديق" : "Shop All Boxes"}
-        </Link>
-      </section>
-    </div>
-  );
-}
-
-function HowItWorksCard({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
-  return (
-    <div className="savo-mystery-how-card">
-      <div className="savo-mystery-how-icon">{icon}</div>
-      <p className="savo-mystery-how-title">{title}</p>
-      <p className="savo-mystery-how-body">{body}</p>
     </div>
   );
 }

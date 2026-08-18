@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Heart, ShoppingCart, Gift, Star, CheckCircle2, RotateCw } from "lucide-react";
-import { Link } from "@/i18n/routing";
+import { Link, useRouter } from "@/i18n/routing";
 import { CountdownTimer } from "@/components/product/countdown-timer";
 import { useCartStore } from "@/store/cart-store";
 import { formatKWD, calcDiscountPct } from "@/lib/utils";
@@ -67,6 +67,7 @@ export function ProductCard({
   addToCartLabel?: string;
 }) {
   const addItem = useCartStore((s) => s.addItem);
+  const router = useRouter();
   const image = product.images[0]?.url ?? "/placeholder-product.svg";
   const outOfStock = product.stockQty <= 0;
   const displayName = locale === "ar" && product.nameAr ? product.nameAr : product.name;
@@ -85,6 +86,14 @@ export function ProductCard({
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
     if (outOfStock) return;
+    // Mystery Box products are NOT a direct-add item — the approved
+    // 2026 experience (Collection → Build → Locked) is the ONLY
+    // customer Mystery Box flow. Route to the canonical page instead
+    // of silently adding an unconfigured box to the cart.
+    if (product.type === "MYSTERY_BOX") {
+      router.push("/mystery-boxes");
+      return;
+    }
     addItem(
       {
         productId: product.id,

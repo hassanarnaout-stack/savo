@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Link } from "@/i18n/routing";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { serializeProducts } from "@/lib/utils";
 import { auth } from "@/lib/auth";
 import { MembershipService } from "@/lib/services/membership-service";
@@ -62,6 +62,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CategoryPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const { sort, page } = await searchParams;
+
+  // Mystery Boxes is NOT a normal shoppable category — the approved
+  // 2026 experience (Collection → Build → Locked) is the ONLY customer
+  // Mystery Box flow. Redirect immediately, before any category
+  // query, rather than rendering competing generic ProductCards.
+  if (slug === "mystery-boxes") {
+    const localeForRedirect = await getLocale();
+    redirect(`/${localeForRedirect}/mystery-boxes`);
+  }
 
   const [category, session, locale] = await Promise.all([
     prisma.category.findUnique({ where: { slug }, include: { children: true } }),

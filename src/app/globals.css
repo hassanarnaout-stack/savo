@@ -1034,6 +1034,30 @@
   .savo-together-panel{border-inline-start:0;border-top:1px solid var(--savo-shell-border)}
 }
 
+/* Homepage Mystery Box teaser — compact version of the canonical
+   /mystery-boxes design system (same dark/teal/gold language). Every
+   card links to the SAME canonical experience — no duplicate flow. */
+.savo-mysteryhome{padding:0 56px 56px}
+.savo-mysteryhome-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:20px}
+.savo-mysteryhome-title{margin:4px 0 0;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:27px;letter-spacing:-.025em}
+.savo-mysteryhome-viewall{color:var(--savo-shell-discovery);font-size:13px;font-weight:700;white-space:nowrap}
+.savo-mysteryhome-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.savo-mysteryhome-card{position:relative;display:block;background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:18px;padding:22px 20px;transition:border-color .2s,transform .2s}
+.savo-mysteryhome-card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--savo-shell-discovery) 35%,transparent)}
+.savo-mysteryhome-card.is-gold:hover{border-color:color-mix(in srgb,var(--savo-shell-gold) 45%,transparent)}
+.savo-mysteryhome-badge{position:absolute;top:16px;inset-inline-end:16px;font-size:9px;font-weight:700;letter-spacing:.08em;border:1px solid;border-radius:6px;padding:3px 8px}
+.savo-mysteryhome-slots{display:flex;gap:4px;margin-bottom:16px}
+.savo-mysteryhome-slots span{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.savo-mysteryhome-slots span.is-mystery{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:var(--savo-shell-muted)}
+.savo-mysteryhome-slots span.is-pick{border:1px solid}
+.savo-mysteryhome-card h3{margin:0 0 6px;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:16px}
+.savo-mysteryhome-mechanic{margin:0 0 14px;color:var(--savo-shell-muted);font-size:12px}
+.savo-mysteryhome-card strong{font-family:var(--font-display),sans-serif;font-weight:800;font-size:19px}
+@media(max-width:900px){
+  .savo-mysteryhome{padding:0 22px 40px}
+  .savo-mysteryhome-title{font-size:20px}
+}
+
 .savo-hub{padding:56px;background:var(--savo-shell-ink)}
 .savo-hub-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
 .savo-hub-title{margin:7px 0 0;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:27px;letter-spacing:-.025em}

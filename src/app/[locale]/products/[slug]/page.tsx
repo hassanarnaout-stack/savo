@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { CountdownTimer } from "@/components/product/countdown-timer";
 import { AddToCartPanel } from "@/components/product/add-to-cart-panel";
@@ -108,6 +108,20 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
 
   if (!product || product.status === "ARCHIVED") notFound();
 
+  // Mystery Box products are NOT a normal PDP purchase — the approved
+  // 2026 experience (Collection → Build → Locked) is the ONLY customer
+  // Mystery Box flow. Redirect immediately rather than rendering the
+  // normal add-to-cart PDP, which would bypass the required choice
+  // step and the checkout-time hidden-content allocation. TypeScript
+  // then correctly narrows `product.type` to exclude "MYSTERY_BOX" for
+  // the rest of this function — the old mystery-specific branches
+  // below (viewed-analytics call, reveal-status block, isMysteryBox
+  // prop) are proven dead code by that narrowing and removed.
+  if (product.type === "MYSTERY_BOX") {
+    const localeForRedirect = await getLocale();
+    redirect(`/${localeForRedirect}/mystery-boxes`);
+  }
+
   // The Main Image must always be the first gallery item regardless of
   // when it was uploaded — see file header comment.
   product.media.sort((a, b) => {
@@ -147,13 +161,19 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
     SponsoredSlotService.recordClick(sponsoredSlotLookup.id, sponsoredSlotLookup.brandId, session?.user?.id);
     prisma.brandEvent.create({ data: { brandId: sponsoredSlotLookup.brandId, eventType: "PRODUCT_VIEW", userId: session?.user?.id, metadata: { slotId: sponsoredSlotLookup.id, productId: product.id } } }).catch(() => {});
   }
-  if (product.type === "MYSTERY_BOX") MysteryBoxAnalytics.viewed(product.id, session?.user?.id);
+  // Mystery Box view-analytics call removed — genuinely unreachable
+  // now (see redirect above). MysteryBoxAnalytics.viewed() has zero
+  // remaining caller anywhere in the codebase after this — a real gap
+  // if per-tier page-view tracking is wanted later; the canonical
+  // /mystery-boxes page does not currently call it either.
 
   const isArabic = locale === "ar";
   const displayName = isArabic && product.nameAr ? product.nameAr : product.name;
   const displayDescription = isArabic && product.descriptionAr ? product.descriptionAr : product.description;
   const categoryName = isArabic && product.category.nameAr ? product.category.nameAr : product.category.name;
-  const mysteryReveal = isArabic && product.mysteryBoxRevealAr ? product.mysteryBoxRevealAr : product.mysteryBoxReveal;
+  // mysteryReveal removed — was only used by the now-unreachable
+  // Mystery Box reveal-teaser block above (this page redirects for
+  // MYSTERY_BOX before reaching any of this).
 
   const originalPrice = Number(product.originalPrice);
   const saveoPrice = Number(product.saveoPrice);
@@ -310,22 +330,9 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
             </div>
           )}
 
-          {product.type === "MYSTERY_BOX" && mysteryReveal && (
-            <div className="savo-pdp-mystery">
-              <p className="savo-pdp-mystery-title">🎁 {p("mysteryReveal")}</p>
-              <p className="savo-pdp-mystery-text">{mysteryReveal}</p>
-              {!!product.mysteryBoxChooseCount && product.mysteryBoxChooseCount > 0 && (
-                <p className="savo-pdp-mystery-choose">
-                  ✨ {isArabic ? `أنت تختار ${product.mysteryBoxChooseCount} من محتوياتك بنفسك — والباقي مفاجأة!` : `You pick ${product.mysteryBoxChooseCount} of your items yourself — the rest is a surprise!`}
-                </p>
-              )}
-              {product.mysteryBoxValueMin && product.mysteryBoxValueMax && (
-                <p className="savo-pdp-mystery-value">
-                  {p("estimatedValue")}: {formatKWD(Number(product.mysteryBoxValueMin))}–{formatKWD(Number(product.mysteryBoxValueMax))}
-                </p>
-              )}
-            </div>
-          )}
+          {/* Mystery Box reveal-teaser block removed — unreachable
+             now, this whole page redirects for MYSTERY_BOX before
+             reaching here (see redirect above). */}
 
           {lowStock && (
             <div className="savo-pdp-stock-urgency">
@@ -343,7 +350,7 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
                 image: product.images[0]?.url ?? "/placeholder-product.svg",
                 originalPrice, saveoPrice, stockQty: product.stockQty,
               }}
-              isMysteryBox={product.type === "MYSTERY_BOX"}
+              isMysteryBox={false /* unreachable for MYSTERY_BOX — this whole page redirects first, see redirect above */}
               userId={session?.user?.id ?? null}
               isFavorited={isFavorited}
             />

@@ -8,6 +8,7 @@ import { DiscoveryHub } from "./discovery-hub";
 import { SAVOSpotlight360 } from "./savo-spotlight";
 import { DiscoverBrands } from "./discover-brands";
 import { DiscoverTogether } from "./discover-together";
+import { MysteryBoxHomeSection } from "./mystery-box-home-section";
 
 const kd = (value: number) => "KD " + value.toFixed(3);
 
@@ -29,6 +30,7 @@ export function V21Homepage({ data, locale }: { data: HomepageViewModel; locale:
     <SAVOSpotlight360 />
     <DiscoverBrands insideTheBrand={data.insideTheBrand} locale={locale} />
     <DiscoverTogether bundle={data.discoverTogetherBundle} locale={locale} />
+    <MysteryBoxHomeSection tiers={data.mysteryBoxTiers} locale={locale} />
   </div>;
 }
 

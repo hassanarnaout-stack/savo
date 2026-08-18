@@ -35,7 +35,18 @@ export default function CheckoutPage() {
   const [giftCardBalance, setGiftCardBalance] = useState<number | null>(null);
   const [giftCardError, setGiftCardError] = useState<string | null>(null);
   const [membership, setMembership] = useState({ isMember: false, extraDiscountPercent: 0, hasFreeDelivery: false });
-  const [mysteryBoxChoices, setMysteryBoxChoices] = useState<Record<string, string[]>>({});
+  const [mysteryBoxChoices, setMysteryBoxChoices] = useState<Record<string, string[]>>(() => {
+    // Pre-filled from real cart items already locked via the Build/Lock
+    // experience — the existing at-checkout picker (below) only ever
+    // needs to handle a box that somehow lacks this (backward compat).
+    const preset: Record<string, string[]> = {};
+    for (const item of items) {
+      if (item.mysteryBoxChoiceIds && item.mysteryBoxChoiceIds.length > 0) {
+        preset[item.productId] = item.mysteryBoxChoiceIds;
+      }
+    }
+    return preset;
+  });
   const [mysteryChoicesComplete, setMysteryChoicesComplete] = useState(true);
   const [form, setForm] = useState({
     fullName: "",
@@ -55,6 +66,24 @@ export default function CheckoutPage() {
       .catch(() => {});
     trackClientEvent("CHECKOUT_START", { metadata: { itemCount: items.length } });
   }, []);
+
+  // Safety net for Zustand persist's async hydration — items can still
+  // be empty on the very first render even though localStorage has
+  // real data. Re-syncs any already-locked Mystery Box choices as soon
+  // as the real cart items are actually available.
+  useEffect(() => {
+    setMysteryBoxChoices((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const item of items) {
+        if (item.mysteryBoxChoiceIds && item.mysteryBoxChoiceIds.length > 0 && !next[item.productId]) {
+          next[item.productId] = item.mysteryBoxChoiceIds;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [items]);
 
   const membershipDiscount = (subtotal() * membership.extraDiscountPercent) / 100;
   const deliveryFee = membership.hasFreeDelivery ? 0 : subtotal() >= 15 ? 0 : 1.5;
@@ -275,6 +304,7 @@ export default function CheckoutPage() {
           <CheckoutMysteryBoxChoices
             cartProductIds={items.map((i) => i.productId)}
             locale={locale}
+            presetChoices={Object.fromEntries(items.filter((i) => i.mysteryBoxChoiceIds?.length).map((i) => [i.productId, i.mysteryBoxChoiceIds!]))}
             onChoicesChange={(choices, complete) => {
               setMysteryBoxChoices(choices);
               setMysteryChoicesComplete(complete);

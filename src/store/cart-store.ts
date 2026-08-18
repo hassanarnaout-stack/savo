@@ -10,6 +10,15 @@ export interface CartLineItem {
   saveoPrice: number;
   quantity: number;
   stockQty: number;
+  // Mystery Box (2026 approved Figma flow) — the customer's REAL,
+  // already-locked CHOICE-pool picks, carried from the Build/Lock
+  // experience through the existing cart into the existing checkout
+  // submission (checkout/page.tsx pre-fills its mysteryBoxChoices
+  // state from this — see CheckoutMysteryBoxChoices). Purely additive;
+  // undefined for every normal product and for any mystery box added
+  // through a path that hasn't made its picks yet (that box still
+  // falls back to the existing at-checkout picker UI).
+  mysteryBoxChoiceIds?: string[];
 }
 
 interface CartState {

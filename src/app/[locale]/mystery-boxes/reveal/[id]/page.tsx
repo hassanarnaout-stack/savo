@@ -1,59 +1,35 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
-import { RevealExperience } from "@/components/mystery-box/reveal-experience";
-import { getLaunchFlags } from "@/lib/launch-flags";
 
 export const dynamic = "force-dynamic";
 
 interface Props {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; locale: string }>;
 }
 
-export default async function MysteryBoxRevealPage({ params }: Props) {
-  const FEATURE_FLAGS = await getLaunchFlags();
-  if (!FEATURE_FLAGS.MYSTERY_BOX_ENABLED) notFound();
-
+/**
+ * RETIRED (2026 approved Figma decision) — the old digital "Open
+ * Mystery Box" reveal page is cancelled. This route is kept (not
+ * deleted) only to safely redirect any old bookmarked/shared reveal
+ * URL to the customer's real order details, WITHOUT ever fetching or
+ * rendering MysteryBoxRevealItem content — the physical unboxing at
+ * delivery is the only reveal, no exceptions for historical URLs
+ * either.
+ */
+export default async function MysteryBoxRevealPageRetired({ params }: Props) {
+  const { id, locale } = await params;
   const session = await auth();
-  const { id } = await params;
-  if (!session?.user?.id) redirect(`/login?callbackUrl=/mystery-boxes/reveal/${id}`);
+  if (!session?.user?.id) redirect(`/login?callbackUrl=/mystery-boxes`);
 
+  // Only look up ownership + the linked order — never `items` (the
+  // actual hidden contents) or `chosenProductIds`.
   const reveal = await prisma.mysteryBoxReveal.findUnique({
     where: { id },
-    include: {
-      orderItem: { include: { product: { include: { images: { take: 1, orderBy: { sortOrder: "asc" } } } } } },
-      items: { include: { product: { include: { images: { take: 1, orderBy: { sortOrder: "asc" } } } } } },
-    },
+    select: { userId: true, orderItem: { select: { supplierOrder: { select: { orderId: true } } } } },
   });
 
-  // SECURITY: 404 (not 403) if it doesn't exist or belongs to someone else.
   if (!reveal || reveal.userId !== session.user.id) notFound();
 
-  const box = reveal.orderItem.product;
-  const chosenIds = new Set((reveal.chosenProductIds as string[] | null) ?? []);
-
-  return (
-    <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
-      <RevealExperience
-        revealId={reveal.id}
-        boxName={box.name}
-        boxNameAr={box.nameAr}
-        boxImage={box.images[0]?.url ?? null}
-        quantity={reveal.orderItem.quantity}
-        fallbackDescription={box.mysteryBoxReveal}
-        fallbackDescriptionAr={box.mysteryBoxRevealAr}
-        alreadyRevealed={!!reveal.revealedAt}
-        items={reveal.items.map((i) => ({
-          id: i.id,
-          quantity: i.quantity,
-          name: i.product.name,
-          nameAr: i.product.nameAr,
-          slug: i.product.slug,
-          image: i.product.images[0]?.url ?? null,
-          saveoPrice: Number(i.product.saveoPrice),
-          isYourPick: chosenIds.has(i.productId),
-        }))}
-      />
-    </div>
-  );
+  redirect(`/${locale}/account/orders/${reveal.orderItem.supplierOrder.orderId}`);
 }

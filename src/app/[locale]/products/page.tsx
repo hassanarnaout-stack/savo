@@ -11,6 +11,7 @@ import { SponsoredSearchAdsRail } from "@/components/product/sponsored-search-ad
 import { DiscoveryPoint } from "@/components/brand/discovery-point";
 import { FlashDealService } from "@/lib/services/flash-deal-service";
 import { parseProductFilters, buildProductWhere, buildProductOrderBy, type ProductFilterParams } from "@/lib/product-filters";
+import { redirect } from "next/navigation";
 
 export const revalidate = 30;
 
@@ -26,6 +27,16 @@ export default async function ProductsPage({ params, searchParams }: Props) {
   const { locale } = await params;
   const isArabic = locale === "ar";
   const rawParams = await searchParams;
+
+  // Mystery Boxes is NOT a normal shoppable category — the approved
+  // 2026 experience (Collection → Build → Locked) is the ONLY customer
+  // Mystery Box flow. Redirect immediately, before any query/filter
+  // rendering, whenever this route is reached via ?category=mystery-boxes
+  // (e.g. the category chip inside this same page).
+  if (rawParams.category === "mystery-boxes") {
+    redirect(`/${locale}/mystery-boxes`);
+  }
+
   const filters = parseProductFilters(rawParams);
   const [t, common, pT, session] = await Promise.all([
     getTranslations("productsPage"),

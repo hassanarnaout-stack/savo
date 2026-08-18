@@ -20,22 +20,55 @@ function weightedPick<T extends { probability: number }>(pool: T[]): T {
 }
 
 /**
- * Creates a PENDING reveal record at checkout time — deliberately does
- * NOT pick contents yet. This is what makes "don't show the product
- * before purchase" true even internally: the actual items aren't chosen
- * until the customer opens the box on the reveal page.
+ * Creates the reveal record at checkout time AND, in the new (2026)
+ * architecture, is immediately followed by openMysteryBoxReveal() in
+ * the SAME checkout transaction — see src/app/api/checkout/route.ts.
+ * The actual hidden LOCKED-pool products are now allocated
+ * automatically at this point (real inventory-safe, server-side,
+ * reusing the exact same weighted-random draw as before) rather than
+ * waiting for a customer-triggered "open" action. The customer is
+ * NEVER shown the result — MysteryBoxRevealItem exists purely for
+ * admin/fulfillment operational visibility.
  */
 export async function createPendingReveal(
   tx: Tx,
   params: { orderItemId: string; userId: string; chosenProductIds?: string[] }
 ) {
-  await tx.mysteryBoxReveal.create({
+  return tx.mysteryBoxReveal.create({
     data: {
       orderItemId: params.orderItemId,
       userId: params.userId,
       chosenProductIds: params.chosenProductIds && params.chosenProductIds.length > 0 ? params.chosenProductIds : undefined,
     },
   });
+}
+
+/**
+ * Real, server-side validation of a customer's CHOICE-pool picks —
+ * shared by the checkout path (new 2026 flow) and submitChoices()
+ * (kept for any pre-2026 pending reveals). Never trusts the client:
+ * re-derives the required count and the valid product-ID set from the
+ * actual database configuration every time.
+ */
+export async function validateMysteryBoxChoices(tx: Tx, params: { mysteryBoxId: string; productIds: string[] }) {
+  const box = await tx.product.findUniqueOrThrow({
+    where: { id: params.mysteryBoxId },
+    select: { mysteryBoxChooseCount: true },
+  });
+  const chooseCount = box.mysteryBoxChooseCount ?? 0;
+  if (chooseCount === 0) return; // no CHOICE pool configured — nothing to validate
+
+  if (params.productIds.length !== chooseCount) {
+    throw new InvalidChoiceCountError(chooseCount);
+  }
+  const validOptions = await tx.mysteryBoxContent.findMany({
+    where: { mysteryBoxId: params.mysteryBoxId, poolType: "CHOICE" },
+    select: { possibleProductId: true },
+  });
+  const validIds = new Set(validOptions.map((o) => o.possibleProductId));
+  if (!params.productIds.every((id) => validIds.has(id))) {
+    throw new InvalidChoiceProductError();
+  }
 }
 
 export class RevealOwnershipError extends Error {
@@ -137,14 +170,24 @@ export async function submitChoices(tx: Tx, params: { revealId: string; userId: 
 }
 
 /**
- * The actual "open the box" moment. Picks `quantity` items (independently,
- * with replacement — buying 2 of the same box can reveal the same item
- * twice, same as a real randomized box would) from the box's configured
- * MysteryBoxContent pool, weighted by probability.
+ * The actual hidden-contents allocation. As of the 2026 approved
+ * Figma flow, this is called automatically at CHECKOUT time (right
+ * after createPendingReveal, same transaction) — never by a
+ * customer-triggered "open"/"reveal" action, which the approved design
+ * explicitly forbids. `revealedAt` here means "hidden contents have
+ * been allocated internally", not "shown to the customer" — the
+ * customer-facing serialization must never include MysteryBoxRevealItem
+ * data (enforced in the checkout/order-history response shaping, not
+ * here — this function's job is purely the real, inventory-aware
+ * allocation logic, reused unchanged from the pre-2026 architecture).
  *
- * Falls back gracefully to zero revealed items (not an error) if the box
- * has no MysteryBoxContent configured yet — the UI then shows the box's
- * general `mysteryBoxReveal` description text instead of named items.
+ * Picks `quantity` items (independently, with replacement — buying 2 of
+ * the same box can allocate the same item twice, same as a real
+ * randomized box would) from the box's configured MysteryBoxContent
+ * pool, weighted by probability.
+ *
+ * Falls back gracefully to zero allocated items (not an error) if the
+ * box has no MysteryBoxContent configured yet.
  */
 export async function openMysteryBoxReveal(tx: Tx, params: { revealId: string; userId: string }) {
   const reveal = await tx.mysteryBoxReveal.findUniqueOrThrow({

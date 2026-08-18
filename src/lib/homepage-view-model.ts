@@ -5,6 +5,7 @@ import { getDealOfTheHour } from "@/lib/discovery-engine";
 import { isLaunchFeatureEnabled } from "@/lib/launch-flags";
 import { HomepageSettingsService } from "@/lib/services/homepage-settings-service";
 import { BundleService } from "@/lib/services/bundle-service";
+import { getMysteryBoxTierConfigs } from "@/lib/mystery-box-tiers";
 
 export type HomeProduct = {
   id: string; slug: string; name: string; nameAr: string | null; brand: string | null;
@@ -49,6 +50,7 @@ export type HomepageViewModel = {
     items: { productId: string; name: string; nameAr: string | null; slug: string; brand: string | null; saveoPrice: number; image: string | null }[];
     discountType: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_ITEM";
   } | null;
+  mysteryBoxTiers: Awaited<ReturnType<typeof getMysteryBoxTierConfigs>>;
   categories: { id: string; slug: string; name: string; nameAr: string | null; count: number; image: string | null }[];
   brands: { slug: string; name: string; count: number }[];
   mysteryBoxes: HomeProduct[]; justLanded: HomeProduct[]; bestValue: HomeProduct[];
@@ -85,7 +87,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
   const visibility = await MembershipService.getVisibilityFilter(session?.user?.id);
   const now = new Date();
   const publicWhere = { status: "ACTIVE" as const, approvalStatus: "APPROVED" as const, ...visibility };
-  const [products, flashRows, editorRows, bestSellerRows, categories, verifiedSupplierCount, dealOfHourEnabled, homepageSettings, catalogBrandRows, activeBundles] = await Promise.all([
+  const [products, flashRows, editorRows, bestSellerRows, categories, verifiedSupplierCount, dealOfHourEnabled, homepageSettings, catalogBrandRows, activeBundles, mysteryBoxTiers] = await Promise.all([
     prisma.product.findMany({ where: publicWhere, include: productInclude }),
     prisma.flashDeal.findMany({
       where: { status: "LIVE", isActive: true, startAt: { lte: now }, endAt: { gt: now }, product: publicWhere },
@@ -127,6 +129,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
     // Discover Together — reuses the existing, real BundleService
     // (Phase 4.3) as-is. Zero new bundle/pricing logic.
     BundleService.getActiveBundles(),
+    getMysteryBoxTierConfigs(),
   ]);
   // SAVO Hour — only queried when the launch flag is on; getDealOfTheHour()
   // already filters to the single active, non-expired slot.
@@ -230,6 +233,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
     hubTrending, hubBestSellers, hubEditorsPicks,
     insideTheBrand,
     discoverTogetherBundle,
+    mysteryBoxTiers,
     categories: categories.filter((category) => category._count.products > 0).slice(0, 6).map((category) => ({
       id: category.id, slug: category.slug, name: category.name, nameAr: category.nameAr,
       count: category._count.products, image: category.imageUrl ?? category.products[0]?.images[0]?.url ?? null,

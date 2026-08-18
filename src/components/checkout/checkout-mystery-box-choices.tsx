@@ -16,10 +16,15 @@ export function CheckoutMysteryBoxChoices({
   cartProductIds,
   locale,
   onChoicesChange,
+  presetChoices,
 }: {
   cartProductIds: string[];
   locale: string;
   onChoicesChange: (choices: Record<string, string[]>, allComplete: boolean) => void;
+  /** Real, already-locked picks carried in from the cart (Build/Lock
+   * experience) — boxes present here are already resolved and are
+   * skipped from this picker entirely, never re-asked. */
+  presetChoices: Record<string, string[]>;
 }) {
   const [boxes, setBoxes] = useState<BoxChoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,10 +48,11 @@ export function CheckoutMysteryBoxChoices({
   }, [cartProductIds.join(",")]);
 
   useEffect(() => {
-    const allComplete = boxes.every((b) => (selections[b.productId]?.length ?? 0) === b.chooseCount);
-    onChoicesChange(selections, boxes.length === 0 || allComplete);
+    const pickerBoxes = boxes.filter((b) => !presetChoices[b.productId]);
+    const allComplete = pickerBoxes.every((b) => (selections[b.productId]?.length ?? 0) === b.chooseCount);
+    onChoicesChange({ ...presetChoices, ...selections }, pickerBoxes.length === 0 || allComplete);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selections, boxes]);
+  }, [selections, boxes, presetChoices]);
 
   function toggle(box: BoxChoice, productId: string) {
     setSelections((prev) => {
@@ -59,11 +65,12 @@ export function CheckoutMysteryBoxChoices({
     });
   }
 
-  if (loading || boxes.length === 0) return null;
+  const pickerBoxes = boxes.filter((box) => !presetChoices[box.productId]);
+  if (loading || pickerBoxes.length === 0) return null;
 
   return (
     <div className="space-y-4">
-      {boxes.map((box) => {
+      {pickerBoxes.map((box) => {
         const boxName = locale === "ar" && box.nameAr ? box.nameAr : box.name;
         const selected = selections[box.productId] ?? [];
         return (
