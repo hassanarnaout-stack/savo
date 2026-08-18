@@ -4,7 +4,7 @@ import { ProductForm } from "@/components/admin/product-form";
 export default async function NewProductPage() {
   const [categories, suppliers] = await Promise.all([
     prisma.category.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-    prisma.supplier.findMany({ where: { status: "ACTIVE" }, orderBy: { companyName: "asc" } }),
+    prisma.supplier.findMany({ where: { status: "ACTIVE" }, orderBy: { companyName: "asc" }, select: { id: true, companyName: true } }),
   ]);
 
   return (
