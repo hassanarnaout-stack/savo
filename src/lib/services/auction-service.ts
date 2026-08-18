@@ -63,7 +63,7 @@ export class AuctionService {
     const currentPrice = await this.getCurrentPrice(auctionId);
     const minValidBid = currentPrice + Number(auction.minIncrement);
     if (amount < minValidBid) {
-      throw new InvalidBidError(`Your bid must be at least ${minValidBid.toFixed(3)} KD.`);
+      throw new InvalidBidError(`Your bid must be at least KD ${minValidBid.toFixed(3)}.`);
     }
 
     return prisma.auctionBid.create({ data: { auctionId, userId, amount } });

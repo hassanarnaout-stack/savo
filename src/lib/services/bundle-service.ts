@@ -15,6 +15,7 @@ const productCardSelect = {
   name: true,
   nameAr: true,
   slug: true,
+  brandName: true,
   originalPrice: true,
   saveoPrice: true,
   images: { take: 1, orderBy: { sortOrder: "asc" as const } },

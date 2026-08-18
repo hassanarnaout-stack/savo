@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { formatKWD } from "@/lib/utils";
 
 interface Affiliate {
   id: string;
@@ -195,7 +196,7 @@ export function AdminAffiliatesClient() {
             <div key={w.id} className="flex items-center justify-between rounded-xl2 border border-black/5 bg-white p-4">
               <div>
                 <p className="text-sm font-semibold">{w.affiliate.user.name ?? w.affiliate.user.email}</p>
-                <p className="text-xs text-saveo-emerald-700/50">{w.affiliate.referralCode} · {Number(w.amount).toFixed(3)} KD</p>
+                <p className="text-xs text-saveo-emerald-700/50">{w.affiliate.referralCode} · {formatKWD(Number(w.amount))}</p>
               </div>
               <div className="flex gap-1.5">
                 <button onClick={() => handleWithdrawal(w.id, "APPROVE")} disabled={busy === w.id} className="btn-primary !py-1.5 text-xs">Pay</button>
@@ -233,7 +234,7 @@ export function AdminAffiliatesClient() {
               <div>
                 <p className="font-semibold">{r.name} {!r.isActive && "(inactive)"}</p>
                 <p className="text-saveo-emerald-700/50">
-                  {r.metric === "REFERRAL_COUNT" ? `${r.threshold} referrals` : `${r.threshold} KD revenue`} → {Number(r.giftCardAmount).toFixed(3)} KD gift
+                  {r.metric === "REFERRAL_COUNT" ? `${r.threshold} referrals` : `${formatKWD(r.threshold)} revenue`} → {formatKWD(Number(r.giftCardAmount))} gift
                   {r.newCommissionRate ? ` + ${r.newCommissionRate}% rate` : ""}
                 </p>
               </div>
@@ -284,8 +285,8 @@ export function AdminAffiliatesClient() {
                     </div>
                   </td>
                   <td className="p-3 text-center">{a._count.milestones > 0 ? `🏆 ${a._count.milestones}` : "—"}</td>
-                  <td className="p-3 font-semibold">{Number(a.totalEarned).toFixed(3)} KD</td>
-                  <td className="p-3">{Number(a.totalWithdrawn).toFixed(3)} KD</td>
+                  <td className="p-3 font-semibold">{formatKWD(Number(a.totalEarned))}</td>
+                  <td className="p-3">{formatKWD(Number(a.totalWithdrawn))}</td>
                 </tr>
               ))}
             </tbody>

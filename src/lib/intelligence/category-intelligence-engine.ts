@@ -67,9 +67,9 @@ export async function computeCategoryIntelligence(categoryId: string): Promise<I
   const score = clampScore(breadthScore * 0.25 + demandScore * 0.45 + growthScore * 0.3);
 
   reason.push(`${products.length} active product${products.length === 1 ? "" : "s"} in "${category.name}", ${totalOrders} combined real orders.`);
-  reason.push(`This month: ${thisMonthOrders._count} orders, ${thisMonthRevenue.toFixed(3)} KD revenue.`);
+  reason.push(`This month: ${thisMonthOrders._count} orders, KD ${thisMonthRevenue.toFixed(3)} revenue.`);
   if (growthPct !== null) {
-    reason.push(`${growthPct >= 0 ? "+" : ""}${growthPct.toFixed(1)}% revenue vs last month (${lastMonthRevenue.toFixed(3)} KD).`);
+    reason.push(`${growthPct >= 0 ? "+" : ""}${growthPct.toFixed(1)}% revenue vs last month (KD ${lastMonthRevenue.toFixed(3)}).`);
   } else if (thisMonthRevenue > 0) {
     reason.push("No revenue last month — this month's sales are entirely new activity.");
   }

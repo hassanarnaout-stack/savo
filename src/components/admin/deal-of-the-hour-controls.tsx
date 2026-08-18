@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { formatKWD } from "@/lib/utils";
 
 export function CreateDealOfHourForm({ products }: { products: { id: string; name: string; saveoPrice: number }[] }) {
   const router = useRouter();
@@ -48,7 +49,7 @@ export function CreateDealOfHourForm({ products }: { products: { id: string; nam
       <select value={productId} onChange={(e) => setProductId(e.target.value)} className="input text-sm">
         <option value="">Select product...</option>
         {products.map((p) => (
-          <option key={p.id} value={p.id}>{p.name} ({p.saveoPrice.toFixed(3)} KD)</option>
+          <option key={p.id} value={p.id}>{p.name} ({formatKWD(p.saveoPrice)})</option>
         ))}
       </select>
       <div className="grid grid-cols-3 gap-2">

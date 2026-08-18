@@ -110,7 +110,7 @@ export default function CheckoutPage() {
       clear();
       toast.success(t("orderSuccess"));
       if (data.membershipSavings > 0) {
-        toast.success(`You saved ${Number(data.membershipSavings).toFixed(3)} KD with Savo Plus`, { duration: 5000 });
+        toast.success(`You saved ${formatKWD(data.membershipSavings)} with Savo Plus`, { duration: 5000 });
       }
       if (data.goldenTicket?.won) {
         toast.success(`🎫 You won a Golden Ticket! ${data.goldenTicket.reward?.label ?? ""}`, { duration: 6000 });
@@ -214,7 +214,7 @@ export default function CheckoutPage() {
               <button type="button" onClick={handleCheckGiftCard} className="btn-outline text-sm">Apply</button>
             </div>
             {giftCardBalance !== null && (
-              <p className="mt-2 text-sm font-semibold text-saveo-emerald-700">✓ {giftCardBalance.toFixed(3)} KD available</p>
+              <p className="mt-2 text-sm font-semibold text-saveo-emerald-700">✓ {formatKWD(giftCardBalance)} available</p>
             )}
             {giftCardError && <p className="mt-2 text-sm font-semibold text-red-600">{giftCardError}</p>}
           </section>

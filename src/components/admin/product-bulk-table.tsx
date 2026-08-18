@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { formatKWD } from "@/lib/utils";
 import { SortableHeader } from "@/components/admin/sortable-header";
 
 interface ProductRow {
@@ -131,7 +132,7 @@ export function ProductBulkTable({ products, categories }: { products: ProductRo
                   </div>
                 </td>
                 <td className="px-4 py-3 text-saveo-emerald-700/60">{p.categoryName}</td>
-                <td className="px-4 py-3 font-semibold">{p.saveoPrice.toFixed(3)} KD</td>
+                <td className="px-4 py-3 font-semibold">{formatKWD(p.saveoPrice)}</td>
                 <td className="px-4 py-3">
                   <span className="rounded-full bg-saveo-emerald-50 px-2 py-0.5 text-xs font-bold text-saveo-emerald-800">-{p.discountPct}%</span>
                 </td>

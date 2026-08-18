@@ -37,7 +37,7 @@ function buildAIReason(item: { rating: number | null; price: number; originalPri
     return item.rating ? `Within your ${context.intent.budget} KD budget, rated ${item.rating.toFixed(1)}★.` : `Within your ${context.intent.budget} KD budget.`;
   }
   if (realSavings > 0) {
-    return `Save ${realSavings.toFixed(3)} KD off the regular price.`;
+    return `Save KD ${realSavings.toFixed(3)} off the regular price.`;
   }
   if (item.rating && item.rating >= 4) {
     return `Highly rated at ${item.rating.toFixed(1)}★.`;
@@ -202,7 +202,7 @@ export async function composeResponse(params: ComposeParams): Promise<AIAssistan
     });
     budgetBasket = buildBudgetBasket(results, context.intent.budget, context);
     message = budgetBasket.items.length > 0
-      ? `Here's what fits in your ${context.intent.budget} KD budget — ${budgetBasket.items.length} item(s), ${budgetBasket.remainingBudget.toFixed(3)} KD remaining.`
+      ? `Here's what fits in your ${context.intent.budget} KD budget — ${budgetBasket.items.length} item(s), KD ${budgetBasket.remainingBudget.toFixed(3)} remaining.`
       : `I couldn't find anything within ${context.intent.budget} KD right now.`;
   } else if (context.intent.category || context.intent.brand || context.intent.isGift || context.intent.wantsDiscount || context.intent.dietTags.length > 0) {
     const results = await searchRelevantProducts({
@@ -227,7 +227,7 @@ export async function composeResponse(params: ComposeParams): Promise<AIAssistan
   }
 
   if (context.cart && context.cart.items.length > 0 && context.cart.missingAmountForFreeDelivery) {
-    message += ` Add ${context.cart.missingAmountForFreeDelivery.toFixed(3)} KD more to your cart for free delivery.`;
+    message += ` Add KD ${context.cart.missingAmountForFreeDelivery.toFixed(3)} more to your cart for free delivery.`;
   }
 
   return {

@@ -1,6 +1,7 @@
 "use client";
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { formatKWD } from "@/lib/utils";
 
 export function RevenueChart({ data }: { data: { day: string; total: number; count: number }[] }) {
   if (data.length === 0) {
@@ -20,7 +21,7 @@ export function RevenueChart({ data }: { data: { day: string; total: number; cou
         <XAxis dataKey="day" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
         <YAxis tick={{ fontSize: 11 }} width={40} />
         <Tooltip
-          formatter={(value: number) => [`${value.toFixed(3)} KD`, "Revenue"]}
+          formatter={(value: number) => [formatKWD(value), "Revenue"]}
           labelStyle={{ fontSize: 12 }}
         />
         <Area type="monotone" dataKey="total" stroke="#0B3D2E" strokeWidth={2} fill="url(#revenueFill)" />

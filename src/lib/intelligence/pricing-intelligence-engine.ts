@@ -52,14 +52,14 @@ export async function computePricingIntelligence(productId: string): Promise<Int
     const avgCompetitorPrice = competitorPrices.reduce((sum, c) => sum + Number(c.price), 0) / competitorPrices.length;
     const priceDiffPct = ((saveoPrice - avgCompetitorPrice) / avgCompetitorPrice) * 100;
     competitiveScore = clampScore(50 - priceDiffPct * 2);
-    reason.push(`${saveoPrice.toFixed(3)} KD vs ${avgCompetitorPrice.toFixed(3)} KD average across ${competitorPrices.length} tracked competitor${competitorPrices.length === 1 ? "" : "s"} (${priceDiffPct >= 0 ? "+" : ""}${priceDiffPct.toFixed(1)}%).`);
+    reason.push(`KD ${saveoPrice.toFixed(3)} vs KD ${avgCompetitorPrice.toFixed(3)} average across ${competitorPrices.length} tracked competitor${competitorPrices.length === 1 ? "" : "s"} (${priceDiffPct >= 0 ? "+" : ""}${priceDiffPct.toFixed(1)}%).`);
   }
 
   const demandScore = clampScore((Math.min(product.orderCount, 30) / 30) * 100);
 
   const score = clampScore(marginScore * 0.4 + competitiveScore * 0.3 + demandScore * 0.3);
 
-  reason.push(`${saveoPrice.toFixed(3)} KD, ${discountPct.toFixed(1)}% off ${originalPrice.toFixed(3)} KD original price.`);
+  reason.push(`KD ${saveoPrice.toFixed(3)}, ${discountPct.toFixed(1)}% off KD ${originalPrice.toFixed(3)} original price.`);
   if (marginPct !== null) {
     reason.push(marginPct < 0 ? `Selling below real recorded cost — negative margin.` : `${marginPct.toFixed(1)}% real margin over purchase cost.`);
   } else {

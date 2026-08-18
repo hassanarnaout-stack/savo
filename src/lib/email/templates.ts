@@ -53,8 +53,8 @@ export function welcomeEmail(locale: EmailLocale, data: { name: string }) {
 }
 
 export function orderConfirmationEmail(locale: EmailLocale, data: { orderNumber: string; total: number; orderId: string }) {
-  const en = { subject: `Order Confirmed — ${data.orderNumber}`, body: `<h2>Thanks for your order!</h2><p>Order <strong>${data.orderNumber}</strong> has been placed — total <strong>${data.total.toFixed(3)} KD</strong>.</p>${button(locale, `${siteUrl()}/en/account/orders/${data.orderId}`, "View Order")}` };
-  const ar = { subject: `تأكيد الطلب — ${data.orderNumber}`, body: `<h2>شكراً لطلبك!</h2><p>تم استلام طلبك <strong>${data.orderNumber}</strong> — الإجمالي <strong>${data.total.toFixed(3)} د.ك</strong>.</p>${button(locale, `${siteUrl()}/ar/account/orders/${data.orderId}`, "عرض الطلب")}` };
+  const en = { subject: `Order Confirmed — ${data.orderNumber}`, body: `<h2>Thanks for your order!</h2><p>Order <strong>${data.orderNumber}</strong> has been placed — total <strong>KD ${data.total.toFixed(3)}</strong>.</p>${button(locale, `${siteUrl()}/en/account/orders/${data.orderId}`, "View Order")}` };
+  const ar = { subject: `تأكيد الطلب — ${data.orderNumber}`, body: `<h2>شكراً لطلبك!</h2><p>تم استلام طلبك <strong>${data.orderNumber}</strong> — الإجمالي <strong>KD ${data.total.toFixed(3)}</strong>.</p>${button(locale, `${siteUrl()}/ar/account/orders/${data.orderId}`, "عرض الطلب")}` };
   const t = locale === "ar" ? ar : en;
   return { subject: t.subject, html: wrapper(locale, t.body) };
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { formatKWD } from "@/lib/utils";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 
 interface CompetitorPriceEntry {
@@ -70,7 +71,7 @@ export function CompetitorPriceManager({
         <div className="mt-2 space-y-2">
           {existing.map((c) => (
             <div key={c.id} className="flex items-center justify-between rounded-lg bg-black/[0.03] px-2.5 py-1.5 text-xs">
-              <span>{c.competitorName}: {c.price.toFixed(3)} KD</span>
+              <span>{c.competitorName}: {formatKWD(c.price)}</span>
               <button onClick={() => removeEntry(c.id)} aria-label="Remove">
                 <Trash2 className="h-3.5 w-3.5 text-red-500" />
               </button>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Copy, TrendingUp, Users, Wallet } from "lucide-react";
+import { formatKWD } from "@/lib/utils";
 import { useLocale } from "next-intl";
 import { buildAffiliateShareUrl } from "@/lib/affiliate-share";
 
@@ -137,7 +138,7 @@ export function AffiliateDashboardClient({ hasAccount }: { hasAccount: boolean }
             const achieved = dashboard.milestones.some((ms) => ms.ruleId === rule.id);
             const progress = rule.metric === "REFERRAL_COUNT" ? dashboard.confirmedCount : dashboard.confirmedRevenue;
             const percent = Math.min(100, (progress / rule.threshold) * 100);
-            const rewardLabel = `${Number(rule.giftCardAmount).toFixed(3)} KD gift${rule.newCommissionRate ? ` + ${rule.newCommissionRate}% rate` : ""}`;
+            const rewardLabel = `${formatKWD(Number(rule.giftCardAmount))} gift${rule.newCommissionRate ? ` + ${rule.newCommissionRate}% rate` : ""}`;
             return (
               <div key={rule.id} className="card p-3">
                 <div className="mb-1 flex items-center justify-between text-xs">
@@ -169,7 +170,7 @@ export function AffiliateDashboardClient({ hasAccount }: { hasAccount: boolean }
         {dashboard.referrals.map((r) => (
           <div key={r.id} className="flex items-center justify-between rounded-lg border border-black/5 bg-white p-2.5 text-xs">
             <span>Order #{r.order.orderNumber}</span>
-            <span className="font-semibold">{Number(r.commissionAmount).toFixed(3)} KD · {r.status}</span>
+            <span className="font-semibold">{formatKWD(Number(r.commissionAmount))} · {r.status}</span>
           </div>
         ))}
         {dashboard.referrals.length === 0 && <p className="text-center text-xs text-saveo-emerald-700/40">No referrals yet — share your link!</p>}

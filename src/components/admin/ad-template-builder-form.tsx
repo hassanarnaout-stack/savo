@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Download } from "lucide-react";
+import { formatKWD } from "@/lib/utils";
 
 interface ProductOption {
   id: string;
@@ -36,7 +37,7 @@ export function AdTemplateBuilderForm({ products }: { products: ProductOption[] 
           config: {
             productName: product.name,
             imageUrl: product.imageUrl ?? "/placeholder-product.png",
-            price: `${product.saveoPrice.toFixed(3)} KD`,
+            price: formatKWD(product.saveoPrice),
             discountPercent: product.discountPct || undefined,
             timerText: timerText || undefined,
             ctaText,

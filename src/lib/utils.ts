@@ -9,7 +9,13 @@ export function cn(...inputs: ClassValue[]) {
 /** Format a price in Kuwaiti Dinar (3 decimal places, per fils convention). */
 export function formatKWD(value: number | string): string {
   const num = typeof value === "string" ? parseFloat(value) : value;
-  return `${num.toFixed(3)} KD`;
+  // U+2066 (LRI) / U+2069 (PDI) — invisible Unicode bidi isolation.
+  // Guarantees "KD X.XXX" always renders left-to-right internally
+  // (KD, then the number) even when embedded inside Arabic/RTL text,
+  // without needing a JSX wrapper — works in every context this
+  // string is used in (toast messages, alt text, aria-labels, plain
+  // template literals), not just rendered JSX.
+  return `\u2066KD ${num.toFixed(3)}\u2069`;
 }
 
 /**

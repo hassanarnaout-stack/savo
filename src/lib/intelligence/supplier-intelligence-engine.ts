@@ -55,7 +55,7 @@ export async function computeSupplierIntelligence(supplierId: string): Promise<I
     reason.push(`${(fulfillmentRate * 100).toFixed(1)}% fulfillment rate on resolved orders.`);
   }
   const revenue = Number(revenueAgg._sum.supplierAmount ?? 0);
-  reason.push(`${revenue.toFixed(3)} KD in real paid revenue.`);
+  reason.push(`KD ${revenue.toFixed(3)} in real paid revenue.`);
   if (reviewAgg._avg.rating !== null) {
     reason.push(`${reviewAgg._avg.rating.toFixed(1)}★ average across this supplier's products (${reviewAgg._count.rating} reviews).`);
   }

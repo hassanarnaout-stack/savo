@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/routing";
 import { Star } from "lucide-react";
+import { formatKWD } from "@/lib/utils";
 import type { ComparisonProduct } from "@/lib/services/smart-comparison-service";
 
 export function SmartComparison({ current, alternatives, locale }: { current: ComparisonProduct; alternatives: ComparisonProduct[]; locale: string }) {
@@ -29,7 +30,7 @@ export function SmartComparison({ current, alternatives, locale }: { current: Co
               )}
             </div>
             <div className="savo-pdp-compare-rows">
-              <div><span>{isArabic ? "السعر" : "Price"}</span><b>{item.price.toFixed(3)} KD</b></div>
+              <div><span>{isArabic ? "السعر" : "Price"}</span><b>{formatKWD(item.price)}</b></div>
               <div>
                 <span>{isArabic ? "التقييم" : "Rating"}</span>
                 <b>{item.avgRating !== null ? <><Star size={11} className="savo-pdp-compare-star" /> {item.avgRating} ({item.reviewCount})</> : "—"}</b>

@@ -101,8 +101,8 @@ export class PricingEngineService {
     const maximumPrice = Number((referencePrice * 1.15).toFixed(3));
 
     const sourceLabel = hasRealCompetitorData
-      ? `real competitor prices (${realCompetitorPrices.map((c) => c.competitorName).join(", ")}, avg ${referencePrice.toFixed(3)} KD)`
-      : `the category average (${referencePrice.toFixed(3)} KD — no competitor prices entered for this product yet)`;
+      ? `real competitor prices (${realCompetitorPrices.map((c) => c.competitorName).join(", ")}, avg KD ${referencePrice.toFixed(3)})`
+      : `the category average (KD ${referencePrice.toFixed(3)} — no competitor prices entered for this product yet)`;
 
     let action: PricingAction = "KEEP";
     let suggestedPrice = currentPrice;

@@ -41,7 +41,7 @@ export async function computeOrderIntelligence(orderId: string): Promise<Intelli
   } else {
     const avgPrior = priorOrders.reduce((sum, o) => sum + Number(o.total), 0) / priorOrders.length;
     const ratio = avgPrior > 0 ? orderTotal / avgPrior : 1;
-    reason.push(`${orderTotal.toFixed(3)} KD vs this customer's ${avgPrior.toFixed(3)} KD average over ${priorOrders.length} prior order${priorOrders.length === 1 ? "" : "s"}.`);
+    reason.push(`KD ${orderTotal.toFixed(3)} vs this customer's KD ${avgPrior.toFixed(3)} average over ${priorOrders.length} prior order${priorOrders.length === 1 ? "" : "s"}.`);
 
     if (ratio > 3) {
       score -= 30;

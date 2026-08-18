@@ -4,6 +4,7 @@ import { MembershipService } from "@/lib/services/membership-service";
 import { getDealOfTheHour } from "@/lib/discovery-engine";
 import { isLaunchFeatureEnabled } from "@/lib/launch-flags";
 import { HomepageSettingsService } from "@/lib/services/homepage-settings-service";
+import { BundleService } from "@/lib/services/bundle-service";
 
 export type HomeProduct = {
   id: string; slug: string; name: string; nameAr: string | null; brand: string | null;
@@ -43,6 +44,11 @@ export type HomepageViewModel = {
   editorsPicks: HomeProduct[];
   hubTrending: HomeProduct[]; hubBestSellers: HomeProduct[]; hubEditorsPicks: HomeProduct[];
   insideTheBrand: { id: string | null; name: string; nameAr: string | null; slug: string; logoUrl: string | null; coverImageUrl: string | null; productCount: number; isLinked: boolean }[];
+  discoverTogetherBundle: {
+    pricing: { bundleId: string; name: string; nameAr: string | null; subtotal: number; discountAmount: number; finalPrice: number };
+    items: { productId: string; name: string; nameAr: string | null; slug: string; brand: string | null; saveoPrice: number; image: string | null }[];
+    discountType: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_ITEM";
+  } | null;
   categories: { id: string; slug: string; name: string; nameAr: string | null; count: number; image: string | null }[];
   brands: { slug: string; name: string; count: number }[];
   mysteryBoxes: HomeProduct[]; justLanded: HomeProduct[]; bestValue: HomeProduct[];
@@ -79,7 +85,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
   const visibility = await MembershipService.getVisibilityFilter(session?.user?.id);
   const now = new Date();
   const publicWhere = { status: "ACTIVE" as const, approvalStatus: "APPROVED" as const, ...visibility };
-  const [products, flashRows, editorRows, bestSellerRows, categories, verifiedSupplierCount, dealOfHourEnabled, homepageSettings, catalogBrandRows] = await Promise.all([
+  const [products, flashRows, editorRows, bestSellerRows, categories, verifiedSupplierCount, dealOfHourEnabled, homepageSettings, catalogBrandRows, activeBundles] = await Promise.all([
     prisma.product.findMany({ where: publicWhere, include: productInclude }),
     prisma.flashDeal.findMany({
       where: { status: "LIVE", isActive: true, startAt: { lte: now }, endAt: { gt: now }, product: publicWhere },
@@ -118,6 +124,9 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
         _count: { select: { products: { where: { status: "ACTIVE", approvalStatus: "APPROVED" } } } },
       },
     }),
+    // Discover Together — reuses the existing, real BundleService
+    // (Phase 4.3) as-is. Zero new bundle/pricing logic.
+    BundleService.getActiveBundles(),
   ]);
   // SAVO Hour — only queried when the launch flag is on; getDealOfTheHour()
   // already filters to the single active, non-expired slot.
@@ -191,10 +200,36 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
     .map((b) => ({ id: null, name: b.name, nameAr: null, slug: b.slug, logoUrl: null, coverImageUrl: null, productCount: b.count, isLinked: false as const }));
   const insideTheBrand = [...canonicalBrands, ...legacyOnlyBrands].slice(0, 6);
 
+  // Discover Together — the first REAL active bundle that matches
+  // V22's exact "Product A + Product B" two-item visual (exactly 2
+  // required products, zero reward item). Priced entirely via
+  // BundleService.calculatePricing() — the same canonical function
+  // the PDP's BundleOffer already uses, zero homepage-only pricing.
+  const twoItemBundle = activeBundles.find((b) => {
+    const required = b.items.filter((i) => !i.isRewardItem);
+    return required.length === 2 && !b.items.some((i) => i.isRewardItem);
+  });
+  const discoverTogetherBundle = twoItemBundle
+    ? (() => {
+        const pricing = BundleService.calculatePricing(twoItemBundle);
+        const items = twoItemBundle.items.map((i) => ({
+          productId: i.productId,
+          name: i.product.name,
+          nameAr: i.product.nameAr,
+          slug: i.product.slug,
+          brand: i.product.brandName,
+          saveoPrice: Number(i.product.saveoPrice),
+          image: i.product.images[0]?.url ?? null,
+        }));
+        return { pricing, items, discountType: twoItemBundle.discountType };
+      })()
+    : null;
+
   return {
     heroProducts, flashDeals: deals.slice(0, 4), trending, editorsPicks,
     hubTrending, hubBestSellers, hubEditorsPicks,
     insideTheBrand,
+    discoverTogetherBundle,
     categories: categories.filter((category) => category._count.products > 0).slice(0, 6).map((category) => ({
       id: category.id, slug: category.slug, name: category.name, nameAr: category.nameAr,
       count: category._count.products, image: category.imageUrl ?? category.products[0]?.images[0]?.url ?? null,

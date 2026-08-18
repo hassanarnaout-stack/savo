@@ -47,12 +47,12 @@ export class AICommerceAssistantService {
 
     const change = ((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100;
     if (change >= 0) {
-      return { answer: `Sales actually rose ${change.toFixed(1)}% this week (${thisWeekTotal.toFixed(3)} KD vs ${lastWeekTotal.toFixed(3)} KD last week) — no drop to explain.`, data: { thisWeekTotal, lastWeekTotal, change } };
+      return { answer: `Sales actually rose ${change.toFixed(1)}% this week (KD ${thisWeekTotal.toFixed(3)} vs KD ${lastWeekTotal.toFixed(3)} last week) — no drop to explain.`, data: { thisWeekTotal, lastWeekTotal, change } };
     }
 
     const orderCountChange = thisWeek._count - lastWeek._count;
     return {
-      answer: `Sales dropped ${Math.abs(change).toFixed(1)}% this week (${thisWeekTotal.toFixed(3)} KD vs ${lastWeekTotal.toFixed(3)} KD last week). Order count went from ${lastWeek._count} to ${thisWeek._count} (${orderCountChange >= 0 ? "+" : ""}${orderCountChange}).`,
+      answer: `Sales dropped ${Math.abs(change).toFixed(1)}% this week (KD ${thisWeekTotal.toFixed(3)} vs KD ${lastWeekTotal.toFixed(3)} last week). Order count went from ${lastWeek._count} to ${thisWeek._count} (${orderCountChange >= 0 ? "+" : ""}${orderCountChange}).`,
       data: { thisWeekTotal, lastWeekTotal, change, thisWeekOrders: thisWeek._count, lastWeekOrders: lastWeek._count },
     };
   }
@@ -61,14 +61,14 @@ export class AICommerceAssistantService {
     const top = await BusinessDashboardService.getTopSuppliers(1);
     if (top.length === 0) return { answer: "No supplier has any realized (delivered) sales yet." };
     const s = top[0];
-    return { answer: `${s.name} is your top supplier by realized revenue: ${s.revenue.toFixed(3)} KD in sales, ${s.commission.toFixed(3)} KD in commission earned.`, data: s };
+    return { answer: `${s.name} is your top supplier by realized revenue: KD ${s.revenue.toFixed(3)} in sales, KD ${s.commission.toFixed(3)} in commission earned.`, data: s };
   }
 
   private static async mostValuableCustomers(): Promise<{ answer: string; data?: unknown }> {
     const { topCustomers, averageLTV } = await BICustomerAnalyticsService.getCustomerLTV(5);
     if (topCustomers.length === 0) return { answer: "No customers have completed any orders yet." };
-    const list = topCustomers.map((c, i) => `${i + 1}. ${c.name} — ${c.ltv.toFixed(3)} KD (${c.orderCount} orders)`).join("\n");
-    return { answer: `Your top 5 customers by lifetime value (platform average: ${averageLTV.toFixed(3)} KD):\n${list}`, data: topCustomers };
+    const list = topCustomers.map((c, i) => `${i + 1}. ${c.name} — KD ${c.ltv.toFixed(3)} (${c.orderCount} orders)`).join("\n");
+    return { answer: `Your top 5 customers by lifetime value (platform average: KD ${averageLTV.toFixed(3)}):\n${list}`, data: topCustomers };
   }
 
   private static async bestProduct(): Promise<{ answer: string; data?: unknown }> {
@@ -79,7 +79,7 @@ export class AICommerceAssistantService {
     });
     if (!product) return { answer: "No product has any completed orders yet." };
     const revenue = product.orderCount * Number(product.saveoPrice);
-    return { answer: `${product.name} is your best-selling product: ${product.orderCount} orders, approximately ${revenue.toFixed(3)} KD in revenue.`, data: product };
+    return { answer: `${product.name} is your best-selling product: ${product.orderCount} orders, approximately KD ${revenue.toFixed(3)} in revenue.`, data: product };
   }
 
   private static async whyConversionDropped(): Promise<{ answer: string; data?: unknown }> {

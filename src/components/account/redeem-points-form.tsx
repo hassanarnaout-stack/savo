@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { formatKWD } from "@/lib/utils";
 
 export function RedeemPointsForm({ availablePoints }: { availablePoints: number }) {
   const router = useRouter();
@@ -22,7 +23,7 @@ export function RedeemPointsForm({ availablePoints }: { availablePoints: number 
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not redeem points");
-      toast.success(`Redeemed ${data.pointsRedeemed} points for ${data.kdCredited.toFixed(3)} KD wallet credit`);
+      toast.success(`Redeemed ${data.pointsRedeemed} points for ${formatKWD(data.kdCredited)} wallet credit`);
       setPoints("");
       router.refresh();
     } catch (err: any) {

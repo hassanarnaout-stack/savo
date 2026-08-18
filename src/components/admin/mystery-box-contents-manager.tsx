@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatKWD } from "@/lib/utils";
 import { toast } from "sonner";
 import { Trash2, Plus, AlertTriangle } from "lucide-react";
 
@@ -107,7 +108,7 @@ export function MysteryBoxContentsManager({ boxId, boxName, initialContents, ini
                 </span>
                 {c.isSpecialItem && <span className="ms-2 rounded-full bg-saveo-gold-100 px-2 py-0.5 text-[10px] font-bold text-saveo-gold-700">Special</span>}
               </p>
-              <p className="text-xs text-saveo-emerald-700/50">{c.probability}% chance · worth {Number(c.possibleProduct.saveoPrice).toFixed(3)} KD</p>
+              <p className="text-xs text-saveo-emerald-700/50">{c.probability}% chance · worth {formatKWD(c.possibleProduct.saveoPrice)}</p>
             </div>
             <button onClick={() => removeContent(c.id, Number(c.probability))} aria-label="Remove">
               <Trash2 className="h-4 w-4 text-red-500" />

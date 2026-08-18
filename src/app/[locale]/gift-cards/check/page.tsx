@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Search, Wallet } from "lucide-react";
+import { formatKWD } from "@/lib/utils";
 
 export default function CheckGiftCardPage() {
   const [code, setCode] = useState("");
@@ -49,7 +50,7 @@ export default function CheckGiftCardPage() {
           {result.valid ? (
             <>
               <p className="text-xs text-saveo-emerald-700/60">Available Balance</p>
-              <p className="text-3xl font-black text-saveo-emerald-700">{result.balance.toFixed(3)} KD</p>
+              <p className="text-3xl font-black text-saveo-emerald-700">{formatKWD(result.balance)}</p>
             </>
           ) : (
             <p className="font-semibold text-red-600">{result.reason ?? "Invalid gift card."}</p>

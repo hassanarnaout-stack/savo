@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { formatKWD } from "@/lib/utils";
 
 export function ApprovePriceButton({ productId, suggestedPrice }: { productId: string; suggestedPrice: number }) {
   const router = useRouter();
@@ -18,7 +19,7 @@ export function ApprovePriceButton({ productId, suggestedPrice }: { productId: s
         body: JSON.stringify({ newPrice: suggestedPrice }),
       });
       if (!res.ok) throw new Error();
-      toast.success(`Price updated to ${suggestedPrice.toFixed(3)} KD`);
+      toast.success(`Price updated to ${formatKWD(suggestedPrice)}`);
       setApproved(true);
       router.refresh();
     } catch {
@@ -32,7 +33,7 @@ export function ApprovePriceButton({ productId, suggestedPrice }: { productId: s
 
   return (
     <button onClick={approve} disabled={saving} className="btn-primary !py-1.5 text-xs">
-      Approve {suggestedPrice.toFixed(3)} KD
+      Approve {formatKWD(suggestedPrice)}
     </button>
   );
 }

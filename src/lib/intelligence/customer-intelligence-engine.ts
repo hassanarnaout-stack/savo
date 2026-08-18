@@ -43,8 +43,8 @@ export async function computeCustomerIntelligence(userId: string): Promise<Intel
 
   let score = clampScore(recencyScore * 0.35 + frequencyScore * 0.35 + monetaryScore * 0.3);
 
-  reason.push(`${orderCount} completed order${orderCount === 1 ? "" : "s"}, ${totalSpent.toFixed(3)} KD total spend.`);
-  reason.push(`Average order value: ${avgOrderValue.toFixed(3)} KD.`);
+  reason.push(`${orderCount} completed order${orderCount === 1 ? "" : "s"}, KD ${totalSpent.toFixed(3)} total spend.`);
+  reason.push(`Average order value: KD ${avgOrderValue.toFixed(3)}.`);
   reason.push(`Last order ${daysSinceLastOrder} day${daysSinceLastOrder === 1 ? "" : "s"} ago.`);
 
   if (isActiveMember) {

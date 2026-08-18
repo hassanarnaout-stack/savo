@@ -54,7 +54,7 @@ export class LoyaltyService {
     await prisma.$transaction([
       prisma.saveoPoints.update({ where: { userId }, data: { points: { decrement: points } } }),
       prisma.pointsTransaction.create({
-        data: { pointsId: account.id, type: "REDEEMED", points, reason: `Redeemed for ${kdValue.toFixed(3)} KD wallet credit` },
+        data: { pointsId: account.id, type: "REDEEMED", points, reason: `Redeemed for KD ${kdValue.toFixed(3)} wallet credit` },
       }),
     ]);
 

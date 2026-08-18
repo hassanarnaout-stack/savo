@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { formatKWD } from "@/lib/utils";
 
 export function SubscribeAndSaveWidget({ productId, saveoPrice, locale }: { productId: string; saveoPrice: number; locale: string }) {
   const router = useRouter();
@@ -37,7 +38,7 @@ export function SubscribeAndSaveWidget({ productId, saveoPrice, locale }: { prod
         {locale === "ar" ? "🔄 اشترك ووفّر 10%" : "🔄 Subscribe & Save 10%"}
       </p>
       <p className="text-xs text-saveo-emerald-700/60">
-        {locale === "ar" ? `${discountedPrice.toFixed(3)} د.ك بدل ${saveoPrice.toFixed(3)} د.ك` : `${discountedPrice.toFixed(3)} KD instead of ${saveoPrice.toFixed(3)} KD`}
+        {locale === "ar" ? `${formatKWD(discountedPrice)} بدل ${formatKWD(saveoPrice)}` : `${formatKWD(discountedPrice)} instead of ${formatKWD(saveoPrice)}`}
       </p>
       <div className="mt-2 flex gap-2">
         <select value={frequency} onChange={(e) => setFrequency(e.target.value as any)} className="input text-xs">

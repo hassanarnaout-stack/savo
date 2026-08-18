@@ -28,7 +28,7 @@ export class BusinessAlertService {
     if (lastWeekTotal > 0) {
       const change = ((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100;
       if (change <= -20) {
-        alerts.push({ severity: "HIGH", title: "Sales dropped sharply", detail: `GMV is down ${Math.abs(change).toFixed(1)}% vs last week (${thisWeekTotal.toFixed(3)} KD vs ${lastWeekTotal.toFixed(3)} KD).` });
+        alerts.push({ severity: "HIGH", title: "Sales dropped sharply", detail: `GMV is down ${Math.abs(change).toFixed(1)}% vs last week (KD ${thisWeekTotal.toFixed(3)} vs KD ${lastWeekTotal.toFixed(3)}).` });
       }
     }
 
