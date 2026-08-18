@@ -41,6 +41,7 @@ export type HomeDealOfHour = {
 export type HomepageViewModel = {
   heroProducts: HomeProduct[]; flashDeals: HomeDeal[]; trending: HomeProduct[];
   editorsPicks: HomeProduct[];
+  hubTrending: HomeProduct[]; hubBestSellers: HomeProduct[]; hubEditorsPicks: HomeProduct[];
   categories: { id: string; slug: string; name: string; nameAr: string | null; count: number; image: string | null }[];
   brands: { slug: string; name: string; count: number }[];
   mysteryBoxes: HomeProduct[]; justLanded: HomeProduct[]; bestValue: HomeProduct[];
@@ -77,7 +78,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
   const visibility = await MembershipService.getVisibilityFilter(session?.user?.id);
   const now = new Date();
   const publicWhere = { status: "ACTIVE" as const, approvalStatus: "APPROVED" as const, ...visibility };
-  const [products, flashRows, editorRows, categories, verifiedSupplierCount, dealOfHourEnabled, homepageSettings] = await Promise.all([
+  const [products, flashRows, editorRows, bestSellerRows, categories, verifiedSupplierCount, dealOfHourEnabled, homepageSettings] = await Promise.all([
     prisma.product.findMany({ where: publicWhere, include: productInclude }),
     prisma.flashDeal.findMany({
       where: { status: "LIVE", isActive: true, startAt: { lte: now }, endAt: { gt: now }, product: publicWhere },
@@ -85,6 +86,13 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
     }),
     prisma.productBadge.findMany({
       where: { type: "EDITORS_PICK", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }], product: publicWhere },
+      orderBy: { assignedAt: "desc" }, include: { product: { include: productInclude } },
+    }),
+    // Real, automated — BadgeEngine assigns BEST_SELLER to the top 5th
+    // percentile by real orderCount (see badge-engine.ts). A genuinely
+    // distinct signal from raw Trending (live orderCount ranking).
+    prisma.productBadge.findMany({
+      where: { type: "BEST_SELLER", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }], product: publicWhere },
       orderBy: { assignedAt: "desc" }, include: { product: { include: productInclude } },
     }),
     prisma.category.findMany({
@@ -134,6 +142,12 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
   });
   const trending = [...all].filter((p) => p.orderCount > 0).sort((a, b) => b.orderCount - a.orderCount || b.viewCount - a.viewCount).slice(0, 4);
   const editorsPicks = editorRows.map((row) => byId.get(row.productId) ?? toProduct(row.product)).filter((p) => p.stock > 0).slice(0, 3);
+  // Discovery Hub — dedicated, slightly larger real slices (up to 7,
+  // matching the V22 grid) kept separate from `trending`/`editorsPicks`
+  // above so Hero's rotation count is never affected by this section.
+  const hubTrending = [...all].filter((p) => p.orderCount > 0).sort((a, b) => b.orderCount - a.orderCount || b.viewCount - a.viewCount).slice(0, 7);
+  const hubBestSellers = bestSellerRows.map((row) => byId.get(row.productId) ?? toProduct(row.product)).filter((p) => p.stock > 0).slice(0, 7);
+  const hubEditorsPicks = editorRows.map((row) => byId.get(row.productId) ?? toProduct(row.product)).filter((p) => p.stock > 0).slice(0, 7);
   const mysteryBoxes = all.filter((p) => p.type === "MYSTERY_BOX").sort((a, b) => (b.mysteryValueMax ?? 0) - (a.mysteryValueMax ?? 0)).slice(0, 3);
   const justLanded = [...all].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 4);
   const bestValue = [...all].filter((p) => p.originalPrice > p.price).sort((a, b) => (b.originalPrice - b.price) - (a.originalPrice - a.price)).slice(0, 4);
@@ -148,6 +162,7 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
   }
   return {
     heroProducts, flashDeals: deals.slice(0, 4), trending, editorsPicks,
+    hubTrending, hubBestSellers, hubEditorsPicks,
     categories: categories.filter((category) => category._count.products > 0).slice(0, 6).map((category) => ({
       id: category.id, slug: category.slug, name: category.name, nameAr: category.nameAr,
       count: category._count.products, image: category.imageUrl ?? category.products[0]?.images[0]?.url ?? null,

@@ -4,6 +4,7 @@ import { Link } from "@/i18n/routing";
 import type { HomeProduct, HomepageViewModel } from "@/lib/homepage-view-model";
 import { SavoHour } from "./savo-hour";
 import { HeroDiscoveryDisplay } from "./hero-discovery-display";
+import { DiscoveryHub } from "./discovery-hub";
 
 const kd = (value: number) => "KD " + value.toFixed(3);
 
@@ -21,6 +22,7 @@ export function V21Homepage({ data, locale }: { data: HomepageViewModel; locale:
     <SavoHour deal={data.dealOfTheHour} />
     <QuickDiscovery data={data} />
     <Categories categories={data.categories} />
+    <DiscoveryHub trending={data.hubTrending} bestSellers={data.hubBestSellers} editorsPicks={data.hubEditorsPicks} locale={locale} />
   </div>;
 }
 

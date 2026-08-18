@@ -906,6 +906,44 @@
    /category/{slug}, unchanged.
    ========================================================================== */
 .v21-home .savo-categories{padding:56px;background:var(--savo-shell-surface)}
+
+/* Discovery Hub — V22 tabbed section. */
+.savo-hub{padding:56px;background:var(--savo-shell-ink)}
+.savo-hub-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
+.savo-hub-title{margin:7px 0 0;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:27px;letter-spacing:-.025em}
+.savo-hub-viewall{color:var(--savo-shell-discovery);font-size:13px;font-weight:700;white-space:nowrap}
+.savo-hub-tabs{display:flex;gap:4px;margin-bottom:24px;overflow-x:auto;scrollbar-width:none}
+.savo-hub-tab{flex-shrink:0;padding:8px 16px;border-radius:10px;border:1px solid var(--savo-shell-border);color:var(--savo-shell-muted);background:transparent;font-family:var(--font-manrope),sans-serif;font-weight:700;font-size:12.5px;cursor:pointer;transition:all .2s}
+.savo-hub-tab.is-active{background:var(--savo-shell-discovery);border-color:var(--savo-shell-discovery);color:var(--savo-shell-ink)}
+.savo-hub-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.savo-hub-card{display:block;border-radius:20px;overflow:hidden;border:1px solid var(--savo-shell-border);background:var(--savo-shell-card);transition:transform .28s cubic-bezier(.34,1.56,.64,1),box-shadow .28s cubic-bezier(.34,1.56,.64,1),border-color .28s}
+.savo-hub-card.is-wide{grid-column:span 2}
+@media(hover:hover) and (pointer:fine){
+  .savo-hub-card:hover{transform:translateY(-5px);box-shadow:0 20px 50px rgba(0,0,0,.5);border-color:color-mix(in srgb,var(--savo-shell-discovery) 25%,transparent)}
+  .savo-hub-card:hover .savo-hub-card-media img{transform:scale(1.06)}
+}
+.savo-hub-card-media{position:relative;height:216px;overflow:hidden;background:var(--savo-shell-surface)}
+.savo-hub-card.is-wide .savo-hub-card-media{height:240px}
+.savo-hub-card-media img{object-fit:cover;transition:transform .55s ease}
+.savo-hub-card-media::after{content:"";position:absolute;inset-inline:0;bottom:0;height:45%;background:linear-gradient(to top,rgba(24,30,44,1) 0%,rgba(24,30,44,.2) 70%,transparent 100%)}
+.savo-hub-card-fallback{position:absolute;inset:0;background:var(--savo-shell-surface)}
+.savo-hub-card-discount{position:absolute;top:12px;inset-inline-end:12px;padding:3px 8px;border-radius:7px;color:#fff;background:var(--savo-shell-fire);font-family:var(--font-display),sans-serif;font-weight:800;font-size:11px}
+.savo-hub-card-body{padding:11px 14px 14px}
+.savo-hub-card-brand{display:block;margin-bottom:3px;color:var(--savo-shell-discovery);font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+.savo-hub-card-body h3{margin:0 0 7px;min-height:36px;color:var(--savo-shell-text);font-size:13px;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.savo-hub-card-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.savo-hub-card-price{display:flex;align-items:baseline;gap:6px;min-width:0}
+.savo-hub-card-price strong{font-family:var(--font-display),sans-serif;font-weight:800;font-size:16.5px;color:var(--savo-shell-text)}
+.savo-hub-card-price del{color:var(--savo-shell-muted);font-size:11.5px}
+.savo-hub-card-add{flex:0 0 auto;width:32px;height:32px;border:0;border-radius:9px;color:var(--savo-shell-ink);background:var(--savo-shell-discovery);display:flex;align-items:center;justify-content:center;cursor:pointer}
+@media(max-width:900px){
+  .savo-hub{padding:40px 22px}
+  .savo-hub-title{font-size:20px}
+  .savo-hub-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .savo-hub-card.is-wide{grid-column:span 2}
+  .savo-hub-card-media{height:175px}
+  .savo-hub-card.is-wide .savo-hub-card-media{height:200px}
+}
 .v21-home .savo-categories-head{margin-bottom:0}
 .v21-home .savo-categories-head .v21-section-head p{color:var(--savo-shell-discovery)}
 .v21-home .savo-categories-head .v21-section-head h2{color:var(--savo-shell-text)}
