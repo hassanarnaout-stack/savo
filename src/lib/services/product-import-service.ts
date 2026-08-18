@@ -311,7 +311,7 @@ export async function executeImport(readyRows: { rowNumber: number; data: NonNul
                 descriptionAr: data.descriptionAr,
                 sku: data.sku,
                 barcode: data.barcode,
-                brand: data.brand,
+                brandName: data.brand, // Product Import Bug Fix — the storefront reads Product.brandName exclusively (/brands, /brands/[slug], the brand filter, homepage brand discovery); this write target used to be the wrong field (Product.brand, a separate unrelated column) so imported products were invisible to every brand-facing surface. The internal field name/user-facing "Brand" column header are unchanged — only this persistence target moved.
                 categoryId: data.categoryId,
                 supplierId,
                 type: data.type,

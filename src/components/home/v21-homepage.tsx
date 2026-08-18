@@ -5,6 +5,8 @@ import type { HomeProduct, HomepageViewModel } from "@/lib/homepage-view-model";
 import { SavoHour } from "./savo-hour";
 import { HeroDiscoveryDisplay } from "./hero-discovery-display";
 import { DiscoveryHub } from "./discovery-hub";
+import { SAVOSpotlight360 } from "./savo-spotlight";
+import { DiscoverBrands } from "./discover-brands";
 
 const kd = (value: number) => "KD " + value.toFixed(3);
 
@@ -23,6 +25,8 @@ export function V21Homepage({ data, locale }: { data: HomepageViewModel; locale:
     <QuickDiscovery data={data} />
     <Categories categories={data.categories} />
     <DiscoveryHub trending={data.hubTrending} bestSellers={data.hubBestSellers} editorsPicks={data.hubEditorsPicks} locale={locale} />
+    <SAVOSpotlight360 />
+    <DiscoverBrands brands={data.brands} locale={locale} />
   </div>;
 }
 
