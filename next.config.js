@@ -41,6 +41,7 @@ const nextConfig = {
       { protocol: "https", hostname: "*.googleusercontent.com" },
       { protocol: "https", hostname: "*.imgix.net" },
       { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "plus.unsplash.com" }, // Unsplash's premium/paid-photo subdomain — a distinct hostname from images.unsplash.com, found blocking /discover (an existing product/category image URL uses this subdomain). Pre-existing config gap, unrelated to any recent Brand Catalog work.
     ],
   },
 };

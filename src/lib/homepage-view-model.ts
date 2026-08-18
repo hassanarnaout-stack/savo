@@ -42,7 +42,7 @@ export type HomepageViewModel = {
   heroProducts: HomeProduct[]; flashDeals: HomeDeal[]; trending: HomeProduct[];
   editorsPicks: HomeProduct[];
   hubTrending: HomeProduct[]; hubBestSellers: HomeProduct[]; hubEditorsPicks: HomeProduct[];
-  catalogBrands: { name: string; nameAr: string | null; logoUrl: string | null; coverImageUrl: string | null; description: string | null; descriptionAr: string | null }[];
+  insideTheBrand: { id: string | null; name: string; nameAr: string | null; slug: string; logoUrl: string | null; coverImageUrl: string | null; productCount: number; isLinked: boolean }[];
   categories: { id: string; slug: string; name: string; nameAr: string | null; count: number; image: string | null }[];
   brands: { slug: string; name: string; count: number }[];
   mysteryBoxes: HomeProduct[]; justLanded: HomeProduct[]; bestValue: HomeProduct[];
@@ -106,7 +106,18 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
     prisma.supplier.count({ where: { status: "ACTIVE", verificationStatus: "VERIFIED" } }),
     isLaunchFeatureEnabled("ADVANCED_DEAL_OF_HOUR_ENABLED"),
     HomepageSettingsService.get(),
-    prisma.brand.findMany({ where: { isActive: true }, select: { name: true, logoUrl: true, coverImageUrl: true, description: true, descriptionAr: true, nameAr: true } }),
+    // "Inside the Brand" — canonical Brand records ONLY, never
+    // reconstructed from Product.brandName when a real linked Brand
+    // exists. Real product count comes from the brandId relation
+    // (products actually linked, not a name-matched guess).
+    prisma.brand.findMany({
+      where: { isActive: true },
+      orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }],
+      select: {
+        id: true, name: true, nameAr: true, slug: true, logoUrl: true, coverImageUrl: true,
+        _count: { select: { products: { where: { status: "ACTIVE", approvalStatus: "APPROVED" } } } },
+      },
+    }),
   ]);
   // SAVO Hour — only queried when the launch flag is on; getDealOfTheHour()
   // already filters to the single active, non-expired slot.
@@ -162,10 +173,28 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
     if (current) current.count += 1;
     else brandMap.set(product.brand, { slug: slugify(product.brand), name: product.brand, count: 1 });
   }
+
+  // "Inside the Brand" final list — canonical Brand records (with a
+  // REAL linked product count) first, sorted by that real count. Only
+  // if fewer than 6 canonical brands have products does this fall
+  // back to filling remaining slots from legacy brandName-only groups
+  // (products with a brandName but no linked Brand row yet) — exactly
+  // the "historical fallback only where no linked Brand exists" rule.
+  const linkedBrandNames = new Set(catalogBrandRows.map((b) => b.name.toLowerCase()));
+  const canonicalBrands = catalogBrandRows
+    .filter((b) => b._count.products > 0)
+    .sort((a, b) => b._count.products - a._count.products)
+    .map((b) => ({ id: b.id, name: b.name, nameAr: b.nameAr, slug: b.slug, logoUrl: b.logoUrl, coverImageUrl: b.coverImageUrl, productCount: b._count.products, isLinked: true as const }));
+  const legacyOnlyBrands = [...brandMap.values()]
+    .filter((b) => !linkedBrandNames.has(b.name.toLowerCase()))
+    .sort((a, b) => b.count - a.count)
+    .map((b) => ({ id: null, name: b.name, nameAr: null, slug: b.slug, logoUrl: null, coverImageUrl: null, productCount: b.count, isLinked: false as const }));
+  const insideTheBrand = [...canonicalBrands, ...legacyOnlyBrands].slice(0, 6);
+
   return {
     heroProducts, flashDeals: deals.slice(0, 4), trending, editorsPicks,
     hubTrending, hubBestSellers, hubEditorsPicks,
-    catalogBrands: catalogBrandRows,
+    insideTheBrand,
     categories: categories.filter((category) => category._count.products > 0).slice(0, 6).map((category) => ({
       id: category.id, slug: category.slug, name: category.name, nameAr: category.nameAr,
       count: category._count.products, image: category.imageUrl ?? category.products[0]?.images[0]?.url ?? null,
