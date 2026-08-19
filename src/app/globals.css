@@ -1327,6 +1327,59 @@
 .savo-cart-checkout-cta{display:block;width:100%;text-align:center;background:linear-gradient(135deg,var(--savo-shell-discovery),#00B88A);color:var(--savo-shell-ink);border:none;border-radius:13px;padding:15px;font-weight:800;font-size:14.5px;font-family:var(--font-display),sans-serif;letter-spacing:-.01em;box-shadow:0 8px 24px rgba(0,229,160,.22)}
 .savo-cart-secure{text-align:center;font-size:11px;color:var(--savo-shell-muted);margin-top:10px}
 
+/* SAVO Checkout — exact V22 transplant + real payment/gift-card/scheduling sections adapted to the same design language */
+.savo-checkout-page{background:var(--savo-shell-ink);min-height:100vh}
+.savo-checkout-empty{max-width:480px;margin:0 auto;padding:80px 20px;text-align:center;font-size:20px;font-weight:800;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif}
+.savo-checkout-header{border-bottom:1px solid var(--savo-shell-border);padding:16px 24px;display:flex;align-items:center;gap:14px}
+.savo-checkout-back{background:transparent;border:1px solid var(--savo-shell-border);border-radius:8px;padding:6px 12px;color:var(--savo-shell-muted);font-size:12px;display:inline-flex;align-items:center;gap:6px}
+.savo-checkout-header-title{font-family:var(--font-display),sans-serif;font-weight:800;font-size:14px;color:var(--savo-shell-text);letter-spacing:-.01em}
+.savo-checkout-secure{margin-inline-start:auto;font-size:11px;color:var(--savo-shell-muted);display:flex;align-items:center;gap:5px}
+.savo-checkout-secure span{color:var(--savo-shell-discovery)}
+.savo-checkout-body{display:flex;gap:48px;max-width:1100px;margin:0 auto;padding:40px 24px;align-items:flex-start;flex-wrap:wrap}
+.savo-checkout-left{flex:1;min-width:280px}
+.savo-checkout-section{margin-bottom:32px}
+.savo-checkout-section-head{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.savo-checkout-step{width:26px;height:26px;border-radius:50%;background:var(--savo-shell-discovery);color:var(--savo-shell-ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display),sans-serif}
+.savo-checkout-section-head span:last-child{font-family:var(--font-display),sans-serif;font-weight:700;font-size:14px;color:var(--savo-shell-text)}
+.savo-checkout-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.savo-checkout-field{margin-top:12px}
+.savo-checkout-label{display:block;margin-bottom:6px;font-size:11.5px;font-weight:700;color:var(--savo-shell-muted);letter-spacing:.02em}
+.savo-checkout-input,.savo-checkout-select,.savo-checkout-textarea{width:100%;background:var(--savo-shell-surface);border:1px solid var(--savo-shell-border);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--savo-shell-text);outline:none;font-family:inherit}
+.savo-checkout-textarea{resize:vertical}
+.savo-checkout-card{background:var(--savo-shell-card);border-radius:14px;padding:16px 18px;border:1px solid var(--savo-shell-border);margin-bottom:20px}
+.savo-checkout-check-row{display:flex;align-items:center;gap:12px;cursor:pointer}
+.savo-checkout-check-row--sm{font-size:13px;color:var(--savo-shell-text);margin-top:12px}
+.savo-checkout-checkbox{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--savo-shell-border);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:var(--savo-shell-ink);font-size:11px;font-weight:900}
+.savo-checkout-checkbox.is-checked{background:var(--savo-shell-discovery);border-color:var(--savo-shell-discovery)}
+.savo-checkout-check-title{font-size:13px;color:var(--savo-shell-text);font-weight:600}
+.savo-checkout-check-sub{font-size:11.5px;color:var(--savo-shell-muted);margin-top:4px}
+.savo-checkout-gift-fields{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.savo-checkout-promo-label{font-size:11.5px;color:var(--savo-shell-muted);font-weight:700;margin:0 0 10px;letter-spacing:.04em}
+.savo-checkout-promo-row{display:flex;gap:10px}
+.savo-checkout-apply-btn{background:transparent;border:1px solid rgba(0,229,160,.25);color:var(--savo-shell-discovery);border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;white-space:nowrap}
+.savo-checkout-gift-ok{margin-top:8px;font-size:13px;font-weight:700;color:var(--savo-shell-discovery)}
+.savo-checkout-gift-err{margin-top:8px;font-size:13px;font-weight:700;color:var(--savo-shell-fire)}
+.savo-checkout-payment-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.savo-checkout-payment-btn{border-radius:12px;border:1px solid var(--savo-shell-border);padding:14px;font-size:13px;font-weight:700;background:var(--savo-shell-surface);color:var(--savo-shell-text)}
+.savo-checkout-payment-btn.is-active{border-color:var(--savo-shell-discovery);background:rgba(0,229,160,.06);color:var(--savo-shell-discovery)}
+.savo-checkout-right{flex:0 0 auto;width:340px}
+.savo-checkout-summary{background:var(--savo-shell-card);border-radius:20px;border:1px solid var(--savo-shell-border);overflow:hidden;position:sticky;top:80px}
+.savo-checkout-summary-head{padding:18px 20px 14px;border-bottom:1px solid var(--savo-shell-border);font-family:var(--font-display),sans-serif;font-weight:700;font-size:13px;color:var(--savo-shell-text)}
+.savo-checkout-summary-items{padding:14px 20px;border-bottom:1px solid var(--savo-shell-border);max-height:200px;overflow-y:auto}
+.savo-checkout-summary-item{display:flex;justify-content:space-between;font-size:12.5px;color:var(--savo-shell-text);margin-bottom:8px}
+.savo-checkout-summary-totals{padding:14px 20px}
+.savo-checkout-summary-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:12.5px;color:var(--savo-shell-muted)}
+.savo-checkout-summary-savings{color:var(--savo-shell-discovery);font-weight:700}
+.savo-checkout-plus-row{display:flex;align-items:center;gap:6px}
+.savo-checkout-summary-total{border-top:1px solid var(--savo-shell-border);margin-top:12px;padding-top:14px;font-family:var(--font-display),sans-serif;font-weight:800;font-size:15px;color:var(--savo-shell-text)}
+.savo-checkout-submit{width:100%;background:linear-gradient(135deg,var(--savo-shell-discovery),#00B88A);color:var(--savo-shell-ink);border:none;border-radius:13px;padding:15px;font-weight:800;font-size:15px;font-family:var(--font-display),sans-serif;box-shadow:0 8px 24px rgba(0,229,160,.22);margin-top:16px}
+.savo-checkout-submit:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:900px){
+  .savo-checkout-body{flex-direction:column;padding:24px 18px}
+  .savo-checkout-right{width:100%}
+  .savo-checkout-summary{position:static}
+}
+
 .savo-hub{padding:56px;background:var(--savo-shell-ink)}
 .savo-hub-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
 .savo-hub-title{margin:7px 0 0;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:27px;letter-spacing:-.025em}

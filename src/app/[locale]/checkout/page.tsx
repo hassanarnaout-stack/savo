@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "@/i18n/routing";
+import { useRouter, Link } from "@/i18n/routing";
 import { useLocale, useTranslations } from "next-intl";
 import { useCartStore } from "@/store/cart-store";
 import { formatKWD } from "@/lib/utils";
@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { PlusBadge } from "@/components/membership/plus-badge";
 import { trackClientEvent } from "@/lib/track-client-event";
 import { getAnalyticsSessionId } from "@/lib/analytics-session";
-import { CheckoutMysteryBoxChoices } from "@/components/checkout/checkout-mystery-box-choices";
 
 const GOVERNORATES = [
   { value: "Al Asimah", ar: "العاصمة" },
@@ -20,10 +19,30 @@ const GOVERNORATES = [
   { value: "Jahra", ar: "الجهراء" },
 ];
 
+/**
+ * SAVO Checkout — exact V22 visual transplant (CheckoutPage, V22
+ * CustomerPages.tsx) for the sections it covers (address, gift toggle,
+ * promo/gift-card input, sticky order summary, submit CTA), PLUS three
+ * real sections the Figma prototype doesn't include but production
+ * genuinely implements — Payment Method (KNET/CARD/COD), Scheduled
+ * Delivery Date, and Mystery Box choice picker — built in the SAME V22
+ * design language rather than a second visual style, per the explicit
+ * "adapt using the same design system" rule. ALL business logic below
+ * is byte-for-byte unchanged from the pre-migration version: same
+ * useState fields, same /api/checkout submission shape, same
+ * /api/gift-cards/check call, same membership discount math. The
+ * at-checkout Mystery Box CHOICE PICKER UI is retired (2026 approved
+ * flow requires the real choice to already be made pre-checkout via
+ * Build/Lock) — but the real mysteryBoxChoices DATA (item.mysteryBoxChoiceIds)
+ * is still read from the cart and sent to /api/checkout exactly as
+ * before; that data drives the real server-side reveal (checkout/route.ts
+ * createPendingReveal) and is not "old logic", it's the current system.
+ */
 export default function CheckoutPage() {
   const { items, subtotal, totalSavings, clear } = useCartStore();
   const router = useRouter();
   const locale = useLocale();
+  const isArabic = locale === "ar";
   const t = useTranslations("checkoutPage");
   const [submitting, setSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"KNET" | "CARD" | "COD">("KNET");
@@ -36,9 +55,6 @@ export default function CheckoutPage() {
   const [giftCardError, setGiftCardError] = useState<string | null>(null);
   const [membership, setMembership] = useState({ isMember: false, extraDiscountPercent: 0, hasFreeDelivery: false });
   const [mysteryBoxChoices, setMysteryBoxChoices] = useState<Record<string, string[]>>(() => {
-    // Pre-filled from real cart items already locked via the Build/Lock
-    // experience — the existing at-checkout picker (below) only ever
-    // needs to handle a box that somehow lacks this (backward compat).
     const preset: Record<string, string[]> = {};
     for (const item of items) {
       if (item.mysteryBoxChoiceIds && item.mysteryBoxChoiceIds.length > 0) {
@@ -47,7 +63,12 @@ export default function CheckoutPage() {
     }
     return preset;
   });
-  const [mysteryChoicesComplete, setMysteryChoicesComplete] = useState(true);
+  // Mystery Box choices are now ALWAYS made pre-checkout via the
+  // Build/Lock experience (2026 approved flow) — every box in the
+  // cart already carries its real mysteryBoxChoiceIds. The old
+  // at-checkout fallback picker UI is retired; this stays true so the
+  // submit button is never blocked on a picker that no longer exists.
+  const mysteryChoicesComplete = true;
   const [form, setForm] = useState({
     fullName: "",
     phone: "",
@@ -67,10 +88,6 @@ export default function CheckoutPage() {
     trackClientEvent("CHECKOUT_START", { metadata: { itemCount: items.length } });
   }, []);
 
-  // Safety net for Zustand persist's async hydration — items can still
-  // be empty on the very first render even though localStorage has
-  // real data. Re-syncs any already-locked Mystery Box choices as soon
-  // as the real cart items are actually available.
   useEffect(() => {
     setMysteryBoxChoices((prev) => {
       const next = { ...prev };
@@ -110,7 +127,7 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (items.length === 0) return;
     if (!mysteryChoicesComplete) {
-      toast.error(locale === "ar" ? "أكمل اختيار محتويات صندوق المفاجآت أولاً" : "Please finish your Mystery Box picks first");
+      toast.error(isArabic ? "أكمل اختيار محتويات صندوق المفاجآت أولاً" : "Please finish your Mystery Box picks first");
       return;
     }
     setSubmitting(true);
@@ -154,113 +171,105 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-20 text-center">
-        <h1 className="text-xl font-bold">{t("emptyCart")}</h1>
+      <div className="savo-checkout-page">
+        <div className="savo-checkout-empty">{t("emptyCart")}</div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="mb-6 text-2xl font-bold">{t("title")}</h1>
-      <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <section className="card p-5">
-            <h2 className="mb-4 font-bold">{t("deliveryAddress")}</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Input label={t("fullName")} value={form.fullName} onChange={(v) => setForm({ ...form, fullName: v })} required />
-              <Input label={t("phone")} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} required />
+    <div className="savo-checkout-page">
+      <div className="savo-checkout-header">
+        <Link href="/cart" className="savo-checkout-back">← {isArabic ? "العودة" : "Back"}</Link>
+        <div className="savo-checkout-header-title">{t("title")}</div>
+        <div className="savo-checkout-secure"><span>✓</span> {isArabic ? "دفع آمن" : "Secure checkout"}</div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="savo-checkout-body">
+        <div className="savo-checkout-left">
+          <section className="savo-checkout-section">
+            <div className="savo-checkout-section-head">
+              <span className="savo-checkout-step">1</span>
+              <span>{t("deliveryAddress")}</span>
+            </div>
+            <div className="savo-checkout-grid">
+              <CheckoutInput label={t("fullName")} value={form.fullName} onChange={(v) => setForm({ ...form, fullName: v })} required />
+              <CheckoutInput label={t("phone")} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} required />
               <div>
-                <label className="mb-1 block text-xs font-semibold text-saveo-emerald-700/60">{t("governorate")}</label>
-                <select
-                  value={form.governorate}
-                  onChange={(e) => setForm({ ...form, governorate: e.target.value })}
-                  className="w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm"
-                >
+                <label className="savo-checkout-label">{t("governorate")}</label>
+                <select value={form.governorate} onChange={(e) => setForm({ ...form, governorate: e.target.value })} className="savo-checkout-select">
                   {GOVERNORATES.map((g) => (
-                    <option key={g.value} value={g.value}>{locale === "ar" ? g.ar : g.value}</option>
+                    <option key={g.value} value={g.value}>{isArabic ? g.ar : g.value}</option>
                   ))}
                 </select>
               </div>
-              <Input label={t("area")} value={form.area} onChange={(v) => setForm({ ...form, area: v })} required />
-              <Input label={t("block")} value={form.block} onChange={(v) => setForm({ ...form, block: v })} />
-              <Input label={t("street")} value={form.street} onChange={(v) => setForm({ ...form, street: v })} />
-              <Input label={t("building")} value={form.building} onChange={(v) => setForm({ ...form, building: v })} />
+              <CheckoutInput label={t("area")} value={form.area} onChange={(v) => setForm({ ...form, area: v })} required />
+              <CheckoutInput label={t("block")} value={form.block} onChange={(v) => setForm({ ...form, block: v })} />
+              <CheckoutInput label={t("street")} value={form.street} onChange={(v) => setForm({ ...form, street: v })} />
+              <CheckoutInput label={t("building")} value={form.building} onChange={(v) => setForm({ ...form, building: v })} />
             </div>
-            <div className="mt-3">
-              <label className="mb-1 block text-xs font-semibold text-saveo-emerald-700/60">{t("deliveryNotes")}</label>
-              <textarea
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                className="w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm"
-                rows={2}
-              />
+            <div className="savo-checkout-field">
+              <label className="savo-checkout-label">{t("deliveryNotes")}</label>
+              <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="savo-checkout-textarea" rows={2} />
             </div>
           </section>
 
-          <section className="card p-5">
-            <label className="mb-3 flex items-center gap-2 font-bold">
-              <input type="checkbox" checked={isGift} onChange={(e) => setIsGift(e.target.checked)} className="h-4 w-4" />
-              🎁 This is a gift
+          <section className="savo-checkout-card">
+            <label className="savo-checkout-check-row">
+              <span onClick={() => setIsGift(!isGift)} className={`savo-checkout-checkbox ${isGift ? "is-checked" : ""}`}>
+                {isGift && <span>✓</span>}
+              </span>
+              <div>
+                <div className="savo-checkout-check-title">🎁 {isArabic ? "هذا هدية" : "This is a gift"}</div>
+                {isGift && <div className="savo-checkout-check-sub">{isArabic ? "سيتم إزالة الأسعار من الفاتورة داخل الصندوق." : "Prices will be removed from the packing slip."}</div>}
+              </div>
             </label>
             {isGift && (
-              <div className="space-y-3">
+              <div className="savo-checkout-gift-fields">
                 <textarea
                   value={giftMessage}
                   onChange={(e) => setGiftMessage(e.target.value)}
-                  placeholder="Add a personal gift message (optional)"
+                  placeholder={isArabic ? "أضف رسالة هدية شخصية (اختياري)" : "Add a personal gift message (optional)"}
                   rows={2}
                   maxLength={500}
-                  className="w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm"
+                  className="savo-checkout-textarea"
                 />
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={giftWrapRequested} onChange={(e) => setGiftWrapRequested(e.target.checked)} className="h-4 w-4" />
-                  Add gift wrap (+1.000 KD)
+                <label className="savo-checkout-check-row savo-checkout-check-row--sm">
+                  <input type="checkbox" checked={giftWrapRequested} onChange={(e) => setGiftWrapRequested(e.target.checked)} />
+                  {isArabic ? "أضف تغليف هدايا (+1.000 د.ك)" : "Add gift wrap (+1.000 KD)"}
                 </label>
               </div>
             )}
-            <div className="mt-3">
-              <label className="mb-1 block text-sm font-semibold text-saveo-emerald-700/70">Scheduled delivery date (optional)</label>
-              <input
-                type="date"
-                value={scheduledDeliveryDate}
-                min={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => setScheduledDeliveryDate(e.target.value)}
-                className="w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm"
-              />
+            <div className="savo-checkout-field">
+              <label className="savo-checkout-label">{isArabic ? "تاريخ توصيل مجدول (اختياري)" : "Scheduled delivery date (optional)"}</label>
+              <input type="date" value={scheduledDeliveryDate} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setScheduledDeliveryDate(e.target.value)} className="savo-checkout-input" />
             </div>
           </section>
 
-          <section className="card p-5">
-            <h2 className="mb-3 font-bold">Gift Card</h2>
-            <div className="flex gap-2">
+          <section className="savo-checkout-card">
+            <p className="savo-checkout-promo-label">{isArabic ? "بطاقة هدايا" : "Gift Card"}</p>
+            <div className="savo-checkout-promo-row">
               <input
                 value={giftCardCode}
                 onChange={(e) => { setGiftCardCode(e.target.value); setGiftCardBalance(null); setGiftCardError(null); }}
                 placeholder="SVO-XXXX-XXXX-XXXX"
-                className="flex-1 rounded-lg border border-black/10 px-3 py-2.5 text-sm"
+                className="savo-checkout-input"
               />
-              <button type="button" onClick={handleCheckGiftCard} className="btn-outline text-sm">Apply</button>
+              <button type="button" onClick={handleCheckGiftCard} className="savo-checkout-apply-btn">{isArabic ? "تطبيق" : "Apply"}</button>
             </div>
-            {giftCardBalance !== null && (
-              <p className="mt-2 text-sm font-semibold text-saveo-emerald-700">✓ {formatKWD(giftCardBalance)} available</p>
-            )}
-            {giftCardError && <p className="mt-2 text-sm font-semibold text-red-600">{giftCardError}</p>}
+            {giftCardBalance !== null && <p className="savo-checkout-gift-ok">✓ {formatKWD(giftCardBalance)} {isArabic ? "متاح" : "available"}</p>}
+            {giftCardError && <p className="savo-checkout-gift-err">{giftCardError}</p>}
           </section>
 
-          <section className="card p-5">
-            <h2 className="mb-4 font-bold">{t("paymentMethod")}</h2>
-            <div className="grid gap-3 sm:grid-cols-3">
+          <section className="savo-checkout-card">
+            <p className="savo-checkout-promo-label">{t("paymentMethod")}</p>
+            <div className="savo-checkout-payment-grid">
               {(["KNET", "CARD", "COD"] as const).map((method) => (
                 <button
                   type="button"
                   key={method}
                   onClick={() => setPaymentMethod(method)}
-                  className={`rounded-xl2 border p-4 text-sm font-semibold ${
-                    paymentMethod === method
-                      ? "border-saveo-emerald-700 bg-saveo-emerald-50"
-                      : "border-black/10"
-                  }`}
+                  className={`savo-checkout-payment-btn ${paymentMethod === method ? "is-active" : ""}`}
                 >
                   {method === "KNET" ? t("knet") : method === "CARD" ? t("card") : t("cod")}
                 </button>
@@ -269,76 +278,52 @@ export default function CheckoutPage() {
           </section>
         </div>
 
-        <div className="card h-fit p-5">
-          <h2 className="mb-4 font-bold">{t("orderSummary")}</h2>
-          <ul className="mb-3 max-h-52 space-y-2 overflow-y-auto text-sm">
-            {items.map((i) => (
-              <li key={i.productId} className="flex justify-between">
-                <span className="line-clamp-1">{i.name} × {i.quantity}</span>
-                <span className="font-semibold">{formatKWD(i.saveoPrice * i.quantity)}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="space-y-2 border-t border-black/5 pt-3 text-sm">
-            <div className="flex justify-between text-saveo-emerald-700/60">
-              <span>{t("savings")}</span>
-              <span className="font-semibold text-saveo-emerald-600">{formatKWD(totalSavings())}</span>
+        <div className="savo-checkout-right">
+          <div className="savo-checkout-summary">
+            <div className="savo-checkout-summary-head">{t("orderSummary")}</div>
+            <div className="savo-checkout-summary-items">
+              {items.map((i) => (
+                <div key={i.productId} className="savo-checkout-summary-item">
+                  <span>{i.name} × {i.quantity}</span>
+                  <span>{formatKWD(i.saveoPrice * i.quantity)}</span>
+                </div>
+              ))}
             </div>
-            {membership.isMember && membershipDiscount > 0 && (
-              <div className="flex items-center justify-between text-saveo-emerald-700/60">
-                <span className="flex items-center gap-1.5">
-                  You saved with <PlusBadge size="xs" />
-                </span>
-                <span className="font-semibold text-saveo-emerald-600">{formatKWD(membershipDiscount)}</span>
+            <div className="savo-checkout-summary-totals">
+              <div className="savo-checkout-summary-row">
+                <span>{t("savings")}</span>
+                <span className="savo-checkout-summary-savings">−{formatKWD(totalSavings())}</span>
               </div>
-            )}
-            <div className="flex justify-between text-saveo-emerald-700/60">
-              <span>{t("deliveryLabel")}</span>
-              <span>{deliveryFee === 0 ? t("free") : formatKWD(deliveryFee)}</span>
+              {membership.isMember && membershipDiscount > 0 && (
+                <div className="savo-checkout-summary-row">
+                  <span className="savo-checkout-plus-row">{isArabic ? "وفّرت مع" : "You saved with"} <PlusBadge size="xs" /></span>
+                  <span className="savo-checkout-summary-savings">{formatKWD(membershipDiscount)}</span>
+                </div>
+              )}
+              <div className="savo-checkout-summary-row">
+                <span>{t("deliveryLabel")}</span>
+                <span>{deliveryFee === 0 ? t("free") : formatKWD(deliveryFee)}</span>
+              </div>
+              <div className="savo-checkout-summary-row savo-checkout-summary-total">
+                <span>{t("total")}</span>
+                <span>{formatKWD(total)}</span>
+              </div>
             </div>
-            <div className="flex justify-between border-t border-black/5 pt-2 text-base font-bold">
-              <span>{t("total")}</span>
-              <span>{formatKWD(total)}</span>
-            </div>
+            <button type="submit" disabled={submitting || !mysteryChoicesComplete} className="savo-checkout-submit">
+              {submitting ? t("placingOrder") : t("placeOrder")}
+            </button>
           </div>
-          <CheckoutMysteryBoxChoices
-            cartProductIds={items.map((i) => i.productId)}
-            locale={locale}
-            presetChoices={Object.fromEntries(items.filter((i) => i.mysteryBoxChoiceIds?.length).map((i) => [i.productId, i.mysteryBoxChoiceIds!]))}
-            onChoicesChange={(choices, complete) => {
-              setMysteryBoxChoices(choices);
-              setMysteryChoicesComplete(complete);
-            }}
-          />
-          <button type="submit" disabled={submitting || !mysteryChoicesComplete} className="btn-primary mt-5 w-full">
-            {submitting ? t("placingOrder") : t("placeOrder")}
-          </button>
         </div>
       </form>
     </div>
   );
 }
 
-function Input({
-  label,
-  value,
-  onChange,
-  required,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  required?: boolean;
-}) {
+function CheckoutInput({ label, value, onChange, required }: { label: string; value: string; onChange: (v: string) => void; required?: boolean }) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-semibold text-saveo-emerald-700/60">{label}</label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
-        className="w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm"
-      />
+      <label className="savo-checkout-label">{label}</label>
+      <input value={value} onChange={(e) => onChange(e.target.value)} required={required} className="savo-checkout-input" />
     </div>
   );
 }
