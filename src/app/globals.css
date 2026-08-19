@@ -1282,6 +1282,12 @@
 }
 
 /* SAVO Cart — exact V22 transplant (CartDrawerPage panel, adapted to a full page) */
+/* SAVO Quick Cart Drawer — same V22 shell as the standalone page above, slide-in overlay variant */
+.savo-cart-drawer-backdrop{position:fixed;inset:0;z-index:50;display:flex;justify-content:flex-end;background:rgba(12,15,22,.6);backdrop-filter:blur(2px)}
+.savo-cart-drawer-panel{position:relative;display:flex;flex-direction:column;height:100%;width:100%;max-width:420px;background:var(--savo-shell-card);border-inline-start:1px solid var(--savo-shell-border);box-shadow:0 0 60px rgba(0,0,0,.4)}
+.savo-cart-drawer-close{background:transparent;border:none;color:var(--savo-shell-muted);cursor:pointer;padding:4px}
+.savo-cart-drawer-panel .savo-cart-items{flex:1}
+
 .savo-cart-page{background:var(--savo-shell-ink);min-height:80vh;padding:40px 20px 80px}
 .savo-cart-panel{max-width:520px;margin:0 auto;background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:20px;overflow:hidden}
 .savo-cart-header{padding:20px 22px 16px;border-bottom:1px solid var(--savo-shell-border);display:flex;align-items:center;justify-content:space-between}
