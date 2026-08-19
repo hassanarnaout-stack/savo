@@ -15,6 +15,7 @@ import { LoyaltyService } from "@/lib/services/loyalty-service";
 import { MarketingAutomationService } from "@/lib/services/marketing-automation-service";
 import { MembershipService } from "@/lib/services/membership-service";
 import { BenefitEngine } from "@/lib/services/benefit-engine";
+import { getEffectivePrice, canAccessPlusProduct } from "@/lib/services/plus-merchandising-service";
 import { PaymentService } from "@/lib/services/payment-service";
 import { GiftCardService } from "@/lib/services/gift-card-service";
 import { AffiliateService } from "@/lib/services/affiliate-service";
@@ -99,9 +100,28 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Membership is resolved BEFORE pricing — the effective price for
+  // every item depends on it (getEffectivePrice), not just the
+  // pre-existing members-only gate below.
+  const membership = await MembershipService.getUserMembership(session.user.id);
+  const isActiveMember = !!membership && membership.status === "ACTIVE" && membership.endsAt > new Date();
+
+  // SAVO Plus Drop enforcement — server-authoritative, never trusts the
+  // client's cart price or any UI state. A product that fails its Plus
+  // access rule (Members Only, or inside an Early Access window) is
+  // rejected here even if it was somehow added to the cart client-side.
+  for (const product of products) {
+    if (!canAccessPlusProduct(product as any, isActiveMember, now)) {
+      return NextResponse.json(
+        { error: `${product.name} is exclusive to active SAVO Plus members right now.` },
+        { status: 403 }
+      );
+    }
+  }
+
   const subtotal = body.items.reduce((sum, item) => {
     const product = products.find((p) => p.id === item.productId)!;
-    return sum + Number(product.saveoPrice) * item.quantity;
+    return sum + getEffectivePrice(product as any, isActiveMember, now) * item.quantity;
   }, 0);
   const originalTotal = body.items.reduce((sum, item) => {
     const product = products.find((p) => p.id === item.productId)!;
@@ -110,8 +130,6 @@ export async function POST(req: NextRequest) {
 
   // Defense-in-depth: members-only products must never be purchasable by
   // non-members, even if the UI (which hides them entirely) is bypassed.
-  const membership = await MembershipService.getUserMembership(session.user.id);
-  const isActiveMember = !!membership && membership.status === "ACTIVE" && membership.endsAt > new Date();
   const membersOnlyInCart = products.filter((p) => p.isMembersOnly);
   if (membersOnlyInCart.length > 0 && !BenefitEngine.canAccessExclusiveDeals(membership as any)) {
     return NextResponse.json(
@@ -208,7 +226,7 @@ export async function POST(req: NextRequest) {
 
       const supplierSubtotal = supplierItems.reduce((sum, item) => {
         const product = products.find((p) => p.id === item.productId)!;
-        return sum + Number(product.saveoPrice) * item.quantity;
+        return sum + getEffectivePrice(product as any, isActiveMember, now) * item.quantity;
       }, 0);
       const commissionAmount = (supplierSubtotal * Number(commissionRate)) / 100;
       const supplierPayout = supplierSubtotal - commissionAmount;
@@ -227,13 +245,14 @@ export async function POST(req: NextRequest) {
           items: {
             create: supplierItems.map((item) => {
               const product = products.find((p) => p.id === item.productId)!;
+              const effectivePrice = getEffectivePrice(product as any, isActiveMember, now);
               return {
                 productId: product.id,
                 productName: product.name,
-                unitPrice: product.saveoPrice,
+                unitPrice: effectivePrice,
                 originalPrice: product.originalPrice,
                 quantity: item.quantity,
-                lineTotal: Number(product.saveoPrice) * item.quantity,
+                lineTotal: effectivePrice * item.quantity,
               };
             }),
           },
@@ -339,7 +358,7 @@ export async function POST(req: NextRequest) {
   if (refCookie) {
     const orderItemsForAttribution = body.items.map((item) => {
       const product = products.find((p) => p.id === item.productId)!;
-      return { productId: item.productId, lineSubtotal: Number(product.saveoPrice) * item.quantity };
+      return { productId: item.productId, lineSubtotal: getEffectivePrice(product as any, isActiveMember, now) * item.quantity };
     });
     await AffiliateService.attributeOrder(refCookie, order.id, subtotal, session.user!.id, orderItemsForAttribution).catch(() => {});
   }

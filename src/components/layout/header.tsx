@@ -91,7 +91,10 @@ export async function Header() {
           >
             <User />
           </Link>
-          {isPlusMember && <PlusBadge size="xs" variant="dark" />}
+          {/* SAVO Plus header control — ONE canonical destination for every state, not just active members */}
+          <Link href="/membership" aria-label="SAVO Plus">
+            {isPlusMember ? <PlusBadge size="xs" variant="dark" /> : <span className="savo-header-plus-link">✦ PLUS</span>}
+          </Link>
           <CartButton />
           <MobileNav categories={categories} locale={locale} />
         </div>
