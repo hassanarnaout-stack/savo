@@ -57,7 +57,7 @@ export default async function MembershipPage() {
   return (
     <main className="savo-plus-page">
       {/* 01 — HERO */}
-      <section className="savo-plus-hero">
+      <section id="savo-plus-hero" className="savo-plus-hero">
         <div className="savo-plus-hero-copy">
           <p className="savo-plus-hero-eyebrow">✦ {isArabic ? "سافو بلس" : "SAVO PLUS"}</p>
           <h1 className="savo-plus-hero-title">
@@ -137,20 +137,26 @@ export default async function MembershipPage() {
         </section>
       )}
 
-      {/* 03 — GOLD BOX (existing canonical Mystery Box destination — zero rebuild, untouched; real BoxIllustration reused) */}
-      <section className="savo-plus-section">
-        <div className="savo-plus-goldbox">
-          <div className="savo-plus-goldbox-copy">
-            <p className="savo-plus-eyebrow-sm">✦ {isArabic ? "سافو بلس · حصري" : "SAVO PLUS · PLUS EXCLUSIVE"}</p>
-            <h2 className="savo-plus-h2">{isArabic ? "صندوق الذهب من سافو." : "SAVO Gold Box."}</h2>
-            <p className="savo-plus-drop-sub">{isArabic ? "منتجات غامضة مختارة، محجوزة حصريًا لأعضاء سافو بلس." : "Curated mystery products, reserved exclusively for SAVO Plus members."}</p>
-            <Link href="/mystery-boxes" className="savo-plus-goldbox-cta">
-              {isMember ? (isArabic ? "استكشف صندوق الذهب ←" : "Explore Gold Box →") : (isArabic ? "انضم لفتح صندوق الذهب ←" : "Join to unlock Gold Box →")}
+      {/* 03 — GOLD BOX — exact Figma section transplant (04 GOLD BOX). Visual layer from Figma; CTA connects to the real canonical Gold Box (/mystery-boxes) and real subscribe flow (Hero anchor) — zero Figma demo logic kept. */}
+      <section id="savo-gold-box" className="savo-plus-goldbox-figma" data-locked={!isMember}>
+        <div>
+          <p className="savo-plus-goldbox-eyebrow">{isArabic ? "حصري لأعضاء بلس" : "PLUS EXCLUSIVE"}</p>
+          <h2 className="savo-plus-goldbox-headline">{isArabic ? "صندوقك الذهبي بانتظارك." : <>Your Gold Box Awaits.</>}</h2>
+          <p className="savo-plus-goldbox-sub">
+            {isArabic ? <>اكتشافات حصرية.<br />محجوزة لأعضاء سافو بلس.</> : <>Exclusive discoveries.<br />Reserved for SAVO Plus.</>}
+          </p>
+          {isMember ? (
+            <Link href="/mystery-boxes" className="savo-plus-goldbox-figma-cta">
+              {isArabic ? "ابنِ صندوقك الذهبي ←" : "BUILD YOUR GOLD BOX →"}
             </Link>
-          </div>
-          <div className="savo-plus-goldbox-visual">
-            <BoxIllustration isGold size={200} />
-          </div>
+          ) : (
+            <Link href="#savo-plus-hero" className="savo-plus-goldbox-figma-cta">
+              {isArabic ? "افتح صندوق الذهب ←" : "UNLOCK GOLD BOX →"}
+            </Link>
+          )}
+        </div>
+        <div className="savo-plus-goldbox-figma-visual">
+          <BoxIllustration isGold size={200} />
         </div>
       </section>
 
