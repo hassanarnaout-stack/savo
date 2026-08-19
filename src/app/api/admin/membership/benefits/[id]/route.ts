@@ -6,6 +6,8 @@ import { z } from "zod";
 const schema = z.object({
   isEnabled: z.boolean().optional(),
   value: z.number().nullable().optional(),
+  label: z.string().nullable().optional(),
+  labelAr: z.string().nullable().optional(),
 });
 
 interface Params {
@@ -28,4 +30,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   });
 
   return NextResponse.json({ success: true, benefit });
+}
+
+/** Safe delete — a benefit row can always be removed; it's config, not
+ * a financial/order record. No FK dependents reference it. */
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  try {
+    await requireAdmin();
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  await prisma.membershipPlanBenefit.delete({ where: { id } });
+
+  return NextResponse.json({ success: true });
 }

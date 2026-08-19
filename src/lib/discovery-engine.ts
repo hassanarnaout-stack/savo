@@ -76,6 +76,24 @@ export async function getDealOfTheHour() {
 }
 
 /** Mystery boxes grouped by tier — Bronze / Silver / Gold. */
+/**
+ * SAVO Rescue homepage rail — real near-expiry products only.
+ * Ranked by soonest expiry first (most urgent to move), matching the
+ * "Expires in X days" real-data promise. Products without a valid
+ * expiryDate are still eligible (RESCUE just means steep-discount
+ * verified-safe surplus, not every row needs an expiry to display),
+ * but the "Expires in X" line itself is only shown when expiryDate is
+ * actually set — never fabricated.
+ */
+export async function getRescueProducts(take = 6) {
+  return prisma.product.findMany({
+    where: { status: "ACTIVE", approvalStatus: "APPROVED", type: "RESCUE" },
+    orderBy: [{ expiryDate: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }],
+    take,
+    select: { ...productCard, expiryDate: true, brandName: true },
+  });
+}
+
 export async function getMysteryBoxesByTier() {
   const boxes = await prisma.product.findMany({
     where: { status: "ACTIVE", approvalStatus: "APPROVED", type: "MYSTERY_BOX" },

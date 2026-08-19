@@ -9,6 +9,10 @@ import { SAVOSpotlight360 } from "./savo-spotlight";
 import { DiscoverBrands } from "./discover-brands";
 import { DiscoverTogether } from "./discover-together";
 import { MysteryBoxHomeSection } from "./mystery-box-home-section";
+import { RescueSection } from "./rescue-section";
+import { PlaySection } from "./play-section";
+import { DiscoveryAdScreen } from "./discovery-ad-screen";
+import { PlusSection } from "./plus-section";
 
 const kd = (value: number) => "KD " + value.toFixed(3);
 
@@ -31,6 +35,12 @@ export function V21Homepage({ data, locale }: { data: HomepageViewModel; locale:
     <DiscoverBrands insideTheBrand={data.insideTheBrand} locale={locale} />
     <DiscoverTogether bundle={data.discoverTogetherBundle} locale={locale} />
     <MysteryBoxHomeSection tiers={data.mysteryBoxTiers} locale={locale} />
+    <RescueSection products={data.rescue} locale={locale} />
+    <section className="savo-play-discovery">
+      <PlaySection featuredGame={data.play.featuredGame} mysterySafeStatus={data.play.mysterySafeStatus} isSignedIn={data.play.isSignedIn} locale={locale} />
+      <DiscoveryAdScreen slides={data.discoveryAdSlides} locale={locale} />
+    </section>
+    <PlusSection plan={data.plus?.plan ?? null} price={data.plus?.price ?? null} benefits={data.plus?.benefits ?? []} isMember={data.plus?.isMember ?? false} locale={locale} />
   </div>;
 }
 

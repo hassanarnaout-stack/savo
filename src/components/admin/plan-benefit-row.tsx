@@ -7,11 +7,14 @@ import { toast } from "sonner";
 export function PlanBenefitRow({
   benefit,
 }: {
-  benefit: { id: string; key: string; isEnabled: boolean; value: number | null; label: string | null };
+  benefit: { id: string; key: string; isEnabled: boolean; value: number | null; label: string | null; labelAr: string | null };
 }) {
   const router = useRouter();
   const [value, setValue] = useState(benefit.value?.toString() ?? "");
+  const [label, setLabel] = useState(benefit.label ?? "");
+  const [labelAr, setLabelAr] = useState(benefit.labelAr ?? "");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function toggle() {
     setSaving(true);
@@ -48,18 +51,68 @@ export function PlanBenefitRow({
     }
   }
 
+  async function saveLabels() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/membership/benefits/${benefit.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: label || null, labelAr: labelAr || null }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Labels updated");
+      router.refresh();
+    } catch {
+      toast.error("Could not update labels");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteBenefit() {
+    if (!confirm(`Remove the "${benefit.label ?? benefit.key}" benefit? This can't be undone.`)) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/membership/benefits/${benefit.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("Benefit removed");
+      router.refresh();
+    } catch {
+      toast.error("Could not remove benefit");
+      setDeleting(false);
+    }
+  }
+
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-black/5 p-2.5 text-sm">
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-black/5 p-2.5 text-sm">
       <button
         onClick={toggle}
-        disabled={saving}
+        disabled={saving || deleting}
         className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
           benefit.isEnabled ? "bg-saveo-emerald-100 text-saveo-emerald-800" : "bg-black/5 text-saveo-emerald-700/50"
         }`}
       >
         {benefit.isEnabled ? "ON" : "OFF"}
       </button>
-      <span className="flex-1 text-xs font-medium text-saveo-emerald-800">{benefit.label ?? benefit.key.replace(/_/g, " ")}</span>
+      <span className="w-32 shrink-0 text-[10px] font-mono text-saveo-emerald-700/40">{benefit.key}</span>
+      <input
+        type="text"
+        placeholder="Label (EN)"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        className="w-28 rounded border border-black/10 px-1.5 py-1 text-xs"
+      />
+      <input
+        type="text"
+        placeholder="Label (AR)"
+        dir="rtl"
+        value={labelAr}
+        onChange={(e) => setLabelAr(e.target.value)}
+        className="w-28 rounded border border-black/10 px-1.5 py-1 text-xs"
+      />
+      <button onClick={saveLabels} disabled={saving || deleting} className="text-xs font-semibold text-saveo-emerald-600">
+        Save labels
+      </button>
       <input
         type="number"
         step="0.01"
@@ -68,8 +121,11 @@ export function PlanBenefitRow({
         onChange={(e) => setValue(e.target.value)}
         className="w-16 rounded border border-black/10 px-1.5 py-1 text-xs"
       />
-      <button onClick={saveValue} disabled={saving} className="text-xs font-semibold text-saveo-emerald-600">
+      <button onClick={saveValue} disabled={saving || deleting} className="text-xs font-semibold text-saveo-emerald-600">
         Save
+      </button>
+      <button onClick={deleteBenefit} disabled={saving || deleting} className="text-xs font-semibold text-red-600">
+        {deleting ? "Removing…" : "Remove"}
       </button>
     </div>
   );

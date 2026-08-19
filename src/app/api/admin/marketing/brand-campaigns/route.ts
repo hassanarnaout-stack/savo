@@ -13,6 +13,15 @@ const schema = z.object({
   startDate: z.string(),
   endDate: z.string(),
   budget: z.number().positive(),
+  headline: z.string().optional(),
+  headlineAr: z.string().optional(),
+  label: z.string().optional(),
+  labelAr: z.string().optional(),
+  ctaText: z.string().optional(),
+  ctaTextAr: z.string().optional(),
+  sortOrder: z.number().optional(),
+  showPrice: z.boolean().optional(),
+  showStockUrgency: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {

@@ -14,8 +14,29 @@ export class BrandCampaignService {
     startDate: Date;
     endDate: Date;
     budget: number;
+    headline?: string; headlineAr?: string;
+    label?: string; labelAr?: string;
+    ctaText?: string; ctaTextAr?: string;
+    sortOrder?: number;
+    showPrice?: boolean;
+    showStockUrgency?: boolean;
   }) {
     return prisma.brandCampaign.create({ data: params });
+  }
+
+  static async update(id: string, params: Partial<{
+    brandName: string; bannerImageUrl: string | null; bannerLinkUrl: string | null;
+    startDate: Date; endDate: Date;
+    headline: string | null; headlineAr: string | null;
+    label: string | null; labelAr: string | null;
+    ctaText: string | null; ctaTextAr: string | null;
+    sortOrder: number; showPrice: boolean; showStockUrgency: boolean; productId: string | null;
+  }>) {
+    return prisma.brandCampaign.update({ where: { id }, data: params });
+  }
+
+  static async remove(id: string) {
+    return prisma.brandCampaign.delete({ where: { id } });
   }
 
   static async setActive(id: string, isActive: boolean) {

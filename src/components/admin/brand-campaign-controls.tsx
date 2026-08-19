@@ -18,6 +18,15 @@ export function CreateBrandCampaignForm({
   const [categoryId, setCategoryId] = useState("");
   const [bannerImageUrl, setBannerImageUrl] = useState("");
   const [bannerLinkUrl, setBannerLinkUrl] = useState("");
+  const [headline, setHeadline] = useState("");
+  const [headlineAr, setHeadlineAr] = useState("");
+  const [label, setLabel] = useState("");
+  const [labelAr, setLabelAr] = useState("");
+  const [ctaText, setCtaText] = useState("");
+  const [ctaTextAr, setCtaTextAr] = useState("");
+  const [sortOrder, setSortOrder] = useState("0");
+  const [showPrice, setShowPrice] = useState(false);
+  const [showStockUrgency, setShowStockUrgency] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [budget, setBudget] = useState("");
@@ -41,6 +50,15 @@ export function CreateBrandCampaignForm({
           startDate,
           endDate,
           budget: parseFloat(budget),
+          headline: headline || undefined,
+          headlineAr: headlineAr || undefined,
+          label: label || undefined,
+          labelAr: labelAr || undefined,
+          ctaText: ctaText || undefined,
+          ctaTextAr: ctaTextAr || undefined,
+          sortOrder: sortOrder ? parseInt(sortOrder, 10) : undefined,
+          showPrice,
+          showStockUrgency,
         }),
       });
       if (!res.ok) throw new Error();
@@ -66,9 +84,9 @@ export function CreateBrandCampaignForm({
         </select>
       </div>
 
-      {(type === "SPONSORED_PRODUCT" || type === "SEARCH_BOOST") && (
+      {(type === "SPONSORED_PRODUCT" || type === "SEARCH_BOOST" || type === "HOMEPAGE_BANNER") && (
         <select value={productId} onChange={(e) => setProductId(e.target.value)} className="input text-sm">
-          <option value="">Select product...</option>
+          <option value="">{type === "HOMEPAGE_BANNER" ? "Link a real product (optional — needed for price/stock)..." : "Select product..."}</option>
           {products.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
@@ -85,7 +103,33 @@ export function CreateBrandCampaignForm({
       {type === "HOMEPAGE_BANNER" && (
         <>
           <input value={bannerImageUrl} onChange={(e) => setBannerImageUrl(e.target.value)} placeholder="Banner image URL" className="input text-sm" />
-          <input value={bannerLinkUrl} onChange={(e) => setBannerLinkUrl(e.target.value)} placeholder="Link URL" className="input text-sm" />
+          <input value={bannerLinkUrl} onChange={(e) => setBannerLinkUrl(e.target.value)} placeholder="Link URL (or leave blank to use a linked product's page)" className="input text-sm" />
+          <p className="text-xs font-semibold text-saveo-emerald-700/50">SAVO Discovery slide content (optional)</p>
+          <div className="grid grid-cols-2 gap-2">
+            <input value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="Headline (EN)" className="input text-sm" />
+            <input value={headlineAr} onChange={(e) => setHeadlineAr(e.target.value)} dir="rtl" placeholder="Headline (AR)" className="input text-sm" />
+            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label (EN) e.g. EDITOR'S PICK" className="input text-sm" />
+            <input value={labelAr} onChange={(e) => setLabelAr(e.target.value)} dir="rtl" placeholder="Label (AR)" className="input text-sm" />
+            <input value={ctaText} onChange={(e) => setCtaText(e.target.value)} placeholder="CTA text (EN) e.g. Discover" className="input text-sm" />
+            <input value={ctaTextAr} onChange={(e) => setCtaTextAr(e.target.value)} dir="rtl" placeholder="CTA text (AR)" className="input text-sm" />
+          </div>
+          <div className="flex items-center gap-4">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-saveo-emerald-700/50">Sort order</label>
+              <input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className="input w-20 text-sm" />
+            </div>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-saveo-emerald-700/70">
+              <input type="checkbox" checked={showPrice} onChange={(e) => setShowPrice(e.target.checked)} />
+              Show real product price
+            </label>
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-saveo-emerald-700/70">
+              <input type="checkbox" checked={showStockUrgency} onChange={(e) => setShowStockUrgency(e.target.checked)} />
+              Show real stock urgency
+            </label>
+          </div>
+          {(showPrice || showStockUrgency) && (
+            <p className="text-xs text-amber-600">Price/stock will use the linked product above — select one in the Product dropdown if this campaign should show real numbers.</p>
+          )}
         </>
       )}
 

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { formatKWD } from "@/lib/utils";
 import { PlanBenefitRow } from "@/components/admin/plan-benefit-row";
 import { PricingOptionRow } from "@/components/admin/pricing-option-row";
+import { CreateBenefitControl } from "@/components/admin/create-benefit-control";
 
 export default async function AdminMembershipPlansPage() {
   const plans = await prisma.membershipPlan.findMany({
@@ -48,6 +49,9 @@ export default async function AdminMembershipPlansPage() {
                       benefit={{ ...benefit, value: benefit.value ? Number(benefit.value) : null }}
                     />
                   ))}
+                </div>
+                <div className="mt-2">
+                  <CreateBenefitControl planId={plan.id} existingKeys={plan.benefits.map((b) => b.key)} />
                 </div>
               </div>
             </div>

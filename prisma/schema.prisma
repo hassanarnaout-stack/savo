@@ -1585,7 +1585,7 @@ model BrandCampaign {
   id            String            @id @default(cuid())
   brandName     String
   type          BrandCampaignType
-  productId     String? // for SPONSORED_PRODUCT / SEARCH_BOOST
+  productId     String? // for SPONSORED_PRODUCT / SEARCH_BOOST — also the real price/stock source for the SAVO Discovery ad screen when showPrice/showStockUrgency is true
   categoryId    String? // for CATEGORY_HIGHLIGHT
   bannerImageUrl String? // for HOMEPAGE_BANNER
   bannerLinkUrl  String?
@@ -1594,6 +1594,19 @@ model BrandCampaign {
   budget        Decimal           @db.Decimal(10, 3)
   isActive      Boolean           @default(true)
   createdAt     DateTime          @default(now())
+  // SAVO Discovery advertising screen (homepage) — additive only,
+  // approved. Bilingual slide copy; showPrice/showStockUrgency are
+  // DISPLAY TOGGLES ONLY — the actual price/stock is always read live
+  // from the linked `product` at render time, never stored here.
+  headline         String?
+  headlineAr       String?
+  label            String?
+  labelAr          String?
+  ctaText          String?
+  ctaTextAr        String?
+  sortOrder        Int      @default(0)
+  showPrice        Boolean  @default(false)
+  showStockUrgency Boolean  @default(false)
 
   product  Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
   category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)

@@ -1058,6 +1058,78 @@
   .savo-mysteryhome-title{font-size:20px}
 }
 
+/* SAVO Smart Savings (internal: Rescue) */
+.savo-rescue{padding:0 56px 56px;background:var(--savo-shell-ink)}
+.savo-rescue-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:20px}
+.savo-rescue-title{margin:4px 0 4px;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:27px;letter-spacing:-.025em}
+.savo-rescue-sub{margin:0;color:var(--savo-shell-muted);font-size:14px}
+.savo-rescue-viewall{color:var(--savo-shell-discovery);font-size:13px;font-weight:700;white-space:nowrap}
+.savo-rescue-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,320px));gap:16px}
+.savo-rescue-card{position:relative;display:block;border-radius:16px;overflow:hidden;min-height:220px;background:var(--savo-shell-surface)}
+.savo-rescue-card img,.savo-rescue-fallback{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.savo-rescue-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(12,15,22,.92) 0%,transparent 60%)}
+.savo-rescue-discount{position:absolute;top:10px;inset-inline-start:10px;background:var(--savo-shell-fire);color:#fff;font-size:11px;font-weight:800;border-radius:6px;padding:3px 8px;z-index:2}
+.savo-rescue-expiry{position:absolute;top:10px;inset-inline-end:10px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:3px 8px;z-index:2}
+.savo-rescue-info{position:absolute;bottom:12px;inset-inline-start:12px;inset-inline-end:12px;display:flex;flex-direction:column;z-index:2}
+.savo-rescue-info small{font-size:10px;color:var(--savo-shell-discovery);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.savo-rescue-info strong{font-size:13px;color:var(--savo-shell-text);font-weight:700;margin-bottom:7px;display:block}
+.savo-rescue-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.savo-rescue-prices{display:flex;align-items:baseline;gap:6px}
+.savo-rescue-prices b{font-family:var(--font-display),sans-serif;font-weight:800;font-size:15px;color:var(--savo-shell-text)}
+.savo-rescue-prices s{font-size:11px;color:var(--savo-shell-muted)}
+
+/* SAVO Play + Discovery ad screen — approved V22: side-by-side row, ~30/70 */
+.savo-play-discovery{padding:0 56px 56px;background:var(--savo-shell-ink);display:grid;grid-template-columns:minmax(260px,32%) 1fr;gap:20px;align-items:stretch}
+.savo-play-card{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.savo-play-badge{align-self:flex-start;font-size:11px;color:var(--savo-shell-discovery);font-weight:700;letter-spacing:.06em;margin-bottom:14px}
+.savo-play-dial{width:110px;height:110px;margin:0 auto 16px}
+.savo-play-name{margin:0 0 6px;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:19px}
+.savo-play-tagline{margin:0 0 14px;color:var(--savo-shell-muted);font-size:12.5px;line-height:1.5}
+.savo-play-state{margin:0 0 18px;color:var(--savo-shell-discovery);font-size:12.5px;font-weight:600;flex:1}
+.savo-play-cta{display:block;width:100%;text-align:center;background:var(--savo-shell-discovery);color:var(--savo-shell-ink);border-radius:12px;padding:13px;font-weight:800;font-size:14px;margin-bottom:10px}
+.savo-play-explore{display:block;text-align:center;color:var(--savo-shell-muted);font-size:12px}
+.savo-discoveryad{position:relative;border-radius:20px;overflow:hidden;min-height:340px;height:100%;background:var(--savo-shell-surface)}
+.savo-discoveryad--empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:1px dashed var(--savo-shell-border)}
+.savo-discoveryad-emptylabel{font-size:11px;color:var(--savo-shell-discovery);font-weight:700;letter-spacing:.1em}
+.savo-discoveryad-emptytext{color:var(--savo-shell-muted);font-size:13px}
+.savo-discoveryad-slide{position:relative;display:block;width:100%;height:100%;min-height:340px}
+.savo-discoveryad-slide img,.savo-discoveryad-fallback{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.savo-discoveryad-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(12,15,22,.92) 0%,transparent 55%)}
+.savo-discoveryad-content{position:absolute;bottom:24px;inset-inline-start:24px;inset-inline-end:24px;display:flex;flex-direction:column;z-index:2}
+.savo-discoveryad-content small{font-size:10px;color:var(--savo-shell-discovery);font-weight:700;letter-spacing:.1em;margin-bottom:6px}
+.savo-discoveryad-content em{font-style:normal;font-size:11px;color:var(--savo-shell-gold);font-weight:700;letter-spacing:.06em;margin-bottom:4px}
+.savo-discoveryad-brand{font-size:12px;color:var(--savo-shell-muted);margin-bottom:4px}
+.savo-discoveryad-content strong{font-family:var(--font-display),sans-serif;font-weight:800;font-size:24px;color:var(--savo-shell-text);margin-bottom:8px}
+.savo-discoveryad-price{font-family:var(--font-display),sans-serif;font-weight:800;font-size:18px;color:var(--savo-shell-text);margin-bottom:4px}
+.savo-discoveryad-stock{font-size:12px;color:var(--savo-shell-fire);font-weight:700;margin-bottom:10px}
+.savo-discoveryad-cta{color:var(--savo-shell-discovery);font-weight:700;font-size:13px}
+.savo-discoveryad-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:3}
+.savo-discoveryad-dots button{width:6px;height:6px;border-radius:50%;border:none;background:rgba(255,255,255,.3);cursor:pointer;padding:0}
+.savo-discoveryad-dots button.is-active{background:var(--savo-shell-discovery);width:18px;border-radius:4px;transition:width .2s}
+
+/* SAVO Plus — compact horizontal banner: left copy | center pills | right price+CTA */
+.savo-plus{padding:0 56px 56px;background:var(--savo-shell-ink)}
+.savo-plus-panel{background:linear-gradient(135deg,#1a1200,#0f0a00);border:1px solid rgba(232,160,32,.25);border-radius:22px;padding:28px 36px;display:flex;align-items:center;gap:32px;flex-wrap:wrap}
+.savo-plus-left{flex:1 1 240px;min-width:200px}
+.savo-plus-eyebrow{color:var(--savo-shell-gold);font-size:11px;font-weight:700;letter-spacing:.14em;margin:0 0 8px}
+.savo-plus-title{margin:0 0 6px;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:24px;line-height:1.1;letter-spacing:-.02em}
+.savo-plus-desc{margin:0;color:var(--savo-shell-muted);font-size:13px;max-width:320px}
+.savo-plus-pills{flex:2 1 320px;display:flex;flex-wrap:wrap;gap:8px}
+.savo-plus-pill{display:flex;align-items:center;gap:5px;background:rgba(232,160,32,.1);border:1px solid rgba(232,160,32,.25);border-radius:20px;padding:6px 12px;font-size:11.5px;font-weight:600;color:var(--savo-shell-text);white-space:nowrap}
+.savo-plus-right{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:10px;min-width:160px}
+.savo-plus-price{margin:0;color:var(--savo-shell-muted);font-size:13px;text-align:end}
+.savo-plus-price b{font-family:var(--font-display),sans-serif;font-weight:800;font-size:19px;color:var(--savo-shell-gold)}
+.savo-plus-cta{display:inline-block;background:var(--savo-shell-gold);color:var(--savo-shell-ink);border-radius:12px;padding:12px 26px;font-weight:800;font-size:13.5px;white-space:nowrap}
+
+@media(max-width:900px){
+  .savo-rescue,.savo-play-discovery,.savo-plus{padding:0 22px 40px}
+  .savo-play-discovery{grid-template-columns:1fr}
+  .savo-discoveryad{min-height:260px}
+  .savo-plus-panel{flex-direction:column;align-items:stretch;text-align:center;padding:26px 22px}
+  .savo-plus-right{align-items:center}
+  .savo-plus-price{text-align:center}
+}
+
 .savo-hub{padding:56px;background:var(--savo-shell-ink)}
 .savo-hub-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
 .savo-hub-title{margin:7px 0 0;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:27px;letter-spacing:-.025em}

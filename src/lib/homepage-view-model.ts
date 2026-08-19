@@ -1,11 +1,14 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { MembershipService } from "@/lib/services/membership-service";
-import { getDealOfTheHour } from "@/lib/discovery-engine";
+import { getDealOfTheHour, getRescueProducts } from "@/lib/discovery-engine";
 import { isLaunchFeatureEnabled } from "@/lib/launch-flags";
 import { HomepageSettingsService } from "@/lib/services/homepage-settings-service";
 import { BundleService } from "@/lib/services/bundle-service";
 import { getMysteryBoxTierConfigs } from "@/lib/mystery-box-tiers";
+import { MysterySafeService } from "@/lib/services/mystery-safe-service";
+import { CampaignService } from "@/lib/services/campaign-service";
+import { getDiscoveryAdSlides } from "@/lib/discovery-ad-service";
 
 export type HomeProduct = {
   id: string; slug: string; name: string; nameAr: string | null; brand: string | null;
@@ -51,6 +54,19 @@ export type HomepageViewModel = {
     discountType: "PERCENTAGE" | "FIXED_AMOUNT" | "FREE_ITEM";
   } | null;
   mysteryBoxTiers: Awaited<ReturnType<typeof getMysteryBoxTierConfigs>>;
+  rescue: { id: string; name: string; nameAr: string | null; slug: string; brandName: string | null; originalPrice: number; saveoPrice: number; expiryDate: string | null; image: string | null }[];
+  play: {
+    featuredGame: { id: string; type: string; name: string; nameAr: string | null } | null;
+    mysterySafeStatus: Awaited<ReturnType<typeof MysterySafeService.getStatusForUser>> | null;
+    isSignedIn: boolean;
+  };
+  discoveryAdSlides: Awaited<ReturnType<typeof getDiscoveryAdSlides>>;
+  plus: {
+    plan: { name: string; nameAr: string | null; description: string | null; descriptionAr: string | null };
+    price: number | null;
+    benefits: { key: string; label: string | null; labelAr: string | null }[];
+    isMember: boolean;
+  } | null;
   categories: { id: string; slug: string; name: string; nameAr: string | null; count: number; image: string | null }[];
   brands: { slug: string; name: string; count: number }[];
   mysteryBoxes: HomeProduct[]; justLanded: HomeProduct[]; bestValue: HomeProduct[];
@@ -85,9 +101,21 @@ const slugify = (name: string) => name.toLowerCase().replace(/&/g, "and").replac
 export async function getHomepageViewModel(): Promise<HomepageViewModel> {
   const session = await auth();
   const visibility = await MembershipService.getVisibilityFilter(session?.user?.id);
+  const [isMember, activeCampaigns] = await Promise.all([
+    session?.user?.id ? MembershipService.isActiveMember(session.user.id) : Promise.resolve(false),
+    CampaignService.getActiveCampaigns(),
+  ]);
+  // SAVO Play — the REAL top-priority ACTIVE campaign, exactly the
+  // same canonical source todays-discovery-widget.tsx already uses.
+  // Zero hardcoded game identity — Admin changes it purely via
+  // /admin/marketing/campaigns, no code touch needed.
+  const featuredCampaign = activeCampaigns[0] ?? null;
+  const mysterySafeStatus = featuredCampaign?.type === "MYSTERY_SAFE" && session?.user?.id
+    ? await MysterySafeService.getStatusForUser(session.user.id)
+    : null;
   const now = new Date();
   const publicWhere = { status: "ACTIVE" as const, approvalStatus: "APPROVED" as const, ...visibility };
-  const [products, flashRows, editorRows, bestSellerRows, categories, verifiedSupplierCount, dealOfHourEnabled, homepageSettings, catalogBrandRows, activeBundles, mysteryBoxTiers] = await Promise.all([
+  const [products, flashRows, editorRows, bestSellerRows, categories, verifiedSupplierCount, dealOfHourEnabled, homepageSettings, catalogBrandRows, activeBundles, mysteryBoxTiers, rescueProducts, discoveryAdSlides, activePlan] = await Promise.all([
     prisma.product.findMany({ where: publicWhere, include: productInclude }),
     prisma.flashDeal.findMany({
       where: { status: "LIVE", isActive: true, startAt: { lte: now }, endAt: { gt: now }, product: publicWhere },
@@ -130,6 +158,16 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
     // (Phase 4.3) as-is. Zero new bundle/pricing logic.
     BundleService.getActiveBundles(),
     getMysteryBoxTierConfigs(),
+    getRescueProducts(6),
+    getDiscoveryAdSlides(6),
+    prisma.membershipPlan.findFirst({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+      include: {
+        pricingOptions: { where: { isActive: true }, orderBy: { price: "asc" } },
+        benefits: { where: { isEnabled: true } },
+      },
+    }),
   ]);
   // SAVO Hour — only queried when the launch flag is on; getDealOfTheHour()
   // already filters to the single active, non-expired slot.
@@ -234,6 +272,26 @@ export async function getHomepageViewModel(): Promise<HomepageViewModel> {
     insideTheBrand,
     discoverTogetherBundle,
     mysteryBoxTiers,
+    rescue: rescueProducts.map((p) => ({
+      id: p.id, name: p.name, nameAr: p.nameAr, slug: p.slug, brandName: p.brandName,
+      originalPrice: Number(p.originalPrice), saveoPrice: Number(p.saveoPrice),
+      expiryDate: p.expiryDate ? p.expiryDate.toISOString() : null,
+      image: p.images[0]?.url ?? null,
+    })),
+    play: {
+      featuredGame: featuredCampaign ? { id: featuredCampaign.id, type: featuredCampaign.type, name: featuredCampaign.name, nameAr: null } : null,
+      mysterySafeStatus,
+      isSignedIn: !!session?.user?.id,
+    },
+    discoveryAdSlides,
+    plus: activePlan
+      ? {
+          plan: { name: activePlan.name, nameAr: activePlan.nameAr, description: activePlan.description, descriptionAr: activePlan.descriptionAr },
+          price: activePlan.pricingOptions[0] ? Number(activePlan.pricingOptions[0].price) : null,
+          benefits: activePlan.benefits.map((b) => ({ key: b.key, label: b.label, labelAr: b.labelAr })),
+          isMember,
+        }
+      : null,
     categories: categories.filter((category) => category._count.products > 0).slice(0, 6).map((category) => ({
       id: category.id, slug: category.slug, name: category.name, nameAr: category.nameAr,
       count: category._count.products, image: category.imageUrl ?? category.products[0]?.images[0]?.url ?? null,
