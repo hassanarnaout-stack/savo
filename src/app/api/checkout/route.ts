@@ -127,6 +127,17 @@ export async function POST(req: NextRequest) {
     const product = products.find((p) => p.id === item.productId)!;
     return sum + Number(product.originalPrice) * item.quantity;
   }, 0);
+  // The Plus "Extra Discount" benefit stacks on top of an item's real
+  // price ONLY when that item has no discount of its own — an item
+  // already marked down (originalPrice > saveoPrice) is excluded from
+  // this subtotal, so the extra % never applies on top of an existing
+  // deal/Rescue/Mystery-Box-style discount.
+  const discountEligibleSubtotal = body.items.reduce((sum, item) => {
+    const product = products.find((p) => p.id === item.productId)!;
+    const effectivePrice = getEffectivePrice(product as any, isActiveMember, now);
+    const alreadyDiscounted = Number(product.originalPrice) > effectivePrice;
+    return alreadyDiscounted ? sum : sum + effectivePrice * item.quantity;
+  }, 0);
 
   // Defense-in-depth: members-only products must never be purchasable by
   // non-members, even if the UI (which hides them entirely) is bypassed.
@@ -141,7 +152,7 @@ export async function POST(req: NextRequest) {
   // Saveo Plus members get free delivery (if their plan grants it) and an
   // extra percentage discount (if their plan grants it) — both driven by
   // BenefitEngine, never hardcoded here.
-  const membershipExtraDiscount = BenefitEngine.calculateExtraDiscount(membership as any, subtotal);
+  const membershipExtraDiscount = BenefitEngine.calculateExtraDiscount(membership as any, discountEligibleSubtotal);
   const hasFreeDelivery = BenefitEngine.hasFreeDelivery(membership as any);
   const deliveryFee = hasFreeDelivery ? 0 : subtotal >= 15 ? 0 : 1.5;
   const giftWrapFee = body.giftWrapRequested ? GIFT_WRAP_FEE : 0;
