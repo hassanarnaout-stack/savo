@@ -8,10 +8,12 @@ export function SubscribeButton({
   planId,
   pricingOptionId,
   label,
+  className,
 }: {
   planId: string;
   pricingOptionId: string;
   label: string;
+  className?: string;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -35,13 +37,13 @@ export function SubscribeButton({
   }
 
   return (
-    <button onClick={handleSubscribe} disabled={loading} className="btn-primary w-full">
+    <button onClick={handleSubscribe} disabled={loading} className={className ?? "btn-primary w-full"}>
       {loading ? "..." : label}
     </button>
   );
 }
 
-export function CancelMembershipButton() {
+export function CancelMembershipButton({ className, label }: { className?: string; label?: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -61,8 +63,8 @@ export function CancelMembershipButton() {
   }
 
   return (
-    <button onClick={handleCancel} disabled={loading} className="text-sm font-semibold text-red-600 hover:underline">
-      {loading ? "..." : "Cancel membership"}
+    <button onClick={handleCancel} disabled={loading} className={className ?? "text-sm font-semibold text-red-600 hover:underline"}>
+      {loading ? "..." : label ?? "Cancel membership"}
     </button>
   );
 }

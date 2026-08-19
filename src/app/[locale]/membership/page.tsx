@@ -163,24 +163,98 @@ export default async function MembershipPage() {
       {/* 03b — THE PLUS DROP (real qualifying products: Members Only / Early Access / Plus Price) */}
       <PlusDropSection products={plusDropProducts} isMember={isMember} locale={locale} />
 
-      {/* 04 — VALUE / SAVINGS — real data only, no invented stats */}
-      {isMember && savings && (
+      {/* 05 VALUE — exact Figma section transplant. Two states: ACTIVE MEMBER
+         shows real value stats; NON-MEMBER shows the "MAKE MORE OF SAVO"
+         upsell. Figma's member state specifies 4 stat cards (Total
+         savings, Free deliveries, Exclusive deals used, Member since) —
+         only 2 have a real backing metric today (savingsLifetime via
+         MembershipService.getSavings(), and Membership.startsAt).
+         "Free deliveries used" and "Exclusive deals used" have NO real
+         counter anywhere in the codebase (no delivery-fee-waived event
+         log, no per-benefit usage tracking) — per explicit instruction
+         NOT to fake unavailable metrics, those two cards are omitted
+         rather than fabricated. */}
+      <section className="savo-plus-section">
+        {isMember ? (
+          <>
+            <p className="savo-plus-eyebrow-sm">{isArabic ? "عضويتك" : "YOUR MEMBERSHIP"}</p>
+            <div className="savo-plus-value-head">
+              <h2 className="savo-plus-h2" style={{ margin: 0 }}>{isArabic ? "قيمة بلس الحقيقية." : "Your Plus Value."}</h2>
+              <p className="savo-plus-value-tagline">{isArabic ? "بلس يردّ لك القيمة فعلًا." : "PLUS IS ALREADY PAYING YOU BACK."}</p>
+            </div>
+            <div className="savo-plus-value-grid">
+              {savings && (
+                <div className="savo-plus-value-card">
+                  <p className="savo-plus-value-stat" data-accent="teal">{formatKWD(savings.savingsLifetime)}</p>
+                  <p className="savo-plus-value-label">{isArabic ? "إجمالي التوفير" : "Total savings"}</p>
+                </div>
+              )}
+              <div className="savo-plus-value-card">
+                <p className="savo-plus-value-stat" data-accent="white">{new Date(membership!.startsAt).toLocaleDateString(isArabic ? "ar-KW" : "en-GB", { month: "short", year: "numeric" })}</p>
+                <p className="savo-plus-value-label">{isArabic ? "عضو منذ" : "Member since"}</p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="savo-plus-eyebrow-sm">{isArabic ? "استفد أكثر من سافو" : "MAKE MORE OF SAVO"}</p>
+            <h2 className="savo-plus-h2">{isArabic ? "قيمة أكبر في كل اكتشاف." : "More value in every discovery."}</h2>
+            <div className="savo-plus-value-bullets">
+              {(isArabic
+                ? ["توصيل مجاني", "أسعار الأعضاء", "وصول حصري", "صندوق الذهب الغامض"]
+                : ["Free Delivery", "Member Pricing", "Exclusive Access", "Gold Mystery Box"]
+              ).map((item) => (
+                <div key={item} className="savo-plus-value-bullet">
+                  <span className="savo-plus-value-dot" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+            {plan && cheapestOption && (
+              <SubscribeButton planId={plan.id} pricingOptionId={cheapestOption.id} label={isArabic ? "ابدأ مع بلس" : "START WITH PLUS"} className="savo-plus-value-cta" />
+            )}
+          </>
+        )}
+      </section>
+
+      {/* 06 PLAN PANEL — exact Figma final pricing/join card transplant. */}
+      {plan && (
         <section className="savo-plus-section">
-          <p className="savo-plus-eyebrow-sm">{isArabic ? "عضويتك" : "YOUR MEMBERSHIP"}</p>
-          <h2 className="savo-plus-h2">{isArabic ? "قيمة بلس الحقيقية." : "Your Plus Value."}</h2>
-          <div className="savo-plus-stats-grid">
-            <div className="savo-plus-stat-card">
-              <p className="savo-plus-stat-value" data-accent="teal">{formatKWD(savings.savingsThisMonth)}</p>
-              <p className="savo-plus-stat-label">{isArabic ? "التوفير هذا الشهر" : "Savings this month"}</p>
-            </div>
-            <div className="savo-plus-stat-card">
-              <p className="savo-plus-stat-value" data-accent="teal">{formatKWD(savings.savingsLifetime)}</p>
-              <p className="savo-plus-stat-label">{isArabic ? "إجمالي التوفير" : "Lifetime savings"}</p>
-            </div>
-            <div className="savo-plus-stat-card">
-              <p className="savo-plus-stat-value" data-accent="white">{new Date(membership!.endsAt).toLocaleDateString(isArabic ? "ar-KW" : "en-GB")}</p>
-              <p className="savo-plus-stat-label">{isArabic ? "تاريخ التجديد" : "Renews on"}</p>
-            </div>
+          <div className="savo-plus-planpanel">
+            <span className="savo-plus-planpanel-badge">{isArabic ? "سافو بلس" : "SAVO PLUS"}</span>
+
+            {isMember ? (
+              <>
+                <div className="savo-plus-planpanel-active-pill"><span>●</span> {isArabic ? "نشطة" : "ACTIVE"}</div>
+                {cheapestOption && (
+                  <>
+                    <p className="savo-plus-planpanel-price">{formatKWD(Number(cheapestOption.price))}</p>
+                    <p className="savo-plus-planpanel-cycle">{isArabic ? `/ ${cheapestOption.billingCycle === "YEARLY" ? "سنة" : "شهر"}` : `/ ${cheapestOption.billingCycle === "YEARLY" ? "year" : "month"}`}</p>
+                  </>
+                )}
+                <div className="savo-plus-planpanel-rows">
+                  <div className="savo-plus-planpanel-row"><span>{isArabic ? "الخطة الحالية" : "Current plan"}</span><span>{isArabic && plan.nameAr ? plan.nameAr : plan.name}</span></div>
+                  <div className="savo-plus-planpanel-row"><span>{isArabic ? "التجديد القادم" : "Next renewal"}</span><span>{new Date(membership!.endsAt).toLocaleDateString(isArabic ? "ar-KW" : "en-GB", { day: "numeric", month: "short", year: "numeric" })}</span></div>
+                  <div className="savo-plus-planpanel-row"><span>{isArabic ? "المزايا النشطة" : "Benefits active"}</span><span>{benefits.length}</span></div>
+                </div>
+                <CancelMembershipButton className="savo-plus-planpanel-manage" label={isArabic ? "إدارة العضوية" : "MANAGE MEMBERSHIP"} />
+                <p className="savo-plus-planpanel-terms">{isArabic ? "تُطبَّق شروط العضوية." : "Membership terms apply"}</p>
+              </>
+            ) : (
+              cheapestOption && (
+                <>
+                  <p className="savo-plus-planpanel-price savo-plus-planpanel-price--lg">{formatKWD(Number(cheapestOption.price))}</p>
+                  <p className="savo-plus-planpanel-cycle">{isArabic ? `/ ${cheapestOption.billingCycle === "YEARLY" ? "سنة" : "شهر"}` : `/ ${cheapestOption.billingCycle === "YEARLY" ? "year" : "month"}`}</p>
+                  <div className="savo-plus-planpanel-benefitlist">
+                    {benefits.map((b) => (
+                      <div key={b.key} className="savo-plus-planpanel-benefitrow"><span>✦</span><span>{b.label}</span></div>
+                    ))}
+                  </div>
+                  <SubscribeButton planId={plan.id} pricingOptionId={cheapestOption.id} label={isArabic ? "انضم لسافو بلس" : "JOIN SAVO PLUS"} className="savo-plus-planpanel-join" />
+                  <p className="savo-plus-planpanel-terms">{isArabic ? "الإلغاء وفق شروط العضوية." : "Cancel according to membership terms."}</p>
+                </>
+              )
+            )}
           </div>
         </section>
       )}
