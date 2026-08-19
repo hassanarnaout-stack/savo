@@ -94,6 +94,31 @@ export async function getRescueProducts(take = 6) {
   });
 }
 
+/**
+ * SAVO Plus Drop — real products currently qualifying for at least one
+ * Plus merchandising mode (Members Only, Early Access, or Plus Price).
+ * Non-members still see up to `take` real qualifying products (locked
+ * preview is a display concern, not a query concern) — zero fabricated
+ * Figma products.
+ */
+export async function getPlusDropProducts(take = 4) {
+  const now = new Date();
+  return prisma.product.findMany({
+    where: {
+      status: "ACTIVE",
+      approvalStatus: "APPROVED",
+      OR: [
+        { isMembersOnly: true },
+        { plusPrice: { not: null } },
+        { earlyAccessStartsAt: { not: null, lte: now } },
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: { ...productCard, brandName: true, isMembersOnly: true, plusPrice: true, earlyAccessStartsAt: true, publicAccessStartsAt: true },
+  });
+}
+
 export async function getMysteryBoxesByTier() {
   const boxes = await prisma.product.findMany({
     where: { status: "ACTIVE", approvalStatus: "APPROVED", type: "MYSTERY_BOX" },

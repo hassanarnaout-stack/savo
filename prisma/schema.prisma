@@ -396,6 +396,11 @@ model Product {
   brand         String?
   isFeatured    Boolean @default(false)
   isMembersOnly Boolean @default(false) // Saveo Plus exclusive — hidden from non-members entirely (not just gated at checkout)
+  // SAVO Plus Drop merchandising — additive only, approved. isMembersOnly
+  // above remains the strongest rule (unaffected by publicAccessStartsAt).
+  plusPrice             Decimal?  @db.Decimal(10, 3) // active Plus members pay this instead of saveoPrice — null = no Plus price configured. Non-members always keep the normal price.
+  earlyAccessStartsAt   DateTime? // Plus members can access/purchase from this time — null = not an Early Access product
+  publicAccessStartsAt  DateTime? // general public access begins at this time (must be later than earlyAccessStartsAt when both are set)
   isSubscribable Boolean @default(false) // Admin-controlled — Subscribe & Save only shows on products the admin has explicitly opted in, never automatically (e.g. never stacks on top of a product that already has its own discount)
   approvalStatus   ProductApprovalStatus @default(APPROVED) // see enum comment — defaults preserve existing products; new supplier submissions are set to PENDING_REVIEW explicitly
   approvedAt       DateTime?

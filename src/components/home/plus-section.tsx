@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/routing";
 import { formatKWD } from "@/lib/utils";
+import { Sparkles } from "lucide-react";
 
 /**
  * SAVO Plus homepage section — approved V22 gold/dark visual. Real
@@ -36,7 +37,7 @@ export function PlusSection({
   return (
     <section className="savo-plus">
       <div className="savo-plus-panel">
-        <p className="savo-plus-eyebrow">{isArabic ? "سافو بلس" : "SAVO PLUS"}</p>
+        <p className="savo-plus-eyebrow"><Sparkles className="savo-plus-eyebrow-spark" aria-hidden="true" /> {isArabic ? "سافو بلس" : "SAVO PLUS"}</p>
         <h2 className="savo-plus-title">{isArabic ? "عضوية. مرتقاة." : <>Membership.<br />Elevated.</>}</h2>
         {(isArabic ? plan.descriptionAr : plan.description) && (
           <p className="savo-plus-desc">{isArabic ? plan.descriptionAr : plan.description}</p>
