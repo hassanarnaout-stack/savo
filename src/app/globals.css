@@ -1162,6 +1162,8 @@
 .savo-plus-hero-price b{font-family:var(--font-display),sans-serif;font-weight:800;font-size:16px;color:var(--savo-shell-text)}
 
 .savo-plus-card{position:relative;max-width:360px;width:100%;margin:0 auto;border-radius:20px;overflow:hidden;padding:36px 32px 32px;min-height:220px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(135deg,#111520 0%,#0a0d14 60%,#141b26 100%);border:1px solid rgba(255,255,255,.1);box-shadow:0 0 40px rgba(0,0,0,.4)}
+.savo-plus-card-shimmer{position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(240,165,0,.08) 50%,transparent 70%);opacity:0;transition:opacity .4s;pointer-events:none;border-radius:20px}
+.savo-plus-card:hover .savo-plus-card-shimmer{opacity:1}
 .savo-plus-card[data-member="true"]{background:linear-gradient(135deg,#1a1200 0%,#0f0800 60%,#1f1600 100%);border-color:rgba(240,165,32,.35);box-shadow:0 0 60px rgba(240,165,32,.12),0 0 120px rgba(240,165,32,.05)}
 .savo-plus-card-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1}
 .savo-plus-card-badge{font-size:13px;font-weight:700;color:var(--savo-shell-gold);letter-spacing:.08em}
