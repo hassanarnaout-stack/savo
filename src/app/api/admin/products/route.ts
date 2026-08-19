@@ -27,6 +27,10 @@ const productSchema = z.object({
   mysteryBoxTier: z.enum(["BRONZE", "SILVER", "GOLD"]).optional(),
   mysteryBoxLockedCount: z.string().optional(),
   mysteryBoxChooseCount: z.string().optional(),
+  isMembersOnly: z.boolean().optional(),
+  plusPrice: z.string().optional(),
+  earlyAccessStartsAt: z.string().optional(),
+  publicAccessStartsAt: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -37,6 +41,16 @@ export async function POST(req: NextRequest) {
   }
 
   const body = productSchema.parse(await req.json());
+
+  // SAVO Plus merchandising — server-side validation, never silently saved invalid.
+  if (body.plusPrice && parseFloat(body.plusPrice) <= 0) {
+    return NextResponse.json({ error: "Plus Price must be greater than 0." }, { status: 400 });
+  }
+  if (body.earlyAccessStartsAt && body.publicAccessStartsAt) {
+    if (new Date(body.publicAccessStartsAt) <= new Date(body.earlyAccessStartsAt)) {
+      return NextResponse.json({ error: "Public Access Start must be later than Early Access Start." }, { status: 400 });
+    }
+  }
 
   const originalPrice = parseFloat(body.originalPrice);
   const saveoPrice = parseFloat(body.saveoPrice);
@@ -67,6 +81,10 @@ export async function POST(req: NextRequest) {
       mysteryBoxTier: body.mysteryBoxTier || null,
       mysteryBoxLockedCount: body.mysteryBoxLockedCount ? parseInt(body.mysteryBoxLockedCount, 10) : 1,
       mysteryBoxChooseCount: body.mysteryBoxChooseCount ? parseInt(body.mysteryBoxChooseCount, 10) : 0,
+      isMembersOnly: body.isMembersOnly ?? false,
+      plusPrice: body.plusPrice ? parseFloat(body.plusPrice) : null,
+      earlyAccessStartsAt: body.earlyAccessStartsAt ? new Date(body.earlyAccessStartsAt) : null,
+      publicAccessStartsAt: body.publicAccessStartsAt ? new Date(body.publicAccessStartsAt) : null,
       status: "ACTIVE",
       images: body.imageUrl
         ? { create: [{ url: body.imageUrl, isPrimary: true, sortOrder: 0 }] }

@@ -53,6 +53,10 @@ export default async function EditProductPage({ params }: Props) {
           mysteryBoxTier: product.mysteryBoxTier ?? undefined,
           mysteryBoxLockedCount: product.mysteryBoxLockedCount?.toString() ?? "1",
           mysteryBoxChooseCount: product.mysteryBoxChooseCount?.toString() ?? "0",
+          isMembersOnly: product.isMembersOnly,
+          plusPrice: product.plusPrice?.toString() ?? "",
+          earlyAccessStartsAt: product.earlyAccessStartsAt ? new Date(product.earlyAccessStartsAt).toISOString().slice(0, 16) : "",
+          publicAccessStartsAt: product.publicAccessStartsAt ? new Date(product.publicAccessStartsAt).toISOString().slice(0, 16) : "",
         }}
       />
       <ProductMediaManager productId={product.id} apiBase="/api/admin/products" initialMedia={media} />

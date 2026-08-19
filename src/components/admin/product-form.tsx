@@ -44,6 +44,11 @@ export interface ProductFormValues {
   mysteryBoxTier?: string;
   mysteryBoxLockedCount?: string;
   mysteryBoxChooseCount?: string;
+  // SAVO Plus merchandising — additive, approved.
+  isMembersOnly?: boolean;
+  plusPrice?: string;
+  earlyAccessStartsAt?: string;
+  publicAccessStartsAt?: string;
 }
 
 const EMPTY: ProductFormValues = {
@@ -61,6 +66,10 @@ const EMPTY: ProductFormValues = {
   expiryDate: "",
   imageUrl: "",
   mysteryBoxReveal: "",
+  isMembersOnly: false,
+  plusPrice: "",
+  earlyAccessStartsAt: "",
+  publicAccessStartsAt: "",
 };
 
 export function ProductForm({
@@ -289,6 +298,35 @@ export function ProductForm({
               </a>
             )}
           </>
+        )}
+      </section>
+
+      <section className="space-y-4 rounded-xl border border-black/10 p-5">
+        <h3 className="text-sm font-bold text-saveo-emerald-900">SAVO Plus Merchandising</h3>
+        <p className="text-xs text-saveo-emerald-700/60">Controls whether/how this product appears in the SAVO Plus "The Plus Drop" section on the customer /membership page.</p>
+
+        <label className="flex items-center gap-2 text-sm font-medium text-saveo-emerald-800">
+          <input type="checkbox" checked={form.isMembersOnly ?? false} onChange={(e) => set("isMembersOnly", e.target.checked)} />
+          Members Only (hidden from non-members entirely — strongest rule)
+        </label>
+
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-saveo-emerald-700/60">Plus Price (KD) — active members pay this instead of the normal price. Leave blank for no Plus price.</label>
+          <input type="number" step="0.001" min="0" value={form.plusPrice ?? ""} onChange={(e) => set("plusPrice", e.target.value)} placeholder="e.g. 4.900" className="input w-40" />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-saveo-emerald-700/60">Early Access Start — Plus members can access from this time</label>
+            <input type="datetime-local" value={form.earlyAccessStartsAt ?? ""} onChange={(e) => set("earlyAccessStartsAt", e.target.value)} className="input" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-saveo-emerald-700/60">Public Access Start — must be later than Early Access Start</label>
+            <input type="datetime-local" value={form.publicAccessStartsAt ?? ""} onChange={(e) => set("publicAccessStartsAt", e.target.value)} className="input" />
+          </div>
+        </div>
+        {form.earlyAccessStartsAt && form.publicAccessStartsAt && form.publicAccessStartsAt <= form.earlyAccessStartsAt && (
+          <p className="text-xs font-semibold text-red-600">Public Access Start must be later than Early Access Start — this combination will be treated as not-Early-Access.</p>
         )}
       </section>
 
