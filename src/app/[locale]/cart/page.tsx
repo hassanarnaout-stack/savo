@@ -1,91 +1,157 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { useLocale, useTranslations } from "next-intl";
-import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { formatKWD } from "@/lib/utils";
-import { LuxuryEmptyState } from "@/components/ui/luxury-empty-state";
+import { RecommendationAnalytics } from "@/lib/recommendation-analytics";
 
+interface SuggestedProduct {
+  id: string;
+  name: string;
+  nameAr?: string | null;
+  slug: string;
+  saveoPrice: number;
+  images?: { url: string }[];
+}
+
+/**
+ * SAVO Cart — exact V22 visual transplant (CartDrawerPage, src/CustomerPages.tsx
+ * in the V22 export), adapted from a drawer to a standalone page since /cart
+ * is a real full route, not an overlay. Real business logic 100% preserved,
+ * zero Figma demo state:
+ *   - items/quantities/removal: useCartStore (unchanged, same store used
+ *     everywhere else in the app)
+ *   - savings: totalSavings() from the real store (was a fabricated 18%
+ *     flat rate in the Figma prototype)
+ *   - the "Empty state" toggle button (Figma design-demo control) removed
+ *   - the fake right-side "Page backdrop" panel (a Figma-canvas artifact,
+ *     not a real UI element) removed
+ *   - the "Complete your deal" cross-sell rail used a hardcoded product
+ *     array in Figma; SAVO has no real cart-level cross-sell/bundle system
+ *     today, so per the no-fake-data rule this section is omitted rather
+ *     than populated with invented products
+ */
 export default function CartPage() {
   const { items, updateQty, removeItem, subtotal, totalSavings } = useCartStore();
   const locale = useLocale();
+  const isArabic = locale === "ar";
   const t = useTranslations("cartPage");
+  const itemCount = items.reduce((s, i) => s + i.quantity, 0);
 
-  if (items.length === 0) {
-    return <LuxuryEmptyState title={t("emptyTitle")} subtitle={t("emptySubtitle")} ctaLabel={t("startShopping")} ctaHref="/products" />;
-  }
+  // Real "Complete your deal" cross-sell — same canonical /api/cart/complete-your-deal
+  // endpoint (backed by CrossSellService.getSmartCartSuggestions) already used by
+  // the header cart-drawer. Zero hardcoded products.
+  const [suggestions, setSuggestions] = useState<SuggestedProduct[]>([]);
+  useEffect(() => {
+    if (items.length === 0) return;
+    const ids = items.map((i) => i.productId).join(",");
+    fetch(`/api/cart/complete-your-deal?productIds=${ids}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const products = data.products ?? [];
+        setSuggestions(products);
+        for (const p of products) RecommendationAnalytics.viewed(p.id, "smart_cart_suggestion");
+      })
+      .catch(() => setSuggestions([]));
+  }, [items]);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="mb-6 text-2xl font-bold">{t("title")}</h1>
-      <div className="grid gap-8 lg:grid-cols-3">
-        <ul className="space-y-4 lg:col-span-2">
-          {items.map((item) => {
-            const displayName = locale === "ar" && (item as any).nameAr ? (item as any).nameAr : item.name;
-            return (
-              <li key={item.productId} className="card flex gap-4 p-4">
-                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-saveo-emerald-700/5">
-                  {item.image && <Image src={item.image} alt={displayName} fill className="object-cover" />}
-                </div>
-                <div className="flex-1">
-                  <Link href={`/products/${item.slug}`} className="font-semibold hover:text-saveo-emerald-600">
-                    {displayName}
-                  </Link>
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="font-bold text-saveo-emerald-600">{formatKWD(item.saveoPrice)}</span>
-                    {item.originalPrice > item.saveoPrice && (
-                      <span className="text-xs text-saveo-emerald-700/40 line-through">
-                        {formatKWD(item.originalPrice)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <button
-                      onClick={() => updateQty(item.productId, item.quantity - 1)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-black/10"
-                    >
-                      <Minus className="h-3.5 w-3.5" />
-                    </button>
-                    <span className="w-5 text-center text-sm">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQty(item.productId, item.quantity + 1)}
-                      disabled={item.quantity >= item.stockQty}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-black/10 disabled:opacity-30"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => removeItem(item.productId)}
-                      className="ms-4 flex items-center gap-1 text-xs text-saveo-emerald-700/40 hover:text-red-500"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" /> {t("remove")}
-                    </button>
-                  </div>
-                </div>
-                <div className="text-end font-bold">{formatKWD(item.saveoPrice * item.quantity)}</div>
-              </li>
-            );
-          })}
-        </ul>
-
-        <div className="card h-fit p-5">
-          <h2 className="mb-4 font-bold">{t("orderSummary")}</h2>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-saveo-emerald-700/60">
-              <span>{t("totalSavings")}</span>
-              <span className="font-semibold text-saveo-emerald-600">{formatKWD(totalSavings())}</span>
-            </div>
-            <div className="flex justify-between border-t border-black/5 pt-2 text-base font-bold">
-              <span>{t("subtotal")}</span>
-              <span>{formatKWD(subtotal())}</span>
-            </div>
+    <div className="savo-cart-page">
+      <div className="savo-cart-panel">
+        <div className="savo-cart-header">
+          <div className="savo-cart-header-title">
+            <span>{t("title")}</span>
+            {itemCount > 0 && <span className="savo-cart-count">{itemCount}</span>}
           </div>
-          <Link href="/checkout" className="btn-primary mt-5 w-full">
-            {t("proceedToCheckout")}
-          </Link>
         </div>
+
+        {items.length === 0 ? (
+          <div className="savo-cart-empty">
+            <div className="savo-cart-empty-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--savo-shell-discovery)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.6">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 01-8 0" />
+              </svg>
+            </div>
+            <div className="savo-cart-empty-title">{t("emptyTitle")}</div>
+            <div className="savo-cart-empty-sub">{t("emptySubtitle")}</div>
+            <Link href="/products" className="savo-cart-empty-cta">{t("startShopping")}</Link>
+          </div>
+        ) : (
+          <>
+            <div className="savo-cart-items">
+              {items.map((item) => {
+                const displayName = isArabic && (item as any).nameAr ? (item as any).nameAr : item.name;
+                return (
+                  <div key={item.productId} className="savo-cart-item">
+                    <Link href={`/products/${item.slug}`} className="savo-cart-item-img">
+                      {item.image && <Image src={item.image} alt={displayName} fill className="object-cover" />}
+                    </Link>
+                    <div className="savo-cart-item-body">
+                      <Link href={`/products/${item.slug}`} className="savo-cart-item-name">{displayName}</Link>
+                      <div className="savo-cart-item-row">
+                        <div className="savo-cart-qty">
+                          <button onClick={() => updateQty(item.productId, item.quantity - 1)} aria-label="-">−</button>
+                          <span>{item.quantity}</span>
+                          <button onClick={() => updateQty(item.productId, item.quantity + 1)} disabled={item.quantity >= item.stockQty} aria-label="+">+</button>
+                        </div>
+                        <span className="savo-cart-item-price">{formatKWD(item.saveoPrice * item.quantity)}</span>
+                      </div>
+                    </div>
+                    <button onClick={() => removeItem(item.productId)} aria-label={t("remove")} className="savo-cart-item-remove">×</button>
+                  </div>
+                );
+              })}
+
+              {suggestions.length > 0 && (
+                <div className="savo-cart-crosssell">
+                  <p className="savo-cart-crosssell-label">{isArabic ? "أكمل صفقتك" : "Complete your deal"}</p>
+                  <div className="savo-cart-crosssell-list">
+                    {suggestions.map((p) => {
+                      const name = isArabic && p.nameAr ? p.nameAr : p.name;
+                      const img = p.images?.[0]?.url;
+                      return (
+                        <div key={p.id} className="savo-cart-crosssell-item">
+                          <Link href={`/products/${p.slug}`} className="savo-cart-crosssell-img">
+                            {img && <Image src={img} alt={name} fill className="object-cover" />}
+                          </Link>
+                          <div className="savo-cart-crosssell-body">
+                            <Link href={`/products/${p.slug}`} className="savo-cart-crosssell-name">{name}</Link>
+                            <span className="savo-cart-crosssell-price">{formatKWD(p.saveoPrice)}</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              useCartStore.getState().addItem({ productId: p.id, name: p.name, slug: p.slug, image: img ?? null, originalPrice: p.saveoPrice, saveoPrice: p.saveoPrice, stockQty: 99 }, 1);
+                              RecommendationAnalytics.added(p.id, "smart_cart_suggestion");
+                            }}
+                            className="savo-cart-crosssell-add"
+                          >
+                            {isArabic ? "أضف" : "Add"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="savo-cart-summary">
+              <div className="savo-cart-summary-row">
+                <span>{t("totalSavings")}</span>
+                <span className="savo-cart-summary-savings">−{formatKWD(totalSavings())}</span>
+              </div>
+              <div className="savo-cart-summary-row savo-cart-summary-total">
+                <span>{t("subtotal")}</span>
+                <span>{formatKWD(subtotal())}</span>
+              </div>
+              <Link href="/checkout" className="savo-cart-checkout-cta">{t("proceedToCheckout")} →</Link>
+              <div className="savo-cart-secure">{isArabic ? "الدفع آمن" : "Secure checkout"}</div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
