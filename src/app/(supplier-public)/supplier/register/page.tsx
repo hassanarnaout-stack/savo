@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { PasswordInput } from "@/components/ui/password-input";
 import { SupplierStepIndicator } from "@/components/supplier/supplier-step-indicator";
+import { SAVOLogo } from "@/components/brand/savo-master-logo";
 
 export default function SupplierRegisterPage() {
   const router = useRouter();
@@ -61,9 +61,12 @@ export default function SupplierRegisterPage() {
   return (
     <div className="savo-supplier-onboard-page">
       <div className="savo-supplier-onboard-glow" />
+      <p className="savo-supplier-onboard-topright">
+        Already applied? <Link href="/login" className="savo-supplier-onboard-link">Sign in</Link>
+      </p>
       <div className="savo-supplier-onboard-wrap">
         <div className="savo-supplier-onboard-header">
-          <Image src="/brand/savo-logo-dark.png" alt="Savo" width={104} height={36} className="savo-supplier-onboard-logo" />
+          <SAVOLogo variant="primary-light" style={{ height: 30, width: "auto" }} className="savo-supplier-onboard-logo" />
           <SupplierStepIndicator currentStep={1} />
           <h1 className="savo-supplier-onboard-title">Become a Savo Supplier</h1>
           <p className="savo-supplier-onboard-sub">Reach Kuwait's smart-savings shoppers. Step 1 of 2 — your company &amp; account details.</p>
@@ -127,10 +130,6 @@ export default function SupplierRegisterPage() {
             {loading ? "Creating your account..." : "Continue to Company Profile"}
           </button>
         </form>
-
-        <p className="savo-supplier-onboard-footer">
-          Already applied? <Link href="/login" className="savo-supplier-onboard-link">Sign in</Link>
-        </p>
       </div>
     </div>
   );

@@ -1431,32 +1431,49 @@
 }
 
 /* SAVO Supplier Onboarding — premium scale, depth, and micro-interactions on the real 2-step flow (content/fields/logic 100% unchanged) */
-.savo-supplier-onboard-page{position:relative;min-height:100vh;background:var(--savo-shell-ink);display:flex;align-items:center;justify-content:center;padding:64px 24px;overflow:hidden}
+.savo-supplier-onboard-page{position:relative;min-height:100vh;background:var(--savo-shell-ink);display:flex;align-items:flex-start;justify-content:center;padding:16px 24px 64px;overflow:hidden}
 .savo-supplier-onboard-glow{position:absolute;top:-10%;left:50%;transform:translateX(-50%);width:900px;height:500px;background:radial-gradient(ellipse,rgba(0,229,160,.06) 0%,transparent 65%);pointer-events:none}
 .savo-supplier-onboard-wrap{position:relative;z-index:1;width:100%;max-width:640px;animation:savo-supplier-rise .5s cubic-bezier(.16,1,.3,1)}
 @keyframes savo-supplier-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-.savo-supplier-onboard-header{text-align:center;margin-bottom:36px}
-.savo-supplier-onboard-logo{margin:0 auto 24px;height:40px;width:auto;filter:brightness(0) invert(1)}
-.savo-supplier-onboard-title{font-family:var(--font-display),sans-serif;font-weight:800;font-size:30px;color:var(--savo-shell-text);letter-spacing:-.02em;margin:0 0 8px}
-.savo-supplier-onboard-sub{font-size:14px;color:var(--savo-shell-muted);line-height:1.6;max-width:440px;margin:0 auto}
+.savo-supplier-onboard-header{text-align:center;margin-bottom:18px}
+.savo-supplier-onboard-logo{display:block;margin:0 auto 18px}
+.savo-supplier-onboard-title{font-family:var(--font-display),sans-serif;font-weight:800;font-size:28px;color:var(--savo-shell-text);letter-spacing:-.02em;margin:0 0 6px}
+.savo-supplier-onboard-sub{font-size:13.5px;color:var(--savo-shell-muted);line-height:1.6;max-width:440px;margin:0 auto}
 
-.savo-supplier-steps{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px}
-.savo-supplier-steps-item{display:flex;align-items:center}
-.savo-supplier-steps-row{display:flex;align-items:center;gap:8px}
+.savo-supplier-steps{display:flex;align-items:flex-start;justify-content:center;gap:6px;margin-bottom:20px}
+.savo-supplier-steps-item{display:flex;align-items:flex-start}
+.savo-supplier-steps-col{display:flex;flex-direction:column;align-items:center;gap:7px;width:104px}
 .savo-supplier-steps-dot{width:28px;height:28px;border-radius:50%;background:var(--savo-shell-surface);border:1.5px solid var(--savo-shell-border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--savo-shell-muted);font-family:var(--font-display),sans-serif;transition:all .2s}
 .savo-supplier-steps-dot.is-active{background:var(--savo-shell-gold);border-color:var(--savo-shell-gold);color:var(--savo-shell-ink)}
-.savo-supplier-steps-line{width:44px;height:1.5px;background:var(--savo-shell-border);border-radius:99px;transition:background .25s}
-.savo-supplier-steps-line.is-active{background:var(--savo-shell-gold)}
-.savo-supplier-steps-label{margin-inline-start:12px;font-size:12px;color:var(--savo-shell-muted);font-weight:600}
+.savo-supplier-steps-dot.is-done{background:var(--savo-shell-discovery);border-color:var(--savo-shell-discovery);color:var(--savo-shell-ink)}
+.savo-supplier-steps-item-label{font-size:11px;font-weight:600;color:var(--savo-shell-muted);text-align:center;line-height:1.3}
+.savo-supplier-steps-item-label.is-active{color:var(--savo-shell-gold);font-weight:700}
+.savo-supplier-steps-line{width:56px;height:1.5px;background:var(--savo-shell-border);border-radius:99px;transition:background .25s;margin-top:13px}
+.savo-supplier-steps-line.is-active{background:var(--savo-shell-discovery)}
 
-.savo-supplier-onboard-card{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:24px;padding:44px 40px;display:flex;flex-direction:column;gap:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);transition:border-color .25s,box-shadow .25s}
-.savo-supplier-onboard-card:hover{border-color:rgba(0,229,160,.14);box-shadow:0 24px 70px rgba(0,0,0,.4),0 0 0 1px rgba(0,229,160,.04)}
+.savo-supplier-onboard-card{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:24px;padding:40px 40px;display:flex;flex-direction:column;gap:18px;box-shadow:0 24px 70px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.02);position:relative;transition:border-color .25s,box-shadow .25s}
+.savo-supplier-onboard-card::before{content:"";position:absolute;inset:-1px;border-radius:24px;padding:1px;background:linear-gradient(160deg,rgba(0,229,160,.15),transparent 40%);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.savo-supplier-onboard-card:hover{border-color:rgba(0,229,160,.22);box-shadow:0 28px 80px rgba(0,0,0,.46),0 0 0 1px rgba(0,229,160,.08)}
 .savo-supplier-onboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .savo-supplier-field{display:flex;flex-direction:column;gap:8px}
 .savo-supplier-field label{font-size:12px;font-weight:700;color:var(--savo-shell-muted);letter-spacing:.02em}
 .savo-supplier-input{width:100%;background:var(--savo-shell-surface);border:1px solid var(--savo-shell-border);border-radius:12px;padding:14px 16px;font-size:14px;color:var(--savo-shell-text);outline:none;font-family:inherit;transition:border-color .18s,box-shadow .18s}
 .savo-supplier-input:hover{border-color:rgba(255,255,255,.18)}
 .savo-supplier-input:focus{border-color:rgba(0,229,160,.5);box-shadow:0 0 0 3px rgba(0,229,160,.08)}
+/* Chrome/Safari autofill forces a bright white background by default
+   (this was the "bright Email/Password" bug) — override via the huge
+   internal-shadow trick since background-color is not overridable
+   directly on autofilled inputs, keeping the real SAVO dark surface
+   and text color, without breaking autofill itself. */
+.savo-supplier-input:-webkit-autofill,
+.savo-supplier-input:-webkit-autofill:hover,
+.savo-supplier-input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--savo-shell-text);
+  -webkit-box-shadow:0 0 0 1000px var(--savo-shell-surface) inset;
+  box-shadow:0 0 0 1000px var(--savo-shell-surface) inset;
+  transition:background-color 5000s ease-in-out 0s;
+  caret-color:var(--savo-shell-text);
+}
 textarea.savo-supplier-input{resize:vertical}
 
 .savo-supplier-onboard-terms{display:flex;align-items:flex-start;gap:10px;font-size:12.5px;color:var(--savo-shell-muted);line-height:1.6;cursor:pointer}
@@ -1471,6 +1488,8 @@ textarea.savo-supplier-input{resize:vertical}
 .savo-supplier-onboard-cta:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
 
 .savo-supplier-onboard-footer{text-align:center;font-size:13.5px;color:var(--savo-shell-muted);margin-top:24px}
+.savo-supplier-onboard-topright{position:absolute;top:20px;inset-inline-end:24px;font-size:13px;color:var(--savo-shell-muted);z-index:2;margin:0}
+@media(max-width:640px){.savo-supplier-onboard-topright{position:static;text-align:center;margin-bottom:16px}}
 .savo-supplier-onboard-link{color:var(--savo-shell-discovery);font-weight:700}
 
 @media(max-width:640px){
