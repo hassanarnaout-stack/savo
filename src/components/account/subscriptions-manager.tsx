@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Link } from "@/i18n/routing";
 import { formatKWD } from "@/lib/utils";
 import { SubscriptionControls } from "@/components/account/subscription-controls";
@@ -148,8 +150,14 @@ export function SubscriptionsManager({ subscriptions, eligibleProducts, isArabic
 
       {subscriptions.length === 0 ? (
         <div className="savo-subs-empty">
-          <p>{isArabic ? "صفر اشتراكات بعد — دوّر على \"اشترك ووفّر\" بأي صفحة منتج." : 'No subscriptions yet — look for "Subscribe & Save" on any product page.'}</p>
-          <Link href="/products" className="savo-subs-empty-cta">{isArabic ? "تصفح المنتجات →" : "Browse Products →"}</Link>
+          {eligibleProducts.length > 0 ? (
+            <p>{isArabic ? "صفر اشتراكات بعد — تصفّح المنتجات المؤهّلة بالأسفل واشترك مباشرة." : "No subscriptions yet — browse eligible products below and subscribe directly."}</p>
+          ) : (
+            <>
+              <p>{isArabic ? "صفر اشتراكات بعد — دوّر على \"اشترك ووفّر\" بأي صفحة منتج." : 'No subscriptions yet — look for "Subscribe & Save" on any product page.'}</p>
+              <Link href="/products" className="savo-subs-empty-cta">{isArabic ? "تصفح المنتجات →" : "Browse Products →"}</Link>
+            </>
+          )}
         </div>
       ) : (
         <>

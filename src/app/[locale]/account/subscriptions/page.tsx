@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { SubscriptionService } from "@/lib/services/subscription-service";
 import { SubscriptionsManager } from "@/components/account/subscriptions-manager";
 
+export const dynamic = "force-dynamic";
+
 /**
  * SAVO Subscribe & Save — enhanced V22 view: hero copy + real stat
  * summary + filter tabs + richer subscription cards, PLUS a real
@@ -37,7 +39,7 @@ export default async function SubscriptionsPage() {
   return (
     <div className="savo-subs-page">
       <SubscriptionsManager
-        subscriptions={subscriptions as any}
+        subscriptions={subscriptions.map((s) => ({ ...s, product: { ...s.product, saveoPrice: Number(s.product.saveoPrice) } })) as any}
         eligibleProducts={eligibleProducts.map((p) => ({ ...p, saveoPrice: Number(p.saveoPrice) })) as any}
         isArabic={locale === "ar"}
       />
