@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
 const CARD_SELECT = {
-  id: true, name: true, nameAr: true, slug: true,
+  id: true, name: true, nameAr: true, slug: true, saveoPrice: true,
   images: { take: 1, orderBy: { sortOrder: "asc" as const } },
 };
 
@@ -47,7 +47,7 @@ export class LoginShowcaseService {
       if (!id) return null;
       const p = byId.get(id);
       if (!p || !p.images[0]?.url) return null; // no broken image cards — drop silently
-      return { id: p.id, name: p.name, nameAr: p.nameAr, slug: p.slug, image: p.images[0].url };
+      return { id: p.id, name: p.name, nameAr: p.nameAr, slug: p.slug, image: p.images[0].url, price: Number(p.saveoPrice) };
     };
 
     return {

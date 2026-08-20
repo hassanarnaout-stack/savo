@@ -1386,9 +1386,18 @@
 .savo-login-panel-grid{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(0,229,160,.05) 1px,transparent 1px);background-size:28px 28px;pointer-events:none}
 .savo-login-panel-glow{position:absolute;top:0;right:0;width:280px;height:280px;background:radial-gradient(circle at top right,rgba(0,229,160,.08) 0%,transparent 60%);pointer-events:none}
 .savo-login-panel-content{position:relative;z-index:1}
-.savo-login-panel-tease{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);display:flex;gap:10px;pointer-events:none}
-.savo-login-panel-card{width:90px;height:110px;border-radius:14px;overflow:hidden;border:1px solid var(--savo-shell-border);box-shadow:0 20px 50px rgba(0,0,0,.5)}
-.savo-login-panel-card img{width:100%;height:100%;object-fit:cover;display:block}
+.savo-login-panel-tease{position:relative;display:flex;align-items:flex-end;justify-content:center;gap:-16px;margin-bottom:40px;padding-top:20px}
+.savo-login-panel-tease-glow{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);width:340px;height:120px;background:radial-gradient(ellipse,rgba(0,229,160,.14) 0%,transparent 70%);pointer-events:none;z-index:0}
+.savo-login-panel-card{position:relative;display:block;width:150px;height:190px;border-radius:18px;overflow:hidden;border:1px solid var(--savo-shell-border);box-shadow:0 24px 60px rgba(0,0,0,.55);transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s,border-color .3s;margin:0 -14px;z-index:1;transform:rotate(var(--savo-login-card-rotate,0deg))}
+.savo-login-panel-card--center{width:180px;height:230px;z-index:2;box-shadow:0 30px 70px rgba(0,0,0,.6)}
+.savo-login-panel-card--side{margin-bottom:22px}
+.savo-login-panel-card:hover{border-color:rgba(0,229,160,.4);box-shadow:0 28px 70px rgba(0,0,0,.6),0 0 0 1px rgba(0,229,160,.15);transform:rotate(var(--savo-login-card-rotate,0deg)) translateY(-6px) scale(1.04)}
+.savo-login-panel-card--center:hover{transform:rotate(0deg) translateY(-8px) scale(1.03);box-shadow:0 34px 80px rgba(0,0,0,.65),0 0 0 1px rgba(0,229,160,.2)}
+.savo-login-panel-card img{width:100%;height:100%;object-fit:cover;display:block;transition:filter .3s}
+.savo-login-panel-card:hover img{filter:brightness(1.08) saturate(1.1)}
+.savo-login-panel-card-info{position:absolute;inset-inline:0;bottom:0;padding:12px 10px 10px;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 100%);display:flex;flex-direction:column;gap:2px;z-index:1}
+.savo-login-panel-card-name{font-size:10.5px;font-weight:700;color:#fff;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.savo-login-panel-card-price{font-size:11px;font-weight:800;color:var(--savo-shell-discovery);font-family:var(--font-display),sans-serif}
 .savo-login-panel-signature{font-family:"Cairo",sans-serif;font-weight:700;font-size:15px;color:var(--savo-shell-discovery);direction:rtl;opacity:.8;margin:0 0 20px}
 .savo-login-panel-dot{display:block;width:8px;height:8px;border-radius:50%;background:var(--savo-shell-discovery);margin-bottom:14px}
 .savo-login-panel-title{font-family:var(--font-display),sans-serif;font-weight:900;font-size:26px;color:var(--savo-shell-text);letter-spacing:-.03em;line-height:1.1;margin:0 0 10px}
@@ -1419,6 +1428,57 @@
   .savo-login-page{flex-direction:column}
   .savo-login-panel{display:none}
   .savo-login-form-side{padding:48px 24px}
+}
+
+/* SAVO Supplier Onboarding — premium scale, depth, and micro-interactions on the real 2-step flow (content/fields/logic 100% unchanged) */
+.savo-supplier-onboard-page{position:relative;min-height:100vh;background:var(--savo-shell-ink);display:flex;align-items:center;justify-content:center;padding:64px 24px;overflow:hidden}
+.savo-supplier-onboard-glow{position:absolute;top:-10%;left:50%;transform:translateX(-50%);width:900px;height:500px;background:radial-gradient(ellipse,rgba(0,229,160,.06) 0%,transparent 65%);pointer-events:none}
+.savo-supplier-onboard-wrap{position:relative;z-index:1;width:100%;max-width:640px;animation:savo-supplier-rise .5s cubic-bezier(.16,1,.3,1)}
+@keyframes savo-supplier-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.savo-supplier-onboard-header{text-align:center;margin-bottom:36px}
+.savo-supplier-onboard-logo{margin:0 auto 24px;height:40px;width:auto;filter:brightness(0) invert(1)}
+.savo-supplier-onboard-title{font-family:var(--font-display),sans-serif;font-weight:800;font-size:30px;color:var(--savo-shell-text);letter-spacing:-.02em;margin:0 0 8px}
+.savo-supplier-onboard-sub{font-size:14px;color:var(--savo-shell-muted);line-height:1.6;max-width:440px;margin:0 auto}
+
+.savo-supplier-steps{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px}
+.savo-supplier-steps-item{display:flex;align-items:center}
+.savo-supplier-steps-row{display:flex;align-items:center;gap:8px}
+.savo-supplier-steps-dot{width:28px;height:28px;border-radius:50%;background:var(--savo-shell-surface);border:1.5px solid var(--savo-shell-border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--savo-shell-muted);font-family:var(--font-display),sans-serif;transition:all .2s}
+.savo-supplier-steps-dot.is-active{background:var(--savo-shell-gold);border-color:var(--savo-shell-gold);color:var(--savo-shell-ink)}
+.savo-supplier-steps-line{width:44px;height:1.5px;background:var(--savo-shell-border);border-radius:99px;transition:background .25s}
+.savo-supplier-steps-line.is-active{background:var(--savo-shell-gold)}
+.savo-supplier-steps-label{margin-inline-start:12px;font-size:12px;color:var(--savo-shell-muted);font-weight:600}
+
+.savo-supplier-onboard-card{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:24px;padding:44px 40px;display:flex;flex-direction:column;gap:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);transition:border-color .25s,box-shadow .25s}
+.savo-supplier-onboard-card:hover{border-color:rgba(0,229,160,.14);box-shadow:0 24px 70px rgba(0,0,0,.4),0 0 0 1px rgba(0,229,160,.04)}
+.savo-supplier-onboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.savo-supplier-field{display:flex;flex-direction:column;gap:8px}
+.savo-supplier-field label{font-size:12px;font-weight:700;color:var(--savo-shell-muted);letter-spacing:.02em}
+.savo-supplier-input{width:100%;background:var(--savo-shell-surface);border:1px solid var(--savo-shell-border);border-radius:12px;padding:14px 16px;font-size:14px;color:var(--savo-shell-text);outline:none;font-family:inherit;transition:border-color .18s,box-shadow .18s}
+.savo-supplier-input:hover{border-color:rgba(255,255,255,.18)}
+.savo-supplier-input:focus{border-color:rgba(0,229,160,.5);box-shadow:0 0 0 3px rgba(0,229,160,.08)}
+textarea.savo-supplier-input{resize:vertical}
+
+.savo-supplier-onboard-terms{display:flex;align-items:flex-start;gap:10px;font-size:12.5px;color:var(--savo-shell-muted);line-height:1.6;cursor:pointer}
+.savo-supplier-onboard-checkbox{appearance:none;-webkit-appearance:none;width:18px;height:18px;border-radius:5px;border:1.5px solid var(--savo-shell-border);background:var(--savo-shell-surface);flex-shrink:0;margin-top:1px;cursor:pointer;position:relative;transition:all .18s}
+.savo-supplier-onboard-checkbox:hover{border-color:rgba(0,229,160,.4)}
+.savo-supplier-onboard-checkbox:checked{background:var(--savo-shell-discovery);border-color:var(--savo-shell-discovery)}
+.savo-supplier-onboard-checkbox:checked::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:var(--savo-shell-ink)}
+
+.savo-supplier-onboard-cta{width:100%;background:linear-gradient(135deg,var(--savo-shell-gold),#D4941C);color:var(--savo-shell-ink);border:none;border-radius:14px;padding:17px;font-weight:800;font-size:15.5px;font-family:var(--font-display),sans-serif;cursor:pointer;transition:transform .18s,box-shadow .18s;box-shadow:0 8px 24px rgba(240,165,0,.2)}
+.savo-supplier-onboard-cta:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 12px 32px rgba(240,165,0,.3)}
+.savo-supplier-onboard-cta:active:not(:disabled){transform:translateY(0)}
+.savo-supplier-onboard-cta:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
+
+.savo-supplier-onboard-footer{text-align:center;font-size:13.5px;color:var(--savo-shell-muted);margin-top:24px}
+.savo-supplier-onboard-link{color:var(--savo-shell-discovery);font-weight:700}
+
+@media(max-width:640px){
+  .savo-supplier-onboard-page{padding:40px 16px}
+  .savo-supplier-onboard-card{padding:28px 22px;border-radius:18px}
+  .savo-supplier-onboard-grid{grid-template-columns:1fr}
+  .savo-supplier-onboard-title{font-size:24px}
+  .savo-supplier-steps-line{width:28px}
 }
 
 .savo-hub{padding:56px;background:var(--savo-shell-ink)}

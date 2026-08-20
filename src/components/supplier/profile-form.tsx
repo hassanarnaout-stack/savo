@@ -38,82 +38,72 @@ export function SupplierProfileForm({ initial }: { initial: ProfileValues }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl2 border border-black/5 bg-white p-6 shadow-card">
-      <Field label="Logo URL (optional)">
+    <form onSubmit={handleSubmit} className="savo-supplier-onboard-card">
+      <SupplierField label="Logo URL (optional)">
         <input
           value={form.logo}
           onChange={(e) => setForm({ ...form, logo: e.target.value })}
-          className="input"
+          className="savo-supplier-input"
           placeholder="https://..."
         />
-      </Field>
-      <Field label="Company Description">
+      </SupplierField>
+      <SupplierField label="Company Description">
         <textarea
           required
           minLength={10}
           rows={3}
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="input"
+          className="savo-supplier-input"
           placeholder="What do you sell, and what makes your business a good fit for Savo?"
         />
-      </Field>
-      <Field label="Business Address">
+      </SupplierField>
+      <SupplierField label="Business Address">
         <textarea
           required
           rows={2}
           value={form.address}
           onChange={(e) => setForm({ ...form, address: e.target.value })}
-          className="input"
+          className="savo-supplier-input"
           placeholder="Warehouse / office address in Kuwait"
         />
-      </Field>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Commercial Registration No. (optional)">
+      </SupplierField>
+      <div className="savo-supplier-onboard-grid">
+        <SupplierField label="Commercial Registration No. (optional)">
           <input
             value={form.commercialRegistrationNumber}
             onChange={(e) => setForm({ ...form, commercialRegistrationNumber: e.target.value })}
-            className="input"
+            className="savo-supplier-input"
           />
-        </Field>
-        <Field label="Tax Number (optional)">
+        </SupplierField>
+        <SupplierField label="Tax Number (optional)">
           <input
             value={form.taxNumber}
             onChange={(e) => setForm({ ...form, taxNumber: e.target.value })}
-            className="input"
+            className="savo-supplier-input"
           />
-        </Field>
+        </SupplierField>
       </div>
-      <Field label="Website (optional)">
+      <SupplierField label="Website (optional)">
         <input
           value={form.website}
           onChange={(e) => setForm({ ...form, website: e.target.value })}
-          className="input"
+          className="savo-supplier-input"
           placeholder="https://..."
         />
-      </Field>
+      </SupplierField>
 
-      <button type="submit" disabled={submitting} className="btn-primary w-full">
+      <button type="submit" disabled={submitting} className="savo-supplier-onboard-cta">
         {submitting ? "Submitting..." : "Submit for Review"}
       </button>
-
-      <style jsx global>{`
-        .input {
-          width: 100%;
-          border: 1px solid rgba(0, 0, 0, 0.1);
-          border-radius: 0.5rem;
-          padding: 0.625rem 0.75rem;
-          font-size: 0.875rem;
-        }
-      `}</style>
     </form>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function SupplierField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <label className="mb-1 block text-xs font-semibold text-saveo-emerald-700/60">{label}</label>
+    <div className="savo-supplier-field">
+      <label>{label}</label>
       {children}
     </div>
   );

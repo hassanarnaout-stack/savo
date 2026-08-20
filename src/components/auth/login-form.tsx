@@ -14,18 +14,19 @@ interface ShowcaseProduct {
   nameAr: string | null;
   slug: string;
   image: string;
+  price: number;
 }
 
 /**
- * SAVO Login — exact V22 visual transplant (LoginPage, V22
- * CustomerPages.tsx): left decorative identity panel (44% desktop
- * width) with the exact V22 dot-grid + radial glow + 3-card product
- * tease at fixed V22 positions/rotation/opacity/lift — now showing
- * REAL, Admin-selected catalog products (Login Showcase Products,
- * /admin/login-showcase) instead of any placeholder imagery. A
- * missing slot (unconfigured / product became unavailable) simply
- * doesn't render its card — never a broken image. Approved SAVO copy
- * preserved (not V22's wording) for both the panel and the form side.
+ * SAVO Login — left decorative identity panel (44% desktop width)
+ * featuring a large, interactive 3-card product showcase (center
+ * dominant, left/right counter-rotated) matching the approved visual
+ * reference, populated entirely from REAL, Admin-selected catalog
+ * products (Login Showcase Products, /admin/login-showcase,
+ * LoginShowcaseService) — never hardcoded. Each card links to its
+ * real product page. A missing slot (unconfigured / product became
+ * unavailable) simply doesn't render its card — never a broken image.
+ * Approved SAVO copy preserved for both the panel and the form side.
  * ALL business logic below is byte-for-byte unchanged from the
  * pre-migration version: same rate-limit pre-check, same next-auth
  * signIn call, same role-based redirect (ADMIN/SUPER_ADMIN -> /admin,
@@ -85,12 +86,14 @@ export function LoginForm({ showcase }: { showcase: { left: ShowcaseProduct | nu
     }
   }
 
-  // Fixed V22 positions — Admin controls WHICH product, never these values.
-  const cards = [
-    showcase.left && { ...showcase.left, rotate: -5, lift: 0, opacity: 0.6 },
-    showcase.center && { ...showcase.center, rotate: 0, lift: -12, opacity: 1 },
-    showcase.right && { ...showcase.right, rotate: 5, lift: 0, opacity: 0.6 },
-  ].filter((c): c is ShowcaseProduct & { rotate: number; lift: number; opacity: number } => !!c);
+  // Fixed composition — Admin controls WHICH product occupies each slot,
+  // never these layout values. Center is dominant per the approved
+  // reference (larger, taller, no rotation); left/right are smaller,
+  // counter-rotated outward.
+  const leftCard = showcase.left && { ...showcase.left, role: "side" as const, rotate: -6 };
+  const centerCard = showcase.center && { ...showcase.center, role: "center" as const, rotate: 0 };
+  const rightCard = showcase.right && { ...showcase.right, role: "side" as const, rotate: 6 };
+  const cards = [leftCard, centerCard, rightCard].filter((c): c is NonNullable<typeof c> => !!c);
 
   return (
     <div className="savo-login-page">
@@ -100,10 +103,20 @@ export function LoginForm({ showcase }: { showcase: { left: ShowcaseProduct | nu
 
         {cards.length > 0 && (
           <div className="savo-login-panel-tease">
+            <div className="savo-login-panel-tease-glow" />
             {cards.map((card) => (
-              <div key={card.id} className="savo-login-panel-card" style={{ transform: `rotate(${card.rotate}deg) translateY(${card.lift}px)`, opacity: card.opacity }}>
+              <Link
+                key={card.id}
+                href={`/products/${card.slug}`}
+                className={`savo-login-panel-card savo-login-panel-card--${card.role}`}
+                style={{ "--savo-login-card-rotate": `${card.rotate}deg` } as React.CSSProperties}
+              >
                 <img src={card.image} alt={isArabic && card.nameAr ? card.nameAr : card.name} />
-              </div>
+                <span className="savo-login-panel-card-info">
+                  <span className="savo-login-panel-card-name">{isArabic && card.nameAr ? card.nameAr : card.name}</span>
+                  <span className="savo-login-panel-card-price">{isArabic ? "د.ك " : "KD "}{card.price.toFixed(3)}</span>
+                </span>
+              </Link>
             ))}
           </div>
         )}
