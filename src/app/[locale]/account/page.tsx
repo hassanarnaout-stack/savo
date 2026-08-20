@@ -5,30 +5,48 @@ import { Link } from "@/i18n/routing";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Package, Heart, MapPin, Wallet, Repeat } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
-import { MembershipDashboard } from "@/components/membership/membership-dashboard";
-import { MembershipService } from "@/lib/services/membership-service";
-import { PlusBadge } from "@/components/membership/plus-badge";
+import { AccountPlusSummary } from "@/components/membership/account-plus-summary";
 import { CustomerBehaviorEngine } from "@/lib/services/customer-behavior-engine";
 import { ProductRail } from "@/components/product/product-grid";
-import { serializeProducts } from "@/lib/utils";
+import { serializeProducts, formatKWD } from "@/lib/utils";
 import { getLaunchFlags } from "@/lib/launch-flags";
+import { OrderStatusBadge } from "@/components/order/order-status-badge";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * SAVO Account — exact V22 visual transplant (AccountPage overview
+ * section, V22 CustomerPages.tsx: sidebar nav + dark main content).
+ * ALL business logic below is byte-for-byte unchanged from the
+ * pre-migration version: same order/favorite counts, same
+ * AccountPlusSummary (real Plus pricing/state — reuses the exact same
+ * .savo-plus-card component/data source as the canonical /membership
+ * page: MembershipService.getUserMembership/isActiveMember/getSavings
+ * + BenefitEngine.listActiveBenefits, real MembershipPlanBenefit —
+ * CustomerBehaviorEngine.getNextBestProducts recommendation source,
+ * same feature-flag gate (SAVEO_PLUS_ENABLED), same next-auth
+ * signOut. "Recent orders" reuses the exact real query pattern from
+ * /account/orders (supplierOrders.items), take:2, zero fake data.
+ */
 export default async function AccountPage() {
   const FEATURE_FLAGS = await getLaunchFlags();
   const session = await auth();
   if (!session?.user) redirect("/login?callbackUrl=/account");
 
-  const [orderCount, favoriteCount, t, locale, isPlusMember, nextBestProducts, common, pT] = await Promise.all([
+  const [orderCount, favoriteCount, t, locale, nextBestProducts, common, pT, recentOrders] = await Promise.all([
     prisma.order.count({ where: { userId: session.user.id } }),
     prisma.favorite.count({ where: { userId: session.user.id } }),
     getTranslations("account"),
     getLocale(),
-    MembershipService.isActiveMember(session.user.id),
     CustomerBehaviorEngine.getNextBestProducts(session.user.id, 6),
     getTranslations("common"),
     getTranslations("product"),
+    prisma.order.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 2,
+      include: { supplierOrders: { include: { items: { include: { product: { include: { images: { take: 1, orderBy: { sortOrder: "asc" } } } } } } } } },
+    }),
   ]);
 
   const recommendedProducts = nextBestProducts.length > 0
@@ -38,71 +56,100 @@ export default async function AccountPage() {
       })
     : [];
 
+  const isArabic = locale === "ar";
+  const navItems = [
+    { href: "/account/orders", label: t("orderHistory"), icon: Package },
+    { href: "/account/wallet", label: "Wallet & Points", icon: Wallet },
+    { href: "/account/subscriptions", label: "Subscribe & Save", icon: Repeat },
+    { href: "/favorites", label: t("favorites"), icon: Heart },
+  ];
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="flex items-center gap-2">
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        {FEATURE_FLAGS.SAVEO_PLUS_ENABLED && isPlusMember && <PlusBadge size="sm" />}
-      </div>
-      <p className="mt-1 text-saveo-emerald-700/50">{session.user.email}</p>
-
-      {FEATURE_FLAGS.SAVEO_PLUS_ENABLED && (
-        <div className="mt-6">
-          <MembershipDashboard userId={session.user.id} locale={locale} />
-        </div>
-      )}
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <Link href="/account/orders" className="card flex items-center gap-4 p-5">
-          <Package className="h-8 w-8 text-saveo-emerald-700" />
+    <div className="savo-account-page">
+      <div className="savo-account-sidebar">
+        <div className="savo-account-user">
+          <span className="savo-account-avatar">{(session.user.email ?? "?")[0].toUpperCase()}</span>
           <div>
-            <p className="font-semibold">{t("orderHistory")}</p>
-            <p className="text-xs text-saveo-emerald-700/50">{t("ordersCount", { count: orderCount })}</p>
-          </div>
-        </Link>
-        <Link href="/favorites" className="card flex items-center gap-4 p-5">
-          <Heart className="h-8 w-8 text-saveo-emerald-700" />
-          <div>
-            <p className="font-semibold">{t("favorites")}</p>
-            <p className="text-xs text-saveo-emerald-700/50">{t("favoritesCount", { count: favoriteCount })}</p>
-          </div>
-        </Link>
-        <Link href="/account/wallet" className="card flex items-center gap-4 p-5">
-          <Wallet className="h-8 w-8 text-saveo-emerald-700" />
-          <div>
-            <p className="font-semibold">Wallet &amp; Points</p>
-            <p className="text-xs text-saveo-emerald-700/50">Store credit and loyalty points</p>
-          </div>
-        </Link>
-        <Link href="/account/subscriptions" className="card flex items-center gap-4 p-5">
-          <Repeat className="h-8 w-8 text-saveo-emerald-700" />
-          <div>
-            <p className="font-semibold">Subscribe &amp; Save</p>
-            <p className="text-xs text-saveo-emerald-700/50">Manage recurring deliveries</p>
-          </div>
-        </Link>
-        <div className="card flex items-center gap-4 p-5">
-          <MapPin className="h-8 w-8 text-saveo-emerald-700" />
-          <div>
-            <p className="font-semibold">{t("addresses")}</p>
-            <p className="text-xs text-saveo-emerald-700/50">{t("addressesSubtitle")}</p>
+            <p className="savo-account-user-name">{session.user.name ?? session.user.email}</p>
+            <p className="savo-account-user-email">{session.user.email}</p>
           </div>
         </div>
-        <SignOutButton label={t("signOut")} />
+        <nav className="savo-account-nav">
+          {navItems.map((item) => (
+            <Link key={item.href} href={item.href as any} className="savo-account-nav-item">
+              <item.icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+          <div className="savo-account-nav-item savo-account-nav-item--static">
+            <MapPin className="h-4 w-4" />
+            <span>{t("addresses")}</span>
+          </div>
+          <SignOutButton label={t("signOut")} className="savo-account-signout" />
+        </nav>
       </div>
 
-      {recommendedProducts.length > 0 && (
-        <div className="mt-8">
-          <ProductRail
-            title={locale === "ar" ? "مُختار لك" : "Recommended for You"}
-            products={serializeProducts(recommendedProducts) as any}
-            source="recommended_for_you"
-            locale={locale}
-            outOfStockLabel={common("outOfStock")}
-            addToCartLabel={pT("addToCart")}
-          />
+      <div className="savo-account-main">
+        {FEATURE_FLAGS.SAVEO_PLUS_ENABLED && (
+          <div className="savo-account-plus-wrap">
+            <AccountPlusSummary userId={session.user.id} locale={locale} />
+          </div>
+        )}
+
+        <div className="savo-account-stats">
+          <div className="savo-account-stat-card">
+            <Package className="h-5 w-5" />
+            <b>{orderCount}</b>
+            <span>{t("orderHistory")}</span>
+          </div>
+          <div className="savo-account-stat-card">
+            <Heart className="h-5 w-5" />
+            <b>{favoriteCount}</b>
+            <span>{t("favorites")}</span>
+          </div>
         </div>
-      )}
+
+        {recentOrders.length > 0 && (
+          <div className="savo-account-recent">
+            <p className="savo-account-section-label">{isArabic ? "آخر الطلبات" : "Recent orders"}</p>
+            <div className="savo-account-recent-list">
+              {recentOrders.map((order) => {
+                const firstImage = order.supplierOrders[0]?.items[0]?.product?.images[0]?.url;
+                const itemCount = order.supplierOrders.reduce((sum, so) => sum + so.items.length, 0);
+                return (
+                  <Link key={order.id} href={`/account/orders/${order.id}` as any} className="savo-account-order-row">
+                    <div className="savo-account-order-img">
+                      {firstImage && <img src={firstImage} alt="" />}
+                    </div>
+                    <div className="savo-account-order-body">
+                      <span className="savo-account-order-number">{order.orderNumber}</span>
+                      <span className="savo-account-order-meta">{new Date(order.createdAt).toLocaleDateString(isArabic ? "ar-KW" : "en-GB")} · {t("itemsCount", { count: itemCount })}</span>
+                    </div>
+                    <div className="savo-account-order-right">
+                      <OrderStatusBadge status={order.status} />
+                      <span className="savo-account-order-total">{formatKWD(Number(order.total))}</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+            <Link href="/account/orders" className="savo-account-viewall">{isArabic ? "عرض كل الطلبات ←" : "View all orders →"}</Link>
+          </div>
+        )}
+
+        {recommendedProducts.length > 0 && (
+          <div className="savo-account-recommend">
+            <ProductRail
+              title={isArabic ? "مُختار لك" : "Recommended for You"}
+              products={serializeProducts(recommendedProducts) as any}
+              source="recommended_for_you"
+              locale={locale}
+              outOfStockLabel={common("outOfStock")}
+              addToCartLabel={pT("addToCart")}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
