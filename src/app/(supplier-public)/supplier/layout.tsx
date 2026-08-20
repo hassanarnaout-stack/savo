@@ -3,8 +3,11 @@ import { BrowserExtensionErrorGuard } from "@/components/layout/browser-extensio
 import "@/app/globals.css";
 
 /**
- * Root layout for the PUBLIC supplier registration flow ONLY
- * (/supplier/register, /supplier/register/profile).
+ * Root layout for the PUBLIC / PRE-OPERATIONAL supplier onboarding
+ * flow (/supplier/register, /supplier/register/profile,
+ * /supplier/pending). Moved up from register/layout.tsx to this
+ * shared level so every onboarding-family page under
+ * (supplier-public)/supplier/* gets the same minimal shell.
  *
  * WHY THIS EXISTS: src/app/supplier/layout.tsx defines its own
  * <html>/<body> and unconditionally renders the authenticated
@@ -12,13 +15,12 @@ import "@/app/globals.css";
  * it — with zero session check. Any layout nested inside that folder
  * would still inherit that header (Next.js layouts nest, they don't
  * replace an ancestor's <html>/<body>). The only real fix is moving
- * these two pages to a separate root outside src/app/supplier/* via
- * a Next.js Route Group — (supplier-public) doesn't appear in the
- * URL, so the public path stays exactly /supplier/register.
+ * these pages to a separate root outside src/app/supplier/* via a
+ * Next.js Route Group — (supplier-public) doesn't appear in the URL,
+ * so public paths stay exactly /supplier/register, /supplier/pending.
  *
- * This layout intentionally has NO supplier dashboard nav and NO
- * session/auth requirement — it's the correct shell for a page a
- * signed-out visitor is meant to see.
+ * This layout intentionally has NO supplier dashboard nav — it's the
+ * correct shell for a supplier who is not yet operationally active.
  */
 export default function SupplierPublicLayout({ children }: { children: React.ReactNode }) {
   return (

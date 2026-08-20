@@ -1432,6 +1432,12 @@
 
 /* SAVO Supplier Onboarding — premium scale, depth, and micro-interactions on the real 2-step flow (content/fields/logic 100% unchanged) */
 .savo-supplier-onboard-page{position:relative;min-height:100vh;background:var(--savo-shell-ink);display:flex;align-items:flex-start;justify-content:center;padding:16px 24px 64px;overflow:hidden}
+/* Pending/status page only — nudges the composition down responsively
+   (proportional to viewport height, not a brittle fixed offset), still
+   biased toward the upper half rather than perfectly centered. Does
+   NOT affect /supplier/register (separate class, applied only there). */
+.savo-supplier-status-page{padding-top:calc(16px + clamp(48px, 9vh, 96px))}
+@media(max-width:640px){.savo-supplier-status-page{padding-top:16px}}
 .savo-supplier-onboard-glow{position:absolute;top:-10%;left:50%;transform:translateX(-50%);width:900px;height:500px;background:radial-gradient(ellipse,rgba(0,229,160,.06) 0%,transparent 65%);pointer-events:none}
 .savo-supplier-onboard-wrap{position:relative;z-index:1;width:100%;max-width:640px;animation:savo-supplier-rise .5s cubic-bezier(.16,1,.3,1)}
 @keyframes savo-supplier-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
@@ -1489,6 +1495,25 @@ textarea.savo-supplier-input{resize:vertical}
 
 .savo-supplier-onboard-footer{text-align:center;font-size:13.5px;color:var(--savo-shell-muted);margin-top:24px}
 .savo-supplier-onboard-topright{position:absolute;top:20px;inset-inline-end:24px;font-size:13px;color:var(--savo-shell-muted);z-index:2;margin:0}
+.savo-supplier-onboard-topright--button{background:transparent;border:1px solid var(--savo-shell-border);border-radius:8px;padding:7px 14px;cursor:pointer;font-weight:600;transition:border-color .18s,color .18s}
+.savo-supplier-onboard-topright--button:hover{border-color:rgba(255,255,255,.22);color:var(--savo-shell-text)}
+
+.savo-supplier-status-label{font-size:10.5px;color:var(--savo-shell-gold);font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin:0}
+.savo-supplier-status-card{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:24px;padding:44px 40px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.02);transition:border-color .25s,box-shadow .25s}
+.savo-supplier-status-card:hover{border-color:rgba(0,229,160,.16);box-shadow:0 28px 80px rgba(0,0,0,.46),0 0 0 1px rgba(0,229,160,.06)}
+.savo-supplier-status-icon{position:relative;width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px}
+.savo-supplier-status-icon--gold{background:rgba(240,165,0,.08);border:1px solid rgba(240,165,0,.2);color:var(--savo-shell-gold)}
+.savo-supplier-status-icon--red{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);color:#f87171}
+.savo-supplier-status-icon--amber{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);color:#fbbf24}
+.savo-supplier-status-pulse{position:absolute;inset:-6px;border-radius:50%;animation:savo-supplier-pulse 2.4s ease-out infinite}
+.savo-supplier-status-pulse--gold{border:1px solid rgba(240,165,0,.3)}
+.savo-supplier-status-pulse--red{border:1px solid rgba(239,68,68,.28)}
+.savo-supplier-status-pulse--amber{border:1px solid rgba(245,158,11,.28)}
+@keyframes savo-supplier-pulse{0%{transform:scale(.9);opacity:.7}70%{transform:scale(1.25);opacity:0}100%{opacity:0}}
+.savo-supplier-status-email{font-family:var(--font-display),sans-serif;font-weight:800;font-size:14.5px;color:var(--savo-shell-discovery)}
+.savo-supplier-status-detail{margin-top:28px;padding-top:24px;border-top:1px solid var(--savo-shell-border);display:flex;flex-direction:column;gap:4px}
+.savo-supplier-status-detail span{font-size:11.5px;color:var(--savo-shell-muted);letter-spacing:.04em;text-transform:uppercase;font-weight:700}
+.savo-supplier-status-detail b{font-family:var(--font-display),sans-serif;font-weight:800;font-size:16px;color:var(--savo-shell-text)}
 @media(max-width:640px){.savo-supplier-onboard-topright{position:static;text-align:center;margin-bottom:16px}}
 .savo-supplier-onboard-link{color:var(--savo-shell-discovery);font-weight:700}
 
