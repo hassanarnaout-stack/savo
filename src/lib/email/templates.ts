@@ -102,6 +102,20 @@ export function supplierApprovedEmail(locale: EmailLocale, data: { companyName: 
   return { subject: t.subject, html: wrapper(locale, t.body) };
 }
 
+export function supplierRejectedEmail(locale: EmailLocale, data: { companyName: string }) {
+  const en = { subject: "Update on your Saveo supplier application", body: `<h2>Hi ${data.companyName},</h2><p>Thanks for applying to become a Saveo supplier. After review, we're unable to approve your application at this time.</p><p>If you believe this was a mistake or would like more information, please contact our supplier team at <a href="mailto:suppliers@saveo.com.kw">suppliers@saveo.com.kw</a>.</p>` };
+  const ar = { subject: "تحديث بخصوص طلب انضمامك كمورد بسافيو", body: `<h2>مرحباً ${data.companyName}،</h2><p>شكراً لتقديم طلب الانضمام كمورد بسافيو. بعد المراجعة، ما قدرنا نوافق على طلبك حالياً.</p><p>إذا تعتقد إن فيه خطأ أو تبي معلومات أكثر، تواصل مع فريق الموردين على <a href="mailto:suppliers@saveo.com.kw">suppliers@saveo.com.kw</a>.</p>` };
+  const t = locale === "ar" ? ar : en;
+  return { subject: t.subject, html: wrapper(locale, t.body) };
+}
+
+export function supplierSuspendedEmail(locale: EmailLocale, data: { companyName: string }) {
+  const en = { subject: "Your Saveo supplier account has been suspended", body: `<h2>Hi ${data.companyName},</h2><p>Your Saveo supplier account has been suspended and is no longer active.</p><p>Please contact our supplier team at <a href="mailto:suppliers@saveo.com.kw">suppliers@saveo.com.kw</a> to resolve this and restore access.</p>` };
+  const ar = { subject: "تم تعليق حساب المورد الخاص فيك بسافيو", body: `<h2>مرحباً ${data.companyName}،</h2><p>تم تعليق حساب المورد الخاص فيك بسافيو ومو نشط حالياً.</p><p>تواصل مع فريق الموردين على <a href="mailto:suppliers@saveo.com.kw">suppliers@saveo.com.kw</a> لحل الموضوع واستعادة الوصول.</p>` };
+  const t = locale === "ar" ? ar : en;
+  return { subject: t.subject, html: wrapper(locale, t.body) };
+}
+
 export function newSupplierOrderEmail(locale: EmailLocale, data: { supplierOrderNumber: string }) {
   const en = { subject: `New Order — ${data.supplierOrderNumber}`, body: `<h2>You've got a new order!</h2><p>Order <strong>${data.supplierOrderNumber}</strong> is waiting for you to accept.</p>${button(locale, `${siteUrl()}/supplier/orders`, "View Order")}` };
   const ar = { subject: `طلب جديد — ${data.supplierOrderNumber}`, body: `<h2>عندك طلب جديد!</h2><p>الطلب <strong>${data.supplierOrderNumber}</strong> بانتظار موافقتك.</p>${button(locale, `${siteUrl()}/supplier/orders`, "عرض الطلب")}` };

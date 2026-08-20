@@ -37,6 +37,10 @@ async function buildEmail(event: NotificationEvent): Promise<{ subject: string; 
       return templates.supplierRegistrationReceivedEmail(locale, { companyName: d.companyName });
     case "SUPPLIER_APPLICATION_APPROVED":
       return templates.supplierApprovedEmail(locale, { companyName: d.companyName });
+    case "SUPPLIER_APPLICATION_REJECTED":
+      return templates.supplierRejectedEmail(locale, { companyName: d.companyName });
+    case "SUPPLIER_ACCOUNT_SUSPENDED":
+      return templates.supplierSuspendedEmail(locale, { companyName: d.companyName });
     case "WELCOME_EMAIL":
       return templates.welcomeEmail(locale, { name: d.name });
     case "NEW_SUPPLIER_ORDER":
