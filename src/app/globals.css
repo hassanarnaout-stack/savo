@@ -1668,6 +1668,92 @@ textarea.savo-supplier-input{resize:vertical}
 .savo-favorites-empty-cta{background:linear-gradient(135deg,var(--savo-shell-discovery),#00B88A);color:var(--savo-shell-ink);border:none;border-radius:13px;padding:13px 30px;font-weight:800;font-size:14px;font-family:var(--font-display),sans-serif;box-shadow:0 8px 24px rgba(0,229,160,.19);letter-spacing:-.01em}
 @media(max-width:640px){.savo-favorites-title{font-size:24px}.savo-favorites-page{padding:0 16px 48px}}
 
+/* SAVO Subscribe & Save — exact V22 transplant */
+.savo-subs-page{background:var(--savo-shell-ink);min-height:70vh;padding:40px 24px 80px}
+.savo-subs-page > *{max-width:680px;margin-inline:auto}
+.savo-subs-title{font-family:var(--font-display),sans-serif;font-weight:800;font-size:22px;color:var(--savo-shell-text);letter-spacing:-.02em;margin:0 0 24px}
+.savo-subs-empty{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:16px;padding:48px 24px;text-align:center;color:var(--savo-shell-muted);font-size:13.5px;line-height:1.7}
+.savo-subs-empty-cta{display:inline-block;margin-top:16px;color:var(--savo-shell-discovery);font-weight:700;font-size:13px}
+.savo-subs-list{display:flex;flex-direction:column;gap:12px}
+.savo-sub-card{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:16px;padding:18px 20px;display:flex;align-items:center;gap:14px}
+.savo-sub-img{width:52px;height:52px;border-radius:12px;overflow:hidden;flex-shrink:0;background:var(--savo-shell-surface)}
+.savo-sub-img img{width:100%;height:100%;object-fit:cover}
+.savo-sub-body{flex:1;min-width:0}
+.savo-sub-name{font-size:12.5px;color:var(--savo-shell-text);font-weight:600;margin:0 0 3px}
+.savo-sub-meta{font-size:11px;color:var(--savo-shell-muted);margin:0 0 3px}
+.savo-sub-price{font-size:12px;color:var(--savo-shell-discovery);font-weight:700;margin:0}
+.savo-sub-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.savo-sub-save{font-size:11.5px;color:var(--savo-shell-gold);font-weight:700}
+.savo-sub-cancelled{font-size:11px;font-weight:700;color:var(--savo-shell-muted)}
+.savo-sub-controls{display:flex;gap:10px}
+.savo-sub-btn{background:transparent;border:none;font-size:11px;font-weight:700;cursor:pointer}
+.savo-sub-btn--pause{color:#fbbf24}
+.savo-sub-btn--resume{color:var(--savo-shell-discovery)}
+.savo-sub-btn--cancel{color:#f87171}
+@media(max-width:600px){.savo-subs-page{padding:24px 16px 56px}.savo-sub-card{flex-wrap:wrap}}
+
+/* SAVO Wallet & Points — V22 top cards + real history/redeem adapted to same design */
+.savo-wallet-page{background:var(--savo-shell-ink);min-height:70vh;padding:40px 24px 80px}
+.savo-wallet-page > *{max-width:680px;margin-inline:auto}
+.savo-wallet-title{font-family:var(--font-display),sans-serif;font-weight:800;font-size:22px;color:var(--savo-shell-text);letter-spacing:-.02em;margin:0 0 24px}
+.savo-wallet-stats{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px}
+.savo-wallet-stat{border-radius:18px;padding:22px}
+.savo-wallet-stat--teal{background:linear-gradient(135deg,rgba(0,229,160,.1),rgba(0,229,160,.03));border:1px solid rgba(0,229,160,.16)}
+.savo-wallet-stat--gold{background:linear-gradient(135deg,rgba(240,165,0,.07),rgba(240,165,0,.02));border:1px solid rgba(240,165,0,.16)}
+.savo-wallet-stat-label{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin:0 0 10px}
+.savo-wallet-stat--teal .savo-wallet-stat-label{color:var(--savo-shell-discovery)}
+.savo-wallet-stat--gold .savo-wallet-stat-label{color:var(--savo-shell-gold)}
+.savo-wallet-stat-value{font-family:var(--font-display),sans-serif;font-weight:900;font-size:28px;color:var(--savo-shell-text);margin:0 0 4px}
+.savo-wallet-stat-sub{font-size:11.5px;color:var(--savo-shell-muted);margin:0}
+.savo-wallet-card{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:16px;padding:20px;margin-bottom:16px}
+.savo-wallet-section-title{font-family:var(--font-display),sans-serif;font-weight:700;font-size:14px;color:var(--savo-shell-text);margin:0 0 12px}
+.savo-wallet-history{display:flex;flex-direction:column;gap:8px}
+.savo-wallet-history-row{display:flex;justify-content:space-between;font-size:13px;color:var(--savo-shell-text)}
+.savo-wallet-credit{font-weight:700;color:var(--savo-shell-discovery)}
+.savo-wallet-debit{font-weight:700;color:#f87171}
+.savo-wallet-empty{color:var(--savo-shell-muted);font-size:12.5px;margin:0}
+.savo-wallet-redeem-form{display:flex;flex-direction:column;gap:10px}
+.savo-wallet-redeem-label{font-size:12.5px;font-weight:700;color:var(--savo-shell-text);margin:0}
+.savo-wallet-redeem-row{display:flex;gap:10px}
+.savo-wallet-redeem-input{flex:1;background:var(--savo-shell-surface);border:1px solid var(--savo-shell-border);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--savo-shell-text);outline:none}
+.savo-wallet-redeem-btn{background:var(--savo-shell-discovery);color:var(--savo-shell-ink);border:none;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;white-space:nowrap}
+.savo-wallet-redeem-btn:disabled{opacity:.5}
+@media(max-width:600px){.savo-wallet-stats{grid-template-columns:1fr}.savo-wallet-page{padding:24px 16px 56px}}
+
+/* SAVO Addresses — exact V22 transplant + real Add/Edit/Delete/Set-Default modal */
+.savo-addr-page{background:var(--savo-shell-ink);min-height:70vh;padding:40px 24px 80px}
+.savo-addr-page > *{max-width:680px;margin-inline:auto}
+.savo-addr-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.savo-addr-title{font-family:var(--font-display),sans-serif;font-weight:800;font-size:22px;color:var(--savo-shell-text);letter-spacing:-.02em;margin:0}
+.savo-addr-add-btn{background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.19);border-radius:10px;padding:8px 16px;color:var(--savo-shell-discovery);font-size:12.5px;font-weight:700;cursor:pointer}
+.savo-addr-empty{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:16px;padding:40px 24px;text-align:center;color:var(--savo-shell-muted);font-size:13px}
+.savo-addr-list{display:flex;flex-direction:column;gap:12px}
+.savo-addr-card{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:16px;padding:18px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.savo-addr-card.is-default{border-color:rgba(0,229,160,.3)}
+.savo-addr-card-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.savo-addr-name{font-family:var(--font-display),sans-serif;font-weight:700;font-size:13px;color:var(--savo-shell-text)}
+.savo-addr-badge{background:rgba(0,229,160,.08);color:var(--savo-shell-discovery);font-size:10px;font-weight:700;border-radius:99px;padding:2px 8px;border:1px solid rgba(0,229,160,.17)}
+.savo-addr-line{font-size:12.5px;color:var(--savo-shell-muted);line-height:1.6;margin:0 0 4px}
+.savo-addr-phone{font-size:11.5px;color:var(--savo-shell-muted);margin:0}
+.savo-addr-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+.savo-addr-action{background:transparent;border:1px solid var(--savo-shell-border);border-radius:8px;padding:6px 12px;font-size:11px;color:var(--savo-shell-text);font-weight:600;cursor:pointer;white-space:nowrap}
+.savo-addr-action--danger{color:#f87171;border-color:rgba(239,68,68,.2)}
+.savo-addr-modal-backdrop{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px}
+.savo-addr-modal{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:18px;padding:28px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto}
+.savo-addr-modal-title{font-family:var(--font-display),sans-serif;font-weight:700;font-size:16px;color:var(--savo-shell-text);margin:0 0 18px}
+.savo-addr-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.savo-addr-input{background:var(--savo-shell-surface);border:1px solid var(--savo-shell-border);border-radius:9px;padding:9px 12px;font-size:13px;color:var(--savo-shell-text);outline:none}
+.savo-addr-input--wide{grid-column:1 / -1}
+.savo-addr-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.savo-addr-modal-cancel{background:transparent;border:1px solid var(--savo-shell-border);border-radius:9px;padding:9px 16px;font-size:12.5px;color:var(--savo-shell-muted);cursor:pointer}
+.savo-addr-modal-save{background:var(--savo-shell-discovery);border:none;border-radius:9px;padding:9px 20px;font-size:12.5px;font-weight:700;color:var(--savo-shell-ink);cursor:pointer}
+@media(max-width:640px){
+  .savo-addr-page{padding:24px 16px 56px}
+  .savo-addr-card{flex-direction:column}
+  .savo-addr-actions{flex-direction:row;align-items:center}
+  .savo-addr-form-grid{grid-template-columns:1fr}
+}
+
 .savo-hub{padding:56px;background:var(--savo-shell-ink)}
 .savo-hub-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
 .savo-hub-title{margin:7px 0 0;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:27px;letter-spacing:-.025em}

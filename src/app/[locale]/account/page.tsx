@@ -62,6 +62,7 @@ export default async function AccountPage() {
     { href: "/account/wallet", label: "Wallet & Points", icon: Wallet },
     { href: "/account/subscriptions", label: "Subscribe & Save", icon: Repeat },
     { href: "/favorites", label: t("favorites"), icon: Heart },
+    { href: "/account/addresses", label: t("addresses"), icon: MapPin },
   ];
 
   return (
@@ -81,10 +82,6 @@ export default async function AccountPage() {
               <span>{item.label}</span>
             </Link>
           ))}
-          <div className="savo-account-nav-item savo-account-nav-item--static">
-            <MapPin className="h-4 w-4" />
-            <span>{t("addresses")}</span>
-          </div>
           <SignOutButton label={t("signOut")} className="savo-account-signout" />
         </nav>
       </div>

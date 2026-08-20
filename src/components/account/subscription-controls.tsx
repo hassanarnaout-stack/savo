@@ -27,17 +27,17 @@ export function SubscriptionControls({ subscriptionId, status }: { subscriptionI
   }
 
   if (status === "CANCELLED") {
-    return <span className="text-xs font-semibold text-saveo-emerald-700/40">Cancelled</span>;
+    return <span className="savo-sub-cancelled">Cancelled</span>;
   }
 
   return (
-    <div className="flex gap-2">
+    <div className="savo-sub-controls">
       {status === "ACTIVE" ? (
-        <button onClick={() => handle("PAUSE")} disabled={saving} className="text-xs font-semibold text-amber-600">Pause</button>
+        <button onClick={() => handle("PAUSE")} disabled={saving} className="savo-sub-btn savo-sub-btn--pause">Pause</button>
       ) : (
-        <button onClick={() => handle("RESUME")} disabled={saving} className="text-xs font-semibold text-saveo-emerald-600">Resume</button>
+        <button onClick={() => handle("RESUME")} disabled={saving} className="savo-sub-btn savo-sub-btn--resume">Resume</button>
       )}
-      <button onClick={() => handle("CANCEL")} disabled={saving} className="text-xs font-semibold text-red-600">Cancel</button>
+      <button onClick={() => handle("CANCEL")} disabled={saving} className="savo-sub-btn savo-sub-btn--cancel">Cancel</button>
     </div>
   );
 }

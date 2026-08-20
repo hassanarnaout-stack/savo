@@ -190,8 +190,14 @@ export async function POST(req: NextRequest) {
   try {
     order = await prisma.$transaction(
     async (tx) => {
+    // Minimal default-address invariant fix — first-ever address for
+    // this customer becomes their default (needed for Subscribe &
+    // Save's processOne() to ever find one); an existing default is
+    // never silently replaced by a later checkout. Full saved-address
+    // selection at checkout is a separate, later task.
+    const existingAddressCount = await tx.address.count({ where: { userId: session.user!.id! } });
     const address = await tx.address.create({
-      data: { userId: session.user!.id!, ...body.address },
+      data: { userId: session.user!.id!, ...body.address, isDefault: existingAddressCount === 0 },
     });
 
     const newOrder = await tx.order.create({
