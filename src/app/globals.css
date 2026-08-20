@@ -1650,6 +1650,24 @@ textarea.savo-supplier-input{resize:vertical}
 .savo-orderdetail-return-wrap{border-top:1px solid var(--savo-shell-border);padding-top:16px;margin-top:16px}
 @media(max-width:640px){.savo-orderdetail-page{padding:24px 16px 60px}}
 
+/* SAVO Favorites — exact V22 transplant (header + distinctive discovery-oriented empty state) */
+.savo-favorites-page{background:var(--savo-shell-ink);min-height:80vh;padding:0 24px 60px}
+.savo-favorites-page > *{max-width:1320px;margin-inline:auto}
+.savo-favorites-header{padding:36px 0 28px;border-bottom:1px solid var(--savo-shell-border);display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.savo-favorites-eyebrow{font-size:10.5px;color:var(--savo-shell-discovery);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:0 0 8px}
+.savo-favorites-title{font-family:var(--font-display),sans-serif;font-weight:900;font-size:32px;color:var(--savo-shell-text);margin:0;letter-spacing:-.03em}
+.savo-favorites-count{font-size:12px;color:var(--savo-shell-muted)}
+.savo-favorites-body{padding-top:28px}
+.savo-favorites-empty{display:flex;flex-direction:column;align-items:center;padding:72px 20px;text-align:center}
+.savo-favorites-empty-icon{position:relative;width:120px;height:120px;margin-bottom:28px}
+.savo-favorites-empty-icon svg{position:absolute;inset:0}
+.savo-favorites-empty-icon::before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(0,229,160,.08) 0%,transparent 70%);border-radius:50%}
+.savo-favorites-empty-heart{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:38px;opacity:.3;color:var(--savo-shell-text)}
+.savo-favorites-empty-title{font-family:var(--font-display),sans-serif;font-weight:900;font-size:24px;color:var(--savo-shell-text);letter-spacing:-.025em;margin:0 0 12px;line-height:1.1}
+.savo-favorites-empty-sub{font-size:14px;color:var(--savo-shell-muted);line-height:1.75;max-width:320px;margin:0 0 28px}
+.savo-favorites-empty-cta{background:linear-gradient(135deg,var(--savo-shell-discovery),#00B88A);color:var(--savo-shell-ink);border:none;border-radius:13px;padding:13px 30px;font-weight:800;font-size:14px;font-family:var(--font-display),sans-serif;box-shadow:0 8px 24px rgba(0,229,160,.19);letter-spacing:-.01em}
+@media(max-width:640px){.savo-favorites-title{font-size:24px}.savo-favorites-page{padding:0 16px 48px}}
+
 .savo-hub{padding:56px;background:var(--savo-shell-ink)}
 .savo-hub-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
 .savo-hub-title{margin:7px 0 0;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:27px;letter-spacing:-.025em}
