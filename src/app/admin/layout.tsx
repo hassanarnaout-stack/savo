@@ -48,6 +48,7 @@ const NAV = [
   { href: "/admin/media", label: "Media Manager", icon: "Image" },
   { href: "/admin/discover-quick-ways", label: "Discover — Quick Ways In", icon: "Compass" },
   { href: "/admin/homepage-settings", label: "Homepage Settings", icon: "Home" },
+  { href: "/admin/login-showcase", label: "Login Showcase Products", icon: "Image" },
   { href: "/admin/catalog-brands", label: "Catalog Brands", icon: "Tag" },
   { href: "/admin/beta-center", label: "Beta Center", icon: "Sparkles" },
   { href: "/admin", label: "Dashboard", icon: "LayoutDashboard" },

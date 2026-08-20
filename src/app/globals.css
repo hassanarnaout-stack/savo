@@ -1380,6 +1380,47 @@
   .savo-checkout-summary{position:static}
 }
 
+/* SAVO Login — exact V22 transplant (identity panel + form) */
+.savo-login-page{display:flex;min-height:calc(100vh - 128px);background:var(--savo-shell-ink)}
+.savo-login-panel{flex:0 0 44%;position:relative;overflow:hidden;background:linear-gradient(160deg,var(--savo-shell-surface) 0%,#0D1726 60%,var(--savo-shell-ink) 100%);display:flex;flex-direction:column;justify-content:flex-end;padding:48px 52px}
+.savo-login-panel-grid{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(0,229,160,.05) 1px,transparent 1px);background-size:28px 28px;pointer-events:none}
+.savo-login-panel-glow{position:absolute;top:0;right:0;width:280px;height:280px;background:radial-gradient(circle at top right,rgba(0,229,160,.08) 0%,transparent 60%);pointer-events:none}
+.savo-login-panel-content{position:relative;z-index:1}
+.savo-login-panel-tease{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);display:flex;gap:10px;pointer-events:none}
+.savo-login-panel-card{width:90px;height:110px;border-radius:14px;overflow:hidden;border:1px solid var(--savo-shell-border);box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.savo-login-panel-card img{width:100%;height:100%;object-fit:cover;display:block}
+.savo-login-panel-signature{font-family:"Cairo",sans-serif;font-weight:700;font-size:15px;color:var(--savo-shell-discovery);direction:rtl;opacity:.8;margin:0 0 20px}
+.savo-login-panel-dot{display:block;width:8px;height:8px;border-radius:50%;background:var(--savo-shell-discovery);margin-bottom:14px}
+.savo-login-panel-title{font-family:var(--font-display),sans-serif;font-weight:900;font-size:26px;color:var(--savo-shell-text);letter-spacing:-.03em;line-height:1.1;margin:0 0 10px}
+.savo-login-panel-title span{color:var(--savo-shell-discovery)}
+.savo-login-panel-sub{font-size:12.5px;color:var(--savo-shell-muted);line-height:1.7;max-width:320px;margin:0}
+.savo-login-form-side{flex:1;display:flex;align-items:center;justify-content:center;padding:60px 32px}
+.savo-login-form-wrap{width:100%;max-width:380px}
+.savo-login-eyebrow{font-size:10.5px;color:var(--savo-shell-discovery);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:0 0 10px}
+.savo-login-title{font-family:var(--font-display),sans-serif;font-weight:900;font-size:28px;color:var(--savo-shell-text);letter-spacing:-.03em;line-height:1.1;margin:0 0 6px}
+.savo-login-sub{font-size:13px;color:var(--savo-shell-muted);margin:0 0 32px}
+.savo-login-form{display:flex;flex-direction:column;gap:14px}
+.savo-login-field{display:flex;flex-direction:column;gap:6px}
+.savo-login-field label{font-size:11.5px;color:var(--savo-shell-muted);font-weight:700}
+.savo-login-input{background:var(--savo-shell-surface) !important;border:1px solid var(--savo-shell-border) !important;border-radius:12px !important;padding:12px 15px !important;font-size:13.5px !important;color:var(--savo-shell-text) !important;outline:none}
+.savo-login-input:focus{border-color:rgba(0,229,160,.4) !important}
+.savo-login-submit{width:100%;background:linear-gradient(135deg,var(--savo-shell-discovery),#00B88A);color:var(--savo-shell-ink);border:none;border-radius:13px;padding:14px;font-weight:800;font-size:15px;font-family:var(--font-display),sans-serif;box-shadow:0 8px 24px rgba(0,229,160,.22);margin-top:4px}
+.savo-login-submit:disabled{opacity:.6;cursor:not-allowed}
+.savo-login-create{text-align:center;font-size:12.5px;color:var(--savo-shell-muted);line-height:1.8;margin:0}
+.savo-login-link{color:var(--savo-shell-discovery);font-weight:700}
+.savo-login-supplier-wrap{border-top:1px solid var(--savo-shell-border);padding-top:16px;margin-top:4px}
+.savo-login-supplier{background:var(--savo-shell-surface);border:1px solid var(--savo-shell-border);border-radius:12px;padding:13px 16px;display:flex;align-items:center;gap:12px}
+.savo-login-supplier-icon{width:34px;height:34px;border-radius:9px;background:rgba(240,165,0,.07);border:1px solid rgba(240,165,0,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.savo-login-supplier-body{flex:1;display:flex;flex-direction:column}
+.savo-login-supplier-title{font-size:12.5px;color:var(--savo-shell-text);font-weight:700}
+.savo-login-supplier-sub{font-size:11px;color:var(--savo-shell-muted)}
+.savo-login-supplier-arrow{color:var(--savo-shell-muted);font-size:14px}
+@media(max-width:900px){
+  .savo-login-page{flex-direction:column}
+  .savo-login-panel{display:none}
+  .savo-login-form-side{padding:48px 24px}
+}
+
 .savo-hub{padding:56px;background:var(--savo-shell-ink)}
 .savo-hub-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
 .savo-hub-title{margin:7px 0 0;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:27px;letter-spacing:-.025em}

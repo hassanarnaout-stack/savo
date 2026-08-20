@@ -1054,6 +1054,22 @@ model HomepageSettings {
   @@map("homepage_settings")
 }
 
+// Login page "identity panel" product showcase — Admin picks 3 REAL
+// catalog products (referenced, not duplicated), displayed at fixed
+// V22 positions on the customer /login page. Same singleton-row
+// pattern as HomepageSettings above — deliberately NOT fields on
+// Product itself (a product isn't "the login left product" as a
+// business fact, it's just referenced by this one config row).
+model LoginShowcaseSettings {
+  id               String   @id @default("singleton")
+  leftProductId    String? // plain reference, no Prisma relation field — avoids requiring a reverse field on Product for what is purely admin configuration, not product business data
+  centerProductId  String?
+  rightProductId   String?
+  updatedAt        DateTime @updatedAt
+
+  @@map("login_showcase_settings")
+}
+
 model BetaSettings {
   id         String    @id @default("singleton") // enforced single row by convention — see BetaService
   enabled    Boolean   @default(false)
