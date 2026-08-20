@@ -1794,6 +1794,20 @@ textarea.savo-supplier-input{resize:vertical}
   .savo-addr-form-grid{grid-template-columns:1fr}
 }
 
+.savo-subs-eligible-section{margin-top:36px;padding-top:28px;border-top:1px solid var(--savo-shell-border)}
+.savo-subs-section-label{font-size:11px;color:var(--savo-shell-muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin:0 0 16px}
+.savo-subs-eligible-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+.savo-subs-eligible-card{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.savo-subs-eligible-img{width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--savo-shell-surface)}
+.savo-subs-eligible-img img{width:100%;height:100%;object-fit:cover}
+.savo-subs-eligible-name{font-size:12px;color:var(--savo-shell-text);font-weight:600;line-height:1.35;min-height:32px}
+.savo-subs-eligible-price{font-size:12.5px;font-weight:800;color:var(--savo-shell-discovery);margin:0}
+.savo-subs-eligible-price span{font-size:10.5px;font-weight:600;color:var(--savo-shell-muted);text-decoration:line-through;margin-inline-start:4px}
+.savo-subs-eligible-actions{display:flex;gap:6px;margin-top:4px}
+.savo-subs-eligible-select{flex:1;background:var(--savo-shell-surface);border:1px solid var(--savo-shell-border);border-radius:7px;padding:5px 6px;font-size:10.5px;color:var(--savo-shell-text)}
+.savo-subs-eligible-btn{background:var(--savo-shell-discovery);color:var(--savo-shell-ink);border:none;border-radius:7px;padding:5px 12px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.savo-subs-eligible-btn:disabled{opacity:.5}
+
 .savo-hub{padding:56px;background:var(--savo-shell-ink)}
 .savo-hub-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
 .savo-hub-title{margin:7px 0 0;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:27px;letter-spacing:-.025em}

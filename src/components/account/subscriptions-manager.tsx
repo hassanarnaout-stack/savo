@@ -35,7 +35,63 @@ type Filter = "ALL" | "ACTIVE" | "PAUSED" | "CANCELLED";
  * Pause/Resume/Cancel still go through the same real
  * SubscriptionControls -> /api/subscriptions/[id] as before.
  */
-export function SubscriptionsManager({ subscriptions, isArabic }: { subscriptions: Subscription[]; isArabic: boolean }) {
+interface EligibleProduct {
+  id: string;
+  name: string;
+  nameAr: string | null;
+  brandName: string | null;
+  saveoPrice: number;
+  images: { url: string }[];
+}
+
+function EligibleProductCard({ product, isArabic }: { product: EligibleProduct; isArabic: boolean }) {
+  const router = useRouter();
+  const [frequency, setFrequency] = useState<"WEEKLY" | "BIWEEKLY" | "MONTHLY">("MONTHLY");
+  const [saving, setSaving] = useState(false);
+  const discountedPrice = product.saveoPrice * 0.9;
+
+  async function handleSubscribe() {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id, quantity: 1, frequency }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? (isArabic ? "تعذّر الاشتراك" : "Could not subscribe"));
+      }
+      toast.success(isArabic ? "تم الاشتراك!" : "Subscribed!");
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err.message ?? (isArabic ? "تعذّر الاشتراك" : "Could not subscribe"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="savo-subs-eligible-card">
+      <div className="savo-subs-eligible-img">
+        {product.images[0] && <img src={product.images[0].url} alt="" />}
+      </div>
+      {product.brandName && <p className="savo-sub-brand">{product.brandName}</p>}
+      <p className="savo-subs-eligible-name">{isArabic && product.nameAr ? product.nameAr : product.name}</p>
+      <p className="savo-subs-eligible-price">{formatKWD(discountedPrice)} <span>{isArabic ? "بدل" : "vs"} {formatKWD(product.saveoPrice)}</span></p>
+      <div className="savo-subs-eligible-actions">
+        <select value={frequency} onChange={(e) => setFrequency(e.target.value as any)} className="savo-subs-eligible-select">
+          <option value="WEEKLY">{isArabic ? "أسبوعياً" : "Weekly"}</option>
+          <option value="BIWEEKLY">{isArabic ? "كل أسبوعين" : "Every 2 weeks"}</option>
+          <option value="MONTHLY">{isArabic ? "شهرياً" : "Monthly"}</option>
+        </select>
+        <button onClick={handleSubscribe} disabled={saving} className="savo-subs-eligible-btn">{saving ? "..." : (isArabic ? "اشترك" : "Subscribe")}</button>
+      </div>
+    </div>
+  );
+}
+
+export function SubscriptionsManager({ subscriptions, eligibleProducts, isArabic }: { subscriptions: Subscription[]; eligibleProducts: EligibleProduct[]; isArabic: boolean }) {
   const [filter, setFilter] = useState<Filter>("ALL");
 
   const activeSubs = subscriptions.filter((s) => s.status === "ACTIVE");
@@ -138,6 +194,17 @@ export function SubscriptionsManager({ subscriptions, isArabic }: { subscription
             })}
           </div>
         </>
+      )}
+
+      {eligibleProducts.length > 0 && (
+        <div className="savo-subs-eligible-section">
+          <p className="savo-subs-section-label">{isArabic ? "متاح للاشتراك" : "Eligible for Subscribe & Save"}</p>
+          <div className="savo-subs-eligible-grid">
+            {eligibleProducts.map((p) => (
+              <EligibleProductCard key={p.id} product={p} isArabic={isArabic} />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
