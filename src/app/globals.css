@@ -1585,6 +1585,27 @@ textarea.savo-supplier-input{resize:vertical}
   .savo-account-stats{grid-template-columns:repeat(2,1fr)}
 }
 
+/* SAVO Order History — exact V22 transplant */
+.savo-orders-page{background:var(--savo-shell-ink);min-height:70vh;padding:40px 24px 80px}
+.savo-orders-page > *{max-width:760px;margin-inline:auto}
+.savo-orders-title{font-family:var(--font-display),sans-serif;font-weight:800;font-size:22px;color:var(--savo-shell-text);letter-spacing:-.02em;margin:0 0 24px}
+.savo-orders-list{display:flex;flex-direction:column;gap:12px}
+.savo-order-row{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:16px;padding:18px 20px;display:flex;align-items:center;gap:16px;text-decoration:none;transition:border-color .18s}
+.savo-order-row:hover{border-color:rgba(0,229,160,.2)}
+.savo-order-row-img{width:56px;height:56px;border-radius:12px;overflow:hidden;flex-shrink:0;background:var(--savo-shell-surface)}
+.savo-order-row-img img{width:100%;height:100%;object-fit:cover}
+.savo-order-row-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.savo-order-row-number{font-family:var(--font-display),sans-serif;font-weight:700;font-size:13px;color:var(--savo-shell-text)}
+.savo-order-row-meta{font-size:11.5px;color:var(--savo-shell-muted)}
+.savo-order-row-right{display:flex;align-items:center;gap:16px;flex-shrink:0}
+.savo-order-row-total{font-family:var(--font-display),sans-serif;font-weight:800;font-size:14px;color:var(--savo-shell-text)}
+.savo-order-row-details{background:transparent;border:1px solid var(--savo-shell-border);border-radius:8px;padding:6px 12px;font-size:11.5px;color:var(--savo-shell-text);font-weight:600}
+@media(max-width:640px){
+  .savo-orders-page{padding:24px 16px 60px}
+  .savo-order-row{flex-wrap:wrap}
+  .savo-order-row-right{width:100%;justify-content:space-between;margin-top:8px}
+}
+
 .savo-hub{padding:56px;background:var(--savo-shell-ink)}
 .savo-hub-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
 .savo-hub-title{margin:7px 0 0;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:27px;letter-spacing:-.025em}
