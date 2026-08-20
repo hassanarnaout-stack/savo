@@ -79,12 +79,29 @@ export default function CheckoutPage() {
     building: "",
     notes: "",
   });
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [useNewAddress, setUseNewAddress] = useState(false);
 
   useEffect(() => {
     fetch("/api/membership/status")
       .then((r) => r.json())
       .then(setMembership)
       .catch(() => {});
+    // Real saved addresses (AddressService) — the customer no longer
+    // has to retype an address they've already saved. The default one
+    // is preselected automatically; "Add new address" reveals the
+    // existing manual form unchanged.
+    fetch("/api/addresses")
+      .then((r) => r.json())
+      .then((data) => {
+        const addresses = data.addresses ?? [];
+        setSavedAddresses(addresses);
+        const def = addresses.find((a: any) => a.isDefault) ?? addresses[0];
+        if (def) setSelectedAddressId(def.id);
+        else setUseNewAddress(true);
+      })
+      .catch(() => setUseNewAddress(true));
     trackClientEvent("CHECKOUT_START", { metadata: { itemCount: items.length } });
   }, []);
 
@@ -130,6 +147,14 @@ export default function CheckoutPage() {
       toast.error(isArabic ? "أكمل اختيار محتويات صندوق المفاجآت أولاً" : "Please finish your Mystery Box picks first");
       return;
     }
+    // Uses the customer's real selected saved address when one is
+    // chosen (and "Add new address" wasn't opened); falls back to the
+    // manual form exactly as before otherwise. /api/checkout itself is
+    // unchanged — it always creates its own real Address row either way.
+    const selectedSaved = !useNewAddress ? savedAddresses.find((a) => a.id === selectedAddressId) : null;
+    const addressPayload = selectedSaved
+      ? { fullName: selectedSaved.fullName, phone: selectedSaved.phone, governorate: selectedSaved.governorate, area: selectedSaved.area, block: selectedSaved.block ?? undefined, street: selectedSaved.street ?? undefined, building: selectedSaved.building ?? undefined, notes: selectedSaved.notes ?? undefined }
+      : form;
     setSubmitting(true);
     try {
       const res = await fetch("/api/checkout", {
@@ -138,7 +163,7 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
           mysteryBoxChoices,
-          address: form,
+          address: addressPayload,
           paymentMethod,
           analyticsSessionId: getAnalyticsSessionId(),
           isGift,
@@ -192,26 +217,53 @@ export default function CheckoutPage() {
               <span className="savo-checkout-step">1</span>
               <span>{t("deliveryAddress")}</span>
             </div>
-            <div className="savo-checkout-grid">
-              <CheckoutInput label={t("fullName")} value={form.fullName} onChange={(v) => setForm({ ...form, fullName: v })} required />
-              <CheckoutInput label={t("phone")} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} required />
-              <div>
-                <label className="savo-checkout-label">{t("governorate")}</label>
-                <select value={form.governorate} onChange={(e) => setForm({ ...form, governorate: e.target.value })} className="savo-checkout-select">
-                  {GOVERNORATES.map((g) => (
-                    <option key={g.value} value={g.value}>{isArabic ? g.ar : g.value}</option>
-                  ))}
-                </select>
+
+            {savedAddresses.length > 0 && !useNewAddress && (
+              <div className="savo-checkout-saved-addresses">
+                {savedAddresses.map((a) => (
+                  <label key={a.id} className={`savo-checkout-saved-addr ${selectedAddressId === a.id ? "is-selected" : ""}`}>
+                    <input type="radio" name="savedAddress" checked={selectedAddressId === a.id} onChange={() => setSelectedAddressId(a.id)} />
+                    <div>
+                      <div className="savo-checkout-saved-addr-head">
+                        <span>{a.label || a.fullName}</span>
+                        {a.isDefault && <span className="savo-checkout-saved-addr-default">{isArabic ? "الافتراضي" : "Default"}</span>}
+                      </div>
+                      <p>{a.governorate}, {a.area}{a.block ? `, Block ${a.block}` : ""}{a.street ? `, ${a.street}` : ""}{a.building ? `, Building ${a.building}` : ""}</p>
+                      <p className="savo-checkout-saved-addr-phone">{a.fullName} · {a.phone}</p>
+                    </div>
+                  </label>
+                ))}
+                <button type="button" onClick={() => setUseNewAddress(true)} className="savo-checkout-new-addr-btn">+ {isArabic ? "إضافة عنوان جديد" : "Add new address"}</button>
               </div>
-              <CheckoutInput label={t("area")} value={form.area} onChange={(v) => setForm({ ...form, area: v })} required />
-              <CheckoutInput label={t("block")} value={form.block} onChange={(v) => setForm({ ...form, block: v })} />
-              <CheckoutInput label={t("street")} value={form.street} onChange={(v) => setForm({ ...form, street: v })} />
-              <CheckoutInput label={t("building")} value={form.building} onChange={(v) => setForm({ ...form, building: v })} />
-            </div>
-            <div className="savo-checkout-field">
-              <label className="savo-checkout-label">{t("deliveryNotes")}</label>
-              <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="savo-checkout-textarea" rows={2} />
-            </div>
+            )}
+
+            {(savedAddresses.length === 0 || useNewAddress) && (
+              <>
+                {savedAddresses.length > 0 && (
+                  <button type="button" onClick={() => setUseNewAddress(false)} className="savo-checkout-back-to-saved">← {isArabic ? "استخدم عنوانًا محفوظًا" : "Use a saved address"}</button>
+                )}
+                <div className="savo-checkout-grid">
+                  <CheckoutInput label={t("fullName")} value={form.fullName} onChange={(v) => setForm({ ...form, fullName: v })} required />
+                  <CheckoutInput label={t("phone")} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} required />
+                  <div>
+                    <label className="savo-checkout-label">{t("governorate")}</label>
+                    <select value={form.governorate} onChange={(e) => setForm({ ...form, governorate: e.target.value })} className="savo-checkout-select">
+                      {GOVERNORATES.map((g) => (
+                        <option key={g.value} value={g.value}>{isArabic ? g.ar : g.value}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <CheckoutInput label={t("area")} value={form.area} onChange={(v) => setForm({ ...form, area: v })} required />
+                  <CheckoutInput label={t("block")} value={form.block} onChange={(v) => setForm({ ...form, block: v })} />
+                  <CheckoutInput label={t("street")} value={form.street} onChange={(v) => setForm({ ...form, street: v })} />
+                  <CheckoutInput label={t("building")} value={form.building} onChange={(v) => setForm({ ...form, building: v })} />
+                </div>
+                <div className="savo-checkout-field">
+                  <label className="savo-checkout-label">{t("deliveryNotes")}</label>
+                  <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="savo-checkout-textarea" rows={2} />
+                </div>
+              </>
+            )}
           </section>
 
           <section className="savo-checkout-card">

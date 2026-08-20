@@ -55,7 +55,7 @@ export class SubscriptionService {
     return prisma.productSubscription.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
-      include: { product: { select: { name: true, saveoPrice: true, images: { take: 1, orderBy: { sortOrder: "asc" } } } } },
+      include: { product: { select: { name: true, brandName: true, saveoPrice: true, images: { take: 1, orderBy: { sortOrder: "asc" } } } } },
     });
   }
 
