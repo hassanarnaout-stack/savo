@@ -1,4 +1,4 @@
-import { Crown } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export function PlusBadge({ size = "sm", variant = "solid" }: { size?: "xs" | "sm" | "md"; variant?: "solid" | "dark" }) {
   const sizeClasses = {
@@ -15,20 +15,26 @@ export function PlusBadge({ size = "sm", variant = "solid" }: { size?: "xs" | "s
   // backgrounds: account, orders, checkout, membership dashboard) is
   // completely untouched — they don't pass `variant`, so they keep the
   // exact same solid-gold treatment as before this change.
+  //
+  // Icon: Sparkles (✦), matching the ONE unified SAVO Plus identity
+  // used everywhere else (membership card, homepage Plus section,
+  // login) — Crown was the old pre-unification identity and is
+  // retired here too, so every PlusBadge in the app (header, account,
+  // orders, checkout, membership dashboard) now shares the same mark.
   if (variant === "dark") {
     return (
       <span
         className={`inline-flex items-center rounded-full border font-bold ${sizeClasses}`}
         style={{ background: "var(--savo-shell-surface)", borderColor: "var(--savo-shell-gold)", color: "var(--savo-shell-gold)" }}
       >
-        <Crown className={iconSize} /> PLUS
+        <Sparkles className={iconSize} /> PLUS
       </span>
     );
   }
 
   return (
     <span className={`inline-flex items-center rounded-full bg-saveo-gold-400 font-bold text-saveo-emerald-900 ${sizeClasses}`}>
-      <Crown className={iconSize} /> PLUS
+      <Sparkles className={iconSize} /> PLUS
     </span>
   );
 }

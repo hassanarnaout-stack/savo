@@ -1606,6 +1606,50 @@ textarea.savo-supplier-input{resize:vertical}
   .savo-order-row-right{width:100%;justify-content:space-between;margin-top:8px}
 }
 
+/* SAVO Order Detail — same V22 design system (no direct Figma reference for this specific screen) */
+.savo-orderdetail-page{background:var(--savo-shell-ink);min-height:80vh;padding:40px 24px 80px}
+.savo-orderdetail-page > *{max-width:760px;margin-inline:auto}
+.savo-orderdetail-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;gap:16px;flex-wrap:wrap}
+.savo-orderdetail-title-row{display:flex;align-items:center;gap:10px}
+.savo-orderdetail-title{font-family:var(--font-display),sans-serif;font-weight:800;font-size:22px;color:var(--savo-shell-text);letter-spacing:-.02em;margin:0}
+.savo-orderdetail-placed{font-size:11.5px;color:var(--savo-shell-muted);margin:4px 0 0}
+.savo-orderdetail-section{margin-bottom:24px}
+.savo-orderdetail-section-title{font-family:var(--font-display),sans-serif;font-weight:700;font-size:15px;color:var(--savo-shell-text);margin:0 0 12px}
+.savo-orderdetail-multisupplier{font-size:12.5px;color:var(--savo-shell-muted);margin:0 0 16px}
+.savo-orderdetail-packages{display:flex;flex-direction:column;gap:16px}
+.savo-orderdetail-card{background:var(--savo-shell-card);border:1px solid var(--savo-shell-border);border-radius:16px;padding:20px;margin-bottom:16px}
+.savo-orderdetail-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.savo-orderdetail-card-title{font-family:var(--font-display),sans-serif;font-weight:700;font-size:14px;color:var(--savo-shell-text);margin:0 0 10px}
+.savo-orderdetail-steps{display:flex;align-items:center;margin-bottom:16px}
+.savo-orderdetail-step{display:flex;flex:1;align-items:center}
+.savo-orderdetail-step-dot{width:24px;height:24px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;background:var(--savo-shell-surface);color:var(--savo-shell-muted)}
+.savo-orderdetail-step-dot.is-active{background:var(--savo-shell-discovery);color:var(--savo-shell-ink)}
+.savo-orderdetail-step-line{flex:1;height:2px;background:var(--savo-shell-border)}
+.savo-orderdetail-step-line.is-active{background:var(--savo-shell-discovery)}
+.savo-orderdetail-items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.savo-orderdetail-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--savo-shell-border);font-size:13px;color:var(--savo-shell-text)}
+.savo-orderdetail-item:first-child{border-top:none}
+.savo-orderdetail-item-right{display:flex;align-items:center;gap:10px}
+.savo-orderdetail-item-total{font-weight:700}
+.savo-orderdetail-reveal{background:var(--savo-shell-gold);color:var(--savo-shell-ink);border-radius:99px;padding:5px 12px;font-size:11px;font-weight:800}
+.savo-orderdetail-totals{display:flex;flex-direction:column;gap:8px}
+.savo-orderdetail-total-row{display:flex;justify-content:space-between;font-size:13px;color:var(--savo-shell-muted)}
+.savo-orderdetail-savings{color:var(--savo-shell-discovery)}
+.savo-orderdetail-total-row--final{font-weight:800;font-size:15px;color:var(--savo-shell-text);border-top:1px solid var(--savo-shell-border);padding-top:10px;margin-top:2px}
+.savo-orderdetail-address-name{font-size:13px;color:var(--savo-shell-text);margin:0 0 4px}
+.savo-orderdetail-address-line{font-size:12.5px;color:var(--savo-shell-muted);margin:0}
+.savo-orderdetail-issues{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column;gap:10px}
+.savo-orderdetail-issue{background:var(--savo-shell-surface);border-radius:12px;padding:12px 14px}
+.savo-orderdetail-issue-head{display:flex;align-items:center;justify-content:space-between}
+.savo-orderdetail-issue-subject{font-size:13px;font-weight:700;color:var(--savo-shell-text);margin:0}
+.savo-orderdetail-issue-desc{font-size:11.5px;color:var(--savo-shell-muted);margin:6px 0 0}
+.savo-orderdetail-issue-status{border-radius:99px;padding:2px 9px;font-size:10px;font-weight:800}
+.savo-orderdetail-issue-status--open{background:rgba(239,68,68,.12);color:#f87171}
+.savo-orderdetail-issue-status--processing{background:rgba(245,158,11,.12);color:#fbbf24}
+.savo-orderdetail-issue-status--resolved{background:rgba(0,229,160,.1);color:var(--savo-shell-discovery)}
+.savo-orderdetail-return-wrap{border-top:1px solid var(--savo-shell-border);padding-top:16px;margin-top:16px}
+@media(max-width:640px){.savo-orderdetail-page{padding:24px 16px 60px}}
+
 .savo-hub{padding:56px;background:var(--savo-shell-ink)}
 .savo-hub-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
 .savo-hub-title{margin:7px 0 0;color:var(--savo-shell-text);font-family:var(--font-display),sans-serif;font-weight:800;font-size:27px;letter-spacing:-.025em}

@@ -5,7 +5,6 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { formatKWD } from "@/lib/utils";
 import { Link } from "@/i18n/routing";
 import { OrderStatusBadge } from "@/components/order/order-status-badge";
-import { SupplierOrderStatusBadge } from "@/components/order/supplier-order-status-badge";
 import { PlusBadge } from "@/components/membership/plus-badge";
 import { ReportIssueForm } from "@/components/order/report-issue-form";
 import { ReturnRequestForm } from "@/components/order/return-request-form";
@@ -17,6 +16,26 @@ interface Props {
 
 const SUPPLIER_STEPS = ["PENDING", "ACCEPTED", "PREPARING", "SHIPPED", "DELIVERED"];
 
+/**
+ * SAVO Order Detail — same V22 dark design system as the rest of the
+ * migrated account area (no direct Figma reference exists for this
+ * screen specifically — V22's Account only shows a simple order LIST,
+ * never an expanded detail view — so this adapts the approved V22
+ * visual language rather than inventing a second design, per the
+ * standing "adapt using the same design system" rule). ALL real
+ * business/fulfillment logic below is byte-for-byte unchanged — the
+ * order is still genuinely split across separate SupplierOrder
+ * fulfillments in the database exactly as before (each with its own
+ * real status/tracking). What changed is presentation only: the
+ * customer-facing view now merges every package's items into one
+ * unified list and shows a single progress bar (the LEAST advanced
+ * package, since the order isn't done until all of them are) instead
+ * of exposing "Package 1 / Package 2" — a customer ordered from ONE
+ * SAVO, not from N suppliers, and should see one order, one delivery.
+ * Same live tracking gate, same Mystery Box reveal link, same
+ * issue/return forms, same address/pricing breakdown, same userId
+ * ownership check.
+ */
 export default async function OrderDetailPage({ params }: Props) {
   const { id } = await params;
   const session = await auth();
@@ -43,108 +62,89 @@ export default async function OrderDetailPage({ params }: Props) {
 
   if (!order || order.userId !== session.user.id) notFound();
 
+  const isArabic = locale === "ar";
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="savo-orderdetail-page">
+      <div className="savo-orderdetail-header">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">{order.orderNumber}</h1>
+          <div className="savo-orderdetail-title-row">
+            <h1 className="savo-orderdetail-title">{order.orderNumber}</h1>
             {order.isMembershipOrder && <PlusBadge size="sm" />}
           </div>
-          <p className="text-xs text-saveo-emerald-700/50">
-            {t("placed")} {new Date(order.createdAt).toLocaleDateString(locale === "ar" ? "ar-KW" : "en-GB")}
+          <p className="savo-orderdetail-placed">
+            {t("placed")} {new Date(order.createdAt).toLocaleDateString(isArabic ? "ar-KW" : "en-GB")}
           </p>
         </div>
         <OrderStatusBadge status={order.status} locale={locale} />
       </div>
 
       {order.status !== "DELIVERED" && order.status !== "CANCELLED" && (
-        <section className="mb-6">
-          <h2 className="mb-3 text-lg font-bold text-saveo-emerald-700">🚚 Live Tracking</h2>
+        <section className="savo-orderdetail-section">
+          <h2 className="savo-orderdetail-section-title">🚚 {isArabic ? "التتبع المباشر" : "Live Tracking"}</h2>
           <LiveTrackingClient orderId={order.id} />
         </section>
       )}
 
-      {order.supplierOrders.length > 1 && (
-        <p className="mb-4 text-sm text-saveo-emerald-700/60">
-          {t("multiSupplierNote", { count: order.supplierOrders.length })}
-        </p>
-      )}
+      {/* Unified customer-facing view — the order may be split across
+          multiple supplier fulfillments behind the scenes (real,
+          unchanged), but the customer only ever sees ONE order, ONE
+          progress, ONE delivery. The step shown is the LEAST advanced
+          supplier package, since the order isn't truly complete for
+          the customer until every package has caught up. */}
+      {(() => {
+        const allItems = order.supplierOrders.flatMap((so) => so.items);
+        const stepIndexes = order.supplierOrders.map((so) => SUPPLIER_STEPS.indexOf(so.status)).filter((i) => i >= 0);
+        const unifiedStepIndex = stepIndexes.length > 0 ? Math.min(...stepIndexes) : -1;
+        const anyCancelled = order.supplierOrders.some((so) => so.status === "CANCELLED");
 
-      {/* One card per package, each with its own delivery progress — the
-          customer sees a unified Saveo order, never which supplier
-          fulfilled which part. */}
-      <div className="space-y-4">
-        {order.supplierOrders.map((so, index) => {
-          const stepIndex = SUPPLIER_STEPS.indexOf(so.status);
-          const packageLabel =
-            order.supplierOrders.length > 1
-              ? locale === "ar"
-                ? `الطرد ${index + 1}`
-                : `Package ${index + 1}`
-              : locale === "ar"
-              ? "طلبك"
-              : "Your Order";
-          return (
-            <div key={so.id} className="card p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="font-bold">{packageLabel}</h2>
-                <SupplierOrderStatusBadge status={so.status} locale={locale} />
-              </div>
-
-              {so.status !== "CANCELLED" && (
-                <div className="mb-4 flex items-center">
-                  {SUPPLIER_STEPS.map((step, idx) => (
-                    <div key={step} className="flex flex-1 items-center">
-                      <div
-                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                          idx <= stepIndex ? "bg-saveo-emerald-700 text-white" : "bg-black/10 text-black/40"
-                        }`}
-                      >
-                        {idx + 1}
-                      </div>
-                      {idx < SUPPLIER_STEPS.length - 1 && (
-                        <div className={`h-0.5 flex-1 ${idx < stepIndex ? "bg-saveo-emerald-700" : "bg-black/10"}`} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <ul className="divide-y divide-black/5">
-                {so.items.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                    <span>{item.productName} × {item.quantity}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold">{formatKWD(Number(item.lineTotal))}</span>
-                      {item.product.type === "MYSTERY_BOX" && item.mysteryBoxReveal && (
-                        <Link
-                          href={`/mystery-boxes/reveal/${item.mysteryBoxReveal.id}`}
-                          className="rounded-full bg-saveo-gold-400 px-3 py-1 text-xs font-bold text-saveo-emerald-900 hover:bg-saveo-gold-300"
-                        >
-                          🎁 {item.mysteryBoxReveal.revealedAt ? "View Reveal" : "Open Your Box"}
-                        </Link>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+        return (
+          <div className="savo-orderdetail-card">
+            <div className="savo-orderdetail-card-head">
+              <h2 className="savo-orderdetail-card-title">{isArabic ? "طلبك" : "Your Order"}</h2>
             </div>
-          );
-        })}
-      </div>
 
-      <div className="card mt-4 p-5">
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between text-saveo-emerald-700/60">
-            <span>{t("savings")}</span>
-            <span className="text-saveo-emerald-600">{formatKWD(Number(order.discountTotal))}</span>
+            {!anyCancelled && unifiedStepIndex >= 0 && (
+              <div className="savo-orderdetail-steps">
+                {SUPPLIER_STEPS.map((step, idx) => (
+                  <div key={step} className="savo-orderdetail-step">
+                    <div className={`savo-orderdetail-step-dot ${idx <= unifiedStepIndex ? "is-active" : ""}`}>{idx + 1}</div>
+                    {idx < SUPPLIER_STEPS.length - 1 && <div className={`savo-orderdetail-step-line ${idx < unifiedStepIndex ? "is-active" : ""}`} />}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <ul className="savo-orderdetail-items">
+              {allItems.map((item) => (
+                <li key={item.id} className="savo-orderdetail-item">
+                  <span>{item.productName} × {item.quantity}</span>
+                  <div className="savo-orderdetail-item-right">
+                    <span className="savo-orderdetail-item-total">{formatKWD(Number(item.lineTotal))}</span>
+                    {item.product.type === "MYSTERY_BOX" && item.mysteryBoxReveal && (
+                      <Link href={`/mystery-boxes/reveal/${item.mysteryBoxReveal.id}`} className="savo-orderdetail-reveal">
+                        🎁 {item.mysteryBoxReveal.revealedAt ? (isArabic ? "شاهد الكشف" : "View Reveal") : (isArabic ? "افتح صندوقك" : "Open Your Box")}
+                      </Link>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="flex justify-between text-saveo-emerald-700/60">
+        );
+      })()}
+
+      <div className="savo-orderdetail-card">
+        <div className="savo-orderdetail-totals">
+          <div className="savo-orderdetail-total-row">
+            <span>{t("savings")}</span>
+            <span className="savo-orderdetail-savings">{formatKWD(Number(order.discountTotal))}</span>
+          </div>
+          <div className="savo-orderdetail-total-row">
             <span>{t("delivery")}</span>
             <span>{Number(order.deliveryFee) === 0 ? t("free") : formatKWD(Number(order.deliveryFee))}</span>
           </div>
-          <div className="flex justify-between text-base font-bold">
+          <div className="savo-orderdetail-total-row savo-orderdetail-total-row--final">
             <span>{t("total")}</span>
             <span>{formatKWD(Number(order.total))}</span>
           </div>
@@ -152,43 +152,33 @@ export default async function OrderDetailPage({ params }: Props) {
       </div>
 
       {order.address && (
-        <div className="card mt-4 p-5 text-sm">
-          <h2 className="mb-2 font-bold">{t("deliveryAddress")}</h2>
-          <p>{order.address.fullName} · {order.address.phone}</p>
-          <p className="text-saveo-emerald-700/60">
+        <div className="savo-orderdetail-card">
+          <h2 className="savo-orderdetail-card-title">{t("deliveryAddress")}</h2>
+          <p className="savo-orderdetail-address-name">{order.address.fullName} · {order.address.phone}</p>
+          <p className="savo-orderdetail-address-line">
             {order.address.governorate}, {order.address.area}
             {order.address.block ? `, Block ${order.address.block}` : ""}
           </p>
         </div>
       )}
 
-      <div className="card mt-4 p-5">
-        <h2 className="mb-3 font-bold">Need help with this order?</h2>
+      <div className="savo-orderdetail-card">
+        <h2 className="savo-orderdetail-card-title">{isArabic ? "تحتاج مساعدة بهذا الطلب؟" : "Need help with this order?"}</h2>
         {order.issues.length > 0 && (
-          <ul className="mb-4 space-y-2">
+          <ul className="savo-orderdetail-issues">
             {order.issues.map((issue) => (
-              <li key={issue.id} className="rounded-lg bg-black/[0.03] p-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold">{issue.subject}</p>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                      issue.status === "OPEN"
-                        ? "bg-red-100 text-red-700"
-                        : issue.status === "PROCESSING"
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-saveo-emerald-100 text-saveo-emerald-800"
-                    }`}
-                  >
-                    {issue.status}
-                  </span>
+              <li key={issue.id} className="savo-orderdetail-issue">
+                <div className="savo-orderdetail-issue-head">
+                  <p className="savo-orderdetail-issue-subject">{issue.subject}</p>
+                  <span className={`savo-orderdetail-issue-status savo-orderdetail-issue-status--${issue.status.toLowerCase()}`}>{issue.status}</span>
                 </div>
-                <p className="mt-1 text-xs text-saveo-emerald-700/60">{issue.description}</p>
+                <p className="savo-orderdetail-issue-desc">{issue.description}</p>
               </li>
             ))}
           </ul>
         )}
         <ReportIssueForm orderId={order.id} />
-        <div className="mt-4 border-t border-black/5 pt-4">
+        <div className="savo-orderdetail-return-wrap">
           <ReturnRequestForm orderId={order.id} />
         </div>
       </div>
